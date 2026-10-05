@@ -1,0 +1,26 @@
+# The human's input file is local-only. Each human keeps their own copy;
+# only the shared input ledger is committed. See idx-agentic-process.md.
+spec/input.md
+
+# Editor / OS noise
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+.directory
+*~
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Visual Studio Code
+.vscode/
+
+# Editor / temp files
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log

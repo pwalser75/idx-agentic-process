@@ -1,0 +1,3 @@
+# The human's input file is local-only: never committed, each human keeps their own.
+# Only the shared, append-only input ledger (agent/input-ledger.md) is versioned.
+input.md
