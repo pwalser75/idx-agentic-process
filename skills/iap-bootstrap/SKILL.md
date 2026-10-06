@@ -127,8 +127,8 @@ This creates `spec/index.md`, an empty `spec/input.md`, a `spec/.gitignore` (kee
 architecture stubs, `spec/tickets/`, and `spec/agent/input-ledger.md`.
 
 **Fallback** (only when `IAP_HOME` was not found): create those files yourself with the
-same structure — `spec/index.md`, `spec/input.md` with a header comment, `spec/.gitignore`
-containing `input.md`, the four architecture stubs, `spec/tickets/`, and
+same structure — `spec/index.md`, an empty `spec/input.md`, `spec/.gitignore` containing
+`input.md`, the four architecture stubs, `spec/tickets/`, and
 `spec/agent/input-ledger.md` with an "append-only" header comment.
 
 ## 4. Write the process marker and process-definition copy

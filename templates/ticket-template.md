@@ -1,7 +1,7 @@
 # {Title}
 
 TYPE:   {STORY | IMPROVEMENT | BUG}
-STATUS: {DRAFT | READY | IN_PROGRESS | IN_REVIEW | CLOSED}
+STATUS: {DRAFT | READY | IN_PROGRESS | IN_REVIEW | DONE | CLOSED}
 CREATED-ON: {ISO date-time of creation}
 UPDATED-ON: {ISO date-time of last update}
 

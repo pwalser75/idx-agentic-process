@@ -62,8 +62,8 @@ facilitate.
 
 5. **Update `spec/index.md`** if the project description or the at-a-glance state
    changed.
-6. **Clear `spec/input.md`.** Remove the processed statements, leaving the file's header
-   comment in place and empty of statements, ready for the next round.
+6. **Clear `spec/input.md`.** Empty the file completely — no statements and **no
+   comment, header or placeholder** — so it is blank and ready for the next round.
 7. **Report** what you created, changed, deferred, and any open questions.
 
 ## Rules and behaviour

@@ -68,7 +68,7 @@ IMPLEMENTOR).
    ```
 
 5. **Reset changed tickets to DRAFT.** Any content change to a ticket in status DRAFT,
-   READY or IN_REVIEW brings it back to DRAFT (forced re-refinement). Tickets in
+   READY, IN_REVIEW or DONE brings it back to DRAFT (forced re-refinement). Tickets in
    IN_PROGRESS are exempt — their content evolves while being implemented.
 6. **Reclaim abandoned work.** For every ticket in status IN_PROGRESS, check whether it
    is genuinely claimed: an active agent, or an open feature branch carrying the claim

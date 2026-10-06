@@ -108,45 +108,59 @@ They eventually log the development process of the project.
 ```
 
 ### Types:
+
 - STORY (functional increment)
 - IMPROVEMENT (non-functional change)
 - BUG (reported bug)
 
 ### Status:
+
 - DRAFT (refinement and acceptance needed)
 - READY (ticket refined and ready to be implemented)
 - IN_PROGRESS (claimed by an agent for implementation)
 - IN_REVIEW (ticket successfully implemented, but needs to be reviewed before it can be closed)
+- DONE (ticket passed review, ready to be merged and closed)
 - CLOSED (ticket done and closed, protected from changes)
 
 Status diagram:
 
 ```
+    │ /plan (new requirement)
+    │
+    ▼
 ╭───────╮  /refine   ╭───────╮  /implement   ╭─────────────╮   (agent)     ╭───────────╮
 │ DRAFT │───────────▶│ READY │──────────────▶│ IN_PROGRESS │──────────────▶│ IN_REVIEW │
 ╰───────╯            ╰───────╯               ╰─────────────╯               ╰───────────╯
-    ▲                    ▲                                                       │
-    │                    └───────────── /review (rework) ────────────────────────┘
+    ▲                    ▲                          │                            │
+    │                    ├◀────────/plan (reclaim)──┘                            │
+    │                    └◀───────────────────/review (rework)───────────────────┤
     │                                                                            │ /review (accepted)
     │                                                                            ▼
-    │                                                                       ╭────────╮
-    └──────────────────────────── any edit ─────────────────────────────────│ CLOSED │
+    │                                                                        ╭──────╮
+    └◀──────any edit (DRAFT / READY / DONE / IN_REVIEW)──────────────────────│ DONE │
+                                                                             ╰──────╯
+                                                                                 │ /accept (human)
+                                                                                 ▼
+                                                                            ╭────────╮
+                                                                            │ CLOSED │
                                                                             ╰────────╯
+                                                                            (terminal)
 ```
 
 ### State transitions
 
-| FROM                  | TO          | TRIGGER                     | ACTOR      | GUARD                                         |
-|-----------------------|-------------|-----------------------------|------------|-----------------------------------------------|
-| —                     | DRAFT       | `/plan`                     | Planner    | new or changed requirement                    |
-| DRAFT                 | READY       | `/refine`                   | Analyst    | sufficiently defined and realizable           |
-| READY                 | IN_PROGRESS | `/implement`                | Implementor| claimed by setting status                     |
-| IN_PROGRESS           | IN_REVIEW   | work complete               | Implementor| tasks done, acceptance criteria fulfilled     |
-| IN_PROGRESS           | READY       | `/plan` (reclaim)           | Planner    | claim abandoned (not active, no open branch)  |
-| IN_REVIEW             | READY       | `/review` (rework)          | Reviewer   | comments state what remains                   |
-| IN_REVIEW             | CLOSED      | `/review` (accept)          | Reviewer   | accepted, feature branch merged               |
-| DRAFT/READY/IN_REVIEW | DRAFT       | content edit                | (anyone)   | forces re-refinement                          |
-| CLOSED                | —           | (none, terminal)            | —          | immutable; follow-up work is a new ticket     |
+| FROM                       | TO          | TRIGGER                     | ACTOR      | GUARD                                         |
+|----------------------------|-------------|-----------------------------|------------|-----------------------------------------------|
+| —                          | DRAFT       | `/plan`                     | Planner    | new or changed requirement                    |
+| DRAFT                      | READY       | `/refine`                   | Analyst    | sufficiently defined and realizable           |
+| READY                      | IN_PROGRESS | `/implement`                | Implementor| claimed by setting status                     |
+| IN_PROGRESS                | IN_REVIEW   | work complete               | Implementor| tasks done, acceptance criteria fulfilled     |
+| IN_PROGRESS                | READY       | `/plan` (reclaim)           | Planner    | claim abandoned (not active, no open branch)  |
+| IN_REVIEW                  | READY       | `/review` (rework)          | Reviewer   | comments state what remains                   |
+| IN_REVIEW                  | DONE        | `/review` (accept)          | Reviewer   | accepted                                      |
+| DONE                       | CLOSED      | `/accept` (accept)          | Human      | accepted, feature branch merged               |
+| DRAFT/READY/IN_REVIEW/DONE | DRAFT       | content edit                | (anyone)   | forces re-refinement                          |
+| CLOSED                     | —           | (none, terminal)            | —          | immutable; follow-up work is a new ticket     |
 
 
 ## Subagents
@@ -199,7 +213,7 @@ Precondition: at least one ticket in status IN_REVIEW.
 
 Looks at tickets in status IN_REVIEW and checks if they are properly and completely implemented (code, tests, configuration, documentation),
 if all tasks are done in the ticket, and verifies that the acceptance criteria is fulfilled.
-When it is satisfied with the result, it sets the ticket status to CLOSED.
+When it is satisfied with the result, it sets the ticket status to DONE.
 Otherwise, it comments on the ticket what else needs to be done before the ticket can be closed, and sets the ticket back to READY. 
 
 ### ARCHAEOLOGIST
@@ -228,19 +242,24 @@ Writes/updates the files under `architecture/`, again marked as inferred and wit
 
 ## Additional Commands
 
-### Status
-Command: `/status`.
+### Open tickets
+Command: `/tickets`.
 Shows a summary of all open (non-CLOSED) tickets, with name, status, created-on (primary sort criteria, ascending), and a list of all commands of this process whose preconditions are met.
+
+### Accept
+Command: `/accept`.
+Accept all DONE tickets, rebase the feature branch onto the main branch and then merge to the main branch.
 
 ### Bootstrap
 
 Command: `/bootstrap`.
 Precondition: a project root that does not yet contain a `spec/` folder — this may be an empty
-directory, a freshly initialized repository, or an existing codebase (see the stretch goal).
+directory, a freshly initialized repository, or an existing codebase.
 
 What it does:
 1. Installs the process commands and their subagent skills for the active agent tool (e.g.
-   `.opencode/`): FACILITATOR, PLANNER, ANALYST, IMPLEMENTOR, REVIEWER and `/status`.
+   `.opencode/`): FACILITATOR, PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST and
+   SYSTEM-ARCHITECT, plus the additional commands `/tickets` and `/accept`.
 2. Creates the missing parts of the `spec/` skeleton from the template: `index.md`, an empty
    `input.md`, and the `requirements/`, `architecture/`, `tickets/` and `agent/` folders.
    Existing content is never overwritten; only absent files are created.
@@ -291,7 +310,21 @@ Rules for collaboration when the project is a GIT repository.
   fast-forward only, so rebase the branch onto main first.
 - A rejected ticket returns to READY; rebase onto main before rework.
 - A CLOSED ticket is protected; follow-up work becomes a new ticket.
+
 ## Setup
+
+### Installation
+
+For a project-local installation, copy the `skills` and `commands` folder to the following
+folder in your project:
+
+- `.agents` (unified installation for OpenCode, Copilot, Cursor, Codex, ...)
+- `.claude` (for Claude Code)
+
+For a global installation, copy the `skills` and `commands` folder to:
+
+- `~/.agents` (unified installation for OpenCode, Copilot, Cursor, Codex, ...)
+- `~/.claude` (for Claude Code)
 
 ### Bootstrapping projects
 
@@ -303,7 +336,8 @@ After bootstrap:
 3. Repeat the requirements loop until the picture is stable.
 4. `/plan` creates tickets; `/refine` promotes them to READY.
 5. `/implement` and `/review` drive the implementation loop.
-6. Commit `spec/` together with the code.
+6. `/accept` closes the implementation and merges the code (Human-in-the-loop).
+7. Commit `spec/` together with the code.
 
 Updating the process: re-run `/bootstrap` (or copy the template again). It only refreshes the
 command/skill definitions and the process marker; the content of `spec/requirements`,
@@ -324,12 +358,12 @@ Order of adoption:
 1. `/bootstrap` the process in the existing repository.
 2. `/survey` and `/excavate` to reconstruct architecture and requirements (repeat as code changes).
 3. The human reviews the inferred documents, corrects and accepts them (the requirements loop).
-4. `/plan`, `/refine`, `/implement`, `/review` as usual.
+4. `/plan`, `/refine`, `/implement`, `/review` and `/accept` as usual.
 
 Provenance:
 - Requirement and architecture items may carry a marker such as `origin: human | inferred` and,
   optionally, a confidence.
-- Inferred content stays provisional until a human confirms it; a status/gap view (e.g. `/status`)
+- Inferred content stays provisional until a human confirms it; a status/gap view (e.g. `/tickets`)
   lists what is still inferred or unresolved.
 - The first entry in `spec/agent/input-ledger.md` records the reverse-engineering event: date,
   source revision/commit, and the commands that were run.

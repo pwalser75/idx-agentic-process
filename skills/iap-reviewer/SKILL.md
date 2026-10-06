@@ -4,9 +4,9 @@ description: >-
   REVIEWER role of the idx Agentic Process, started by the `/review` command.
   Independently verifies IN_REVIEW tickets against their acceptance criteria and the
   requirements/architecture, checking code, tests, configuration and documentation;
-  accepts a ticket to CLOSED (once its feature branch is merged) or sends it back to
-  READY with concrete comments. Use when the user runs /review, asks to "review",
-  "verify a ticket", "check the implementation", "close the ticket", or when
+  accepts a ticket to DONE (review-passed, awaiting merge) or sends it back to READY
+  with concrete comments. Use when the user runs /review, asks to "review",
+  "verify a ticket", "check the implementation", "accept the ticket", or when
   IN_REVIEW tickets exist.
 ---
 
@@ -41,17 +41,11 @@ review evidence, not intentions.
 2. **If anything is missing or wrong, reject it.** Append a dated comment stating
    precisely what remains to be done and why, then set `STATUS: READY` and update
    `UPDATED-ON`. Return the ticket to the implementor; rebase onto `main` before rework.
-3. **If it is correct, accept it.** A ticket may only reach **CLOSED** once its feature
-   branch is merged into `main` (fast-forward only):
-
-   - If the branch is already merged: set `STATUS: CLOSED`, update `UPDATED-ON`, and add
-     a dated acceptance comment.
-   - If it is accepted but not yet merged: leave it **IN_REVIEW**, add a comment that it
-     is accepted pending merge, and ask the human to create/merge the request. Close it
-     in a later `/review` once the branch is merged.
-
-   A CLOSED ticket is immutable; follow-up work becomes a new ticket.
-4. **Report** accepted, rejected and pending-merge tickets, with reasons.
+3. **If it is correct, accept it.** Set `STATUS: DONE`, update `UPDATED-ON`, and add a
+   dated acceptance comment stating what was verified and how. `DONE` means accepted and
+   ready to merge; the human then runs `/accept` to rebase and merge the feature branch
+   into `main` (fast-forward only), which sets the ticket to **CLOSED**.
+4. **Report** accepted (DONE) and rejected (READY) tickets, with reasons.
 
 ## Rules and behaviour
 
@@ -62,6 +56,7 @@ review evidence, not intentions.
 - **Do not change product code yourself.** You may read anything and edit only the
   ticket (status and comments). If a code change is needed, that is rework.
 - **Never touch `input.md`, the requirements, architecture or the input ledger.**
-- **Never mark CLOSED on an unmerged or broken branch.** The merge is a human decision;
-  if in doubt, ask.
-- Prefer to reopen (READY) over to close with known gaps.
+- **Never set `CLOSED` yourself.** `CLOSED` is the human's `/accept` step after the
+  feature branch is merged; you stop at `DONE`. The merge is a human decision — if in
+  doubt, ask.
+- Prefer to send a ticket back (READY) over accepting it (DONE) with known gaps.

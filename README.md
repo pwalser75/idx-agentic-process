@@ -23,7 +23,8 @@ IAP runs development in **three loops**:
 2. **Planning loop** — agents (`/plan`, `/refine`) turn requirement and architecture
    changes into refined, actionable tickets.
 3. **Implementation loop** — agents (`/implement`, `/review`) pick tickets, build, test
-   and verify them, closing tickets only once they are accepted.
+   and verify them; the human then merges and closes the review-accepted tickets
+   (`/accept`).
 
 ## Highlights & principles
 
@@ -81,7 +82,7 @@ the project.
 ```
 # Title
 TYPE:   {STORY | IMPROVEMENT | BUG}
-STATUS: {DRAFT | READY | IN_PROGRESS | IN_REVIEW | CLOSED}
+STATUS: {DRAFT | READY | IN_PROGRESS | IN_REVIEW | DONE | CLOSED}
 CREATED-ON: {ISO date-time}
 UPDATED-ON: {ISO date-time}
 ---
@@ -90,12 +91,15 @@ UPDATED-ON: {ISO date-time}
 {comments}
 ```
 
-Statuses (see the source document for the full transition table):
+Statuses (see the source document for the full transition table): DRAFT (needs
+refinement) → READY → IN_PROGRESS → IN_REVIEW → DONE (review-accepted) → CLOSED
+(merged). A content change to a DRAFT/READY/IN_REVIEW/DONE ticket resets it to DRAFT.
 
 ```
-DRAFT ──/refine──▶ READY ──/implement──▶ IN_PROGRESS ──▶ IN_REVIEW ──/review──▶ CLOSED
-  ▲                  ▲                                      │
-  └──── content edit ┴──────────── /review (rework) ────────┘
+DRAFT ──/refine──▶ READY ──/implement──▶ IN_PROGRESS ──(work done)──▶ IN_REVIEW
+  ▲                  ▲                                                    │
+  └── content edit ──┴──────────── /review (rework) ───────────────────── │
+                                            /review (accept) ──▶ DONE ──/accept──▶ CLOSED
 ```
 
 Priorities when picking work: **BUG > IMPROVEMENT > STORY**.
@@ -112,18 +116,107 @@ own modus operandi; a command starts the matching role and hands it the work.
 | `/plan`        | `iap-planner`         | none                                           | Create/update tickets from requirement changes |
 | `/refine`      | `iap-analyst`         | none                                           | Refine DRAFT tickets and promote them to READY |
 | `/implement`   | `iap-implementor`     | at least one READY ticket                      | Claim the best READY ticket and implement it |
-| `/review`      | `iap-reviewer`        | at least one IN_REVIEW ticket                  | Verify and close (or send back) tickets |
+| `/review`      | `iap-reviewer`        | at least one IN_REVIEW ticket                  | Verify and accept (DONE) or send back tickets |
+| `/accept`      | —                     | at least one DONE ticket                       | Merge the feature branch and close DONE tickets |
 | `/excavate`    | `iap-archaeologist`   | `spec/` bootstrapped, project has source       | Reverse-engineer features & domain models |
 | `/survey`      | `iap-system-architect`| `spec/` bootstrapped, project has source       | Reverse-engineer tech stack & architecture |
-| `/status`      | —                     | `spec/` bootstrapped                           | Summary of open tickets and available commands |
+| `/tickets`     | —                     | `spec/` bootstrapped                           | Summary of open tickets and available commands |
 
 The process definition itself is packaged as the `idx-agentic-process` skill, so an
 agent that has it installed understands the whole process.
 
+## Installation
+
+IAP is used through your agent tool. It has two installable parts:
+
+- **Skills** — one folder per role under [`skills/`](skills/), each with a `SKILL.md`
+  (the open [Agent Skills](https://agentskills.io) standard), defining the roles and the
+  process itself.
+- **Commands** — one Markdown file per slash command under [`commands/`](commands/); each
+  is a thin wrapper that starts the matching role.
+
+The `/bootstrap` command additionally needs the bundle (this repository: `templates/`,
+`idx-agentic-process.md`, `VERSION`) so it can create `spec/` and record the version.
+Point `IAP_HOME` at your clone:
+
+```bash
+git clone git@github.com:pwalser75/idx-agentic-process.git ~/idx-agentic-process
+export IAP_HOME="$HOME/idx-agentic-process"    # add to your shell profile
+```
+
+You can install **globally** (once per machine, in every project) or **project-local**
+(committed to the repository, so every collaborator and cloud agent gets it).
+Project-local wins when both are present.
+
+### Where each tool loads skills and commands
+
+| Tool | Skills (project) | Skills (global) | Commands (project) | Commands (global) |
+|---|---|---|---|---|
+| OpenCode | `.opencode/skills/` | `~/.config/opencode/skills/` | `.opencode/commands/` | `~/.config/opencode/commands/` |
+| Claude Code | `.claude/skills/` | `~/.claude/skills/` | `.claude/commands/` | `~/.claude/commands/` |
+| GitHub Copilot | `.github/skills/` (also `.agents/skills/`, `.claude/skills/`) | `~/.copilot/skills/` (also `~/.agents/skills/`) | `.github/prompts/` (`*.prompt.md`) | user prompts (editor) |
+| OpenAI Codex | `.agents/skills/` | `~/.agents/skills/` | `$CODEX_HOME/prompts/` (`~/.codex/prompts/`) | same |
+| Cursor | `.cursor/skills/` (also `.agents/skills/`) | `~/.cursor/skills/` (also `~/.agents/skills/`) | — (skills are `/skill-name`) | — |
+
+Every tool except Claude Code also reads the cross-tool `.agents/skills/` location, so a
+single install there covers OpenCode, Copilot, Codex and Cursor at once; add
+`.claude/skills/` for Claude Code. In tools where slash commands *are* skills (Claude Code,
+Codex, Cursor, Copilot) the roles are invokable directly (`/iap-facilitator`,
+`$iap-implementor`, …); the `commands/` wrappers (`/facilitate`) are mainly needed for
+OpenCode.
+
+### Global install
+
+**OpenCode**
+
+```bash
+git clone git@github.com:pwalser75/idx-agentic-process.git ~/.config/opencode/iap
+mkdir -p ~/.config/opencode/skills ~/.config/opencode/commands
+ln -s ~/.config/opencode/iap/skills/*   ~/.config/opencode/skills/
+ln -s ~/.config/opencode/iap/commands/* ~/.config/opencode/commands/
+```
+
+**Claude Code**
+
+```bash
+git clone git@github.com:pwalser75/idx-agentic-process.git ~/.claude/iap
+mkdir -p ~/.claude/skills ~/.claude/commands
+ln -s ~/.claude/iap/skills/*   ~/.claude/skills/
+ln -s ~/.claude/iap/commands/* ~/.claude/commands/
+```
+
+**GitHub Copilot, OpenAI Codex, Cursor** (shared `.agents/skills/`)
+
+```bash
+mkdir -p ~/.agents/skills
+ln -s ~/idx-agentic-process/skills/* ~/.agents/skills/
+```
+
+- Copilot also accepts personal skills in `~/.copilot/skills/`.
+- Codex custom prompts (`/prompts:<name>`) go in `~/.codex/prompts/`.
+- Cursor also accepts personal skills in `~/.cursor/skills/`.
+
+### Project-local install
+
+Commit these into the repository and every collaborator (and cloud agent) gets IAP:
+
+```bash
+REPO=~/idx-agentic-process
+
+mkdir -p .agents/skills && cp -R "$REPO"/skills/* .agents/skills/            # OpenCode/Copilot/Codex/Cursor
+mkdir -p .claude/skills && cp -R "$REPO"/skills/* .claude/skills/            # Claude Code
+mkdir -p .opencode/commands && cp -R "$REPO"/commands/* .opencode/commands/  # OpenCode slash commands
+```
+
+For Copilot you can use the canonical `.github/skills/` (and `.github/prompts/*.prompt.md`
+for prompts) instead of `.agents/`. On Windows, replace the symlinks/copies with
+`mklink /D` or plain copies.
+
 ## Quick start
 
-1. In your project, run the bootstrap command (it creates `spec/` if missing and
-   installs this process's commands/skills into the project):
+1. In your project, run the bootstrap command — assuming IAP is installed (see
+   [Installation](#installation)) — which creates `spec/` if missing and installs this
+   process's commands/skills into the project:
 
    ```
    /bootstrap
@@ -141,8 +234,9 @@ agent that has it installed understands the whole process.
    /plan      # derive tickets from the requirements
    /refine    # promote well-defined tickets to READY
    /implement # claim and build the best READY ticket
-   /review    # verify, then close it
-   /status    # always see where you are
+   /review    # verify, then accept it to DONE
+   /accept    # merge the branch and close the DONE tickets
+   /tickets   # always see where you are
    ```
 
 4. Commit `spec/` together with the code.
@@ -176,9 +270,9 @@ idx-agentic-process/
 │  ├─ iap-archaeologist/
 │  └─ iap-system-architect/
 ├─ commands/                    # slash commands (opencode / Claude Code)
-│  ├─ bootstrap.md  status.md
+│  ├─ bootstrap.md  tickets.md
 │  ├─ facilitate.md plan.md refine.md
-│  └─ implement.md  review.md excavate.md survey.md
+│  └─ implement.md  review.md accept.md excavate.md survey.md
 └─ templates/
    ├─ spec/                     # spec/ skeleton written by /bootstrap
    └─ input.md                  # template for spec/input.md (kept out of spec/)

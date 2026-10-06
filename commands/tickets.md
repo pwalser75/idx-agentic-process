@@ -29,8 +29,9 @@ nothing.**
    | `/refine` | always (spec bootstrapped) |
    | `/implement` | at least one READY ticket |
    | `/review` | at least one IN_REVIEW ticket |
+   | `/accept` | at least one DONE ticket |
    | `/excavate`, `/survey` | `spec/` bootstrapped and source code present |
-   | `/status` | `spec/` bootstrapped |
+   | `/tickets` | `spec/` bootstrapped |
 
    **d. Pending planning** — if `spec/agent/planning-log.md` exists, note whether the
    requirements/architecture changed since the last `/plan`.

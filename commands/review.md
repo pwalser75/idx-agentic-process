@@ -1,5 +1,5 @@
 ---
-description: REVIEWER — verify IN_REVIEW tickets and close or send them back.
+description: REVIEWER — verify IN_REVIEW tickets and accept them to DONE or send them back.
 ---
 Assume the **REVIEWER** role of the idx Agentic Process.
 
