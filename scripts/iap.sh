@@ -7,7 +7,7 @@
 # every ticket or requirement file. It never writes anything.
 #
 # Usage:
-#   iap.sh headers            all ticket headers: CREATED  STATUS  TYPE  FILE  TITLE, oldest first
+#   iap.sh headers            all ticket headers: ID  STATUS  TYPE  TITLE  CREATED, oldest first
 #   iap.sh open               like headers, but without CLOSED tickets
 #   iap.sh list STATUS...     open-ish headers filtered by status, e.g. list DRAFT READY
 #   iap.sh next               highest-priority READY ticket (BUG > IMPROVEMENT > STORY, then oldest)
@@ -28,7 +28,7 @@ usage() {
 iap.sh — read-only helper for the idx Agentic Process (IAP)
 
 Usage:
-  iap.sh headers            all ticket headers (CREATED  STATUS  TYPE  FILE  TITLE), oldest first
+  iap.sh headers            all ticket headers (ID  STATUS  TYPE  TITLE  CREATED), oldest first
   iap.sh open               like headers, but without CLOSED tickets
   iap.sh list STATUS...     headers filtered by status, e.g. list DRAFT READY
   iap.sh next               highest-priority READY ticket (BUG > IMPROVEMENT > STORY, then oldest)
@@ -68,14 +68,41 @@ headers() {
   done | sort
 }
 
-cmd_headers() { headers; }
+# render — pretty-print `headers` (TSV: CREATED STATUS TYPE FILE TITLE) as the
+# compact, space-aligned ticket list: ID  STATUS  TYPE  TITLE  CREATED.
+render() {
+  awk -F'\t' '
+    function pad(s, w,   n) {
+      n = w - length(s)
+      return s (n > 0 ? sprintf("%*s", n, "") : "")
+    }
+    {
+      i++
+      ids[i] = $4
+      sub(/^.*\//, "", ids[i]); sub(/\.md$/, "", ids[i]); sub(/-.*/, "", ids[i])
+      created[i] = $1; sub(/^[0-9]+-/, "", created[i])
+      status[i] = $2; type[i] = $3; title[i] = $5
+      if (length($5) > tw) tw = length($5)
+    }
+    END {
+      if (i == 0) exit
+      printf "%s  %s  %s  %s  %s\n", \
+        pad("ID", 4), pad("STATUS", 11), pad("TYPE", 11), pad("TITLE", tw), "CREATED"
+      for (k = 1; k <= i; k++)
+        printf "%s  %s  %s  %s  %s\n", \
+          pad(ids[k], 4), pad(status[k], 11), pad(type[k], 11), pad(title[k], tw), created[k]
+    }
+  '
+}
 
-cmd_open() { headers | awk -F'\t' '$2 != "CLOSED"'; }
+cmd_headers() { headers | render; }
+
+cmd_open() { headers | awk -F'\t' '$2 != "CLOSED"' | render; }
 
 cmd_list() {
   [ "$#" -gt 0 ] || die "usage: iap.sh list STATUS [STATUS...]"
   local want=" $* "
-  headers | awk -F'\t' -v want="$want" 'index(want, " " $2 " ") > 0'
+  headers | awk -F'\t' -v want="$want" 'index(want, " " $2 " ") > 0' | render
 }
 
 cmd_next() {

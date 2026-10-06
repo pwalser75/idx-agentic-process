@@ -23,6 +23,7 @@ project-root/
 └─ spec/                        # Root folder of the process
    ├─ index.md                  # (X) Index file, describing the project
    ├─ input.md                  # (H) Human user input file, (A) clear the file.
+   ├─ release-notes.md          # (X) Release notes of the current version (optional).
    ├─ requirements/             # (X) Requirements of this project
    │  ├─ domain-models/         # (X) Domain models
    │  │  └─ {model-name}.md     # (X) Domain model, with name, attributes and descriptions
@@ -162,6 +163,34 @@ Status diagram:
 | DRAFT/READY/IN_REVIEW/DONE | DRAFT       | content edit                | (anyone)   | forces re-refinement                          |
 | CLOSED                     | —           | (none, terminal)            | —          | immutable; follow-up work is a new ticket     |
 
+## Release Notes
+
+The release notes are stored in `release-notes.md` and updated when a ticket is accepted.
+The release notes file will be cleared by the human when bumping the major/minor version.
+The tickets will be added under the appropriate heading:
+- STORY -> "New Features"
+- IMPROVEMENT -> "Improvements"
+- BUG -> "Bugfixes"
+
+The entries under these headings are bullet lists, with the title in bold, and a short, concise description.
+Entries for multiple similar tickets can be merged to keep the release notes short and concise (don't go into details, and omit technical details unless absolutely relevant for understanding).
+Target audience: clients of the project. Don't add too many details, the actual details can still be looked up in the tickets afterwards.
+
+Format of the release notes:
+```
+# Version {major.minor} | Release Notes
+
+## New Features
+- **{title}**: {description}
+
+## Improvements
+- **{title}**: {description}
+
+## Bugfixes
+- **{title}**: {description}
+```
+
+Release notes are not bootstrapped; they are created on-the-fly by `/accept` when missing.
 
 ## Subagents
 
@@ -248,11 +277,28 @@ Writes/updates the files under `architecture/`, again marked as inferred and wit
 
 ### Open tickets
 Command: `/tickets`.
-Shows a summary of all open (non-CLOSED) tickets, with name, status, created-on (primary sort criteria, ascending), and a list of all commands of this process whose preconditions are met.
+Shows a summary of all open (non-CLOSED) tickets, one row each with the ticket id, status, type, title and created-on (primary sort criteria, ascending).
+Report tickets as one row per ticket, space-aligned, in exactly this column order:
+
+| Column  | Value                                                    |
+|---------|----------------------------------------------------------|
+| ID      | zero-padded ticket number from `{id}-{type}-{name}.md`   |
+| STATUS  | DRAFT, READY, IN_PROGRESS, IN_REVIEW, DONE               |
+| TYPE    | STORY, IMPROVEMENT or BUG                                |
+| TITLE   | the ticket's `#` heading                                 |
+| CREATED | creation date as `MM-DD`                                 |
+
+Separate columns with two spaces, pad each to the widest value in its column, and
+sort rows oldest first. In the open-tickets view, omit CLOSED tickets.
 
 ### Accept
 Command: `/accept`.
-Accept all DONE tickets, rebase the feature branch onto the main branch and then merge to the main branch.
+
+Accept all DONE tickets, and for each:
+- update the release notes (create on-the-fly if missing, and verify the version is correct)
+- squash the commits into one, named as `{ticket-number}-{ticket-type}: {ticket-title}`
+- rebase the feature branch onto the main branch
+- merge to the main branch.
 
 ### Bootstrap
 
@@ -265,7 +311,7 @@ What it does:
    `.opencode/`): FACILITATOR, PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST and
    SYSTEM-ARCHITECT, plus the additional commands `/tickets` and `/accept`.
 2. Creates the missing parts of the `spec/` skeleton from the template: `index.md`, an empty
-   `input.md`, and the `requirements/`, `architecture/`, `tickets/` and `agent/` folders.
+   `input.md` and the `requirements/`, `architecture/`, `tickets/` and `agent/` folders.
    Existing content is never overwritten; only absent files are created.
 3. Writes `spec/agent/process-version.md`, recording the IAP version used, so the copy can later
    be updated or diffed.

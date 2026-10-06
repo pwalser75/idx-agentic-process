@@ -25,8 +25,8 @@ IMPLEMENTOR).
 ## Inputs to read first
 
 1. `spec/index.md`, all of `spec/requirements/**` and `spec/architecture/**`.
-2. All ticket headers in one pass — `bash .iap/iap.sh headers` (CREATED, STATUS, TYPE,
-   FILE, TITLE) — plus the ticket index `spec/agent/ticket-index.md` (create if missing).
+2. All ticket headers in one pass — `bash .iap/iap.sh headers` (ID, STATUS, TYPE,
+   TITLE, CREATED) — plus the ticket index `spec/agent/ticket-index.md` (create if missing).
    Open a ticket body only when you need to edit it or check it for duplicate work.
 3. `spec/agent/planning-log.md` (create if missing) — records the revision/hash of
    requirements+architecture seen at the last `/plan` run.

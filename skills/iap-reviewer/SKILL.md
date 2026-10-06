@@ -49,8 +49,8 @@ review evidence, not intentions.
    `UPDATED-ON`. Return the ticket to the implementor; rebase onto `main` before rework.
 3. **If it is correct, accept it.** Set `STATUS: DONE`, update `UPDATED-ON`, and add a
    dated acceptance comment stating what was verified and how. `DONE` means accepted and
-   ready to merge; the human then runs `/accept` to rebase and merge the feature branch
-   into `main` (fast-forward only), which sets the ticket to **CLOSED**.
+   ready to merge; the human then runs `/accept` to update the release notes and merge the
+   feature branch into `main` (fast-forward only), which sets the ticket to **CLOSED**.
 4. **Report** accepted (DONE) and rejected (READY) tickets, with reasons.
 
 ## Rules and behaviour

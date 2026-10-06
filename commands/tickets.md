@@ -1,5 +1,5 @@
 ---
-description: Show open IAP tickets and the process commands whose preconditions are met.
+description: Show open IAP tickets and the state of the process.
 ---
 Show the status of the idx Agentic Process in this project. **Read-only — modify
 nothing.** Use the shared helper `.iap/iap.sh` for fast, single-pass scans instead of
@@ -10,8 +10,9 @@ opening ticket files one by one. If the helper is missing, run `/bootstrap` to i
    and that `/bootstrap` should be run, then stop.
 2. Print, in this order:
 
-   **a. Open tickets** — every ticket whose STATUS is not CLOSED, one row each (file name,
-   title, STATUS, TYPE, CREATED-ON), sorted oldest first, then a per-status count:
+   **a. Open tickets** — every ticket whose STATUS is not CLOSED, one space-aligned row
+   per ticket with ID, STATUS, TYPE, TITLE and CREATED (oldest first), then a per-status
+   count:
 
    ```bash
    bash .iap/iap.sh open
@@ -26,14 +27,7 @@ opening ticket files one by one. If the helper is missing, run `/bootstrap` to i
    bash .iap/iap.sh inferred
    ```
 
-   **c. Available commands** — list only those whose preconditions are currently met,
-   each with a one-line reason:
-
-   ```bash
-   bash .iap/iap.sh preconditions
-   ```
-
-   **d. Pending planning** — if `spec/agent/planning-log.md` exists, note whether the
+   **c. Pending planning** — if `spec/agent/planning-log.md` exists, note whether the
    requirements/architecture changed since the last `/plan`.
 
 3. Do not edit, create or delete any file.

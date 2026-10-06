@@ -47,8 +47,8 @@ roles are described in their own skills (`iap-bootstrap`, `iap-facilitator`,
 - **Planning loop** — `/plan` turns requirement/architecture changes into tickets;
   `/refine` makes DRAFT tickets precise and promotes them to READY.
 - **Implementation loop** — `/implement` claims the best READY ticket and builds it;
-  `/review` verifies and either accepts it (DONE) or sends it back; `/accept` merges the
-  feature branch and closes the DONE tickets.
+  `/review` verifies and either accepts it (DONE) or sends it back; `/accept` updates the
+  release notes, merges the feature branch and closes the DONE tickets.
 
 ## Artifacts and edit rights
 
@@ -59,6 +59,7 @@ project-root/
 └─ spec/
    ├─ index.md                  # (X) index describing the project
    ├─ input.md                  # (H) human writes; (A) only clears it
+   ├─ release-notes.md          # (X) release notes of the current version (optional)
    ├─ requirements/             # (X) implementation-agnostic requirements
    │  ├─ domain-models/{model}.md   # (X) name, description, attributes
    │  └─ features/{feature}.md      # (X) feature + its functions/use cases
@@ -131,6 +132,28 @@ DRAFT ──/refine──▶ READY ──/implement──▶ IN_PROGRESS ──(
 
 Work priorities when picking a READY ticket: **BUG > IMPROVEMENT > STORY**.
 
+## Release notes
+
+`spec/release-notes.md` records what changed in the current version, for the project's
+clients. It is optional and **not created by `/bootstrap`**; `/accept` creates it on the
+fly when missing and adds each accepted ticket under the heading matching its type —
+STORY → "New Features", IMPROVEMENT → "Improvements", BUG → "Bugfixes". Entries are bold
+titles with a short, client-facing description; similar tickets may be merged into one
+entry to keep it brief. The human clears the file when bumping the major/minor version.
+
+```
+# Version {major.minor} | Release Notes
+
+## New Features
+- **{title}**: {description}
+
+## Improvements
+- **{title}**: {description}
+
+## Bugfixes
+- **{title}**: {description}
+```
+
 ## Commands
 
 Commands are invoked by humans only. Each starts a role implemented as a skill.
@@ -152,8 +175,8 @@ Always check the precondition before acting; if it is not met, say so and stop.
 
 Commands use the shared, read-only helper `.iap/iap.sh` (installed by `/bootstrap`) for
 fast, single-pass scans of `spec/` — e.g. `bash .iap/iap.sh open`, `bash .iap/iap.sh list
-READY`, `bash .iap/iap.sh next`, `bash .iap/iap.sh preconditions`. Prefer it over opening
-ticket files one by one; run `/bootstrap` if it is missing.
+READY`, `bash .iap/iap.sh next`. Prefer it over opening ticket files one by one; run
+`/bootstrap` if it is missing.
 
 ## Golden rules for any IAP agent
 
@@ -188,8 +211,9 @@ ticket files one by one; run `/bootstrap` if it is missing.
 - Rebase before claiming; commit after each acceptance criterion; push before handover.
   Never force-push a branch another agent depends on.
 - The reviewer reviews the feature branch, not the working tree, and accepts a ticket to
-  DONE; the human then runs `/accept` to merge the branch into `main` (fast-forward only)
-  and set it to CLOSED. A ticket reaches CLOSED only once its branch is merged.
+  DONE; the human then runs `/accept` to update the release notes, squash each ticket's
+  commits into one, merge the branch into `main` (fast-forward only) and set it to CLOSED.
+  A ticket reaches CLOSED only once its branch is merged.
 
 ## Bootstrapping and adoption
 

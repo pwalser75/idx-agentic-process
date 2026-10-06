@@ -55,6 +55,7 @@ project-root/
 └─ spec/                        # Root folder of the process
    ├─ index.md                  # (X) Index file, describing the project
    ├─ input.md                  # (H) Human user input file, (A) clear the file
+   ├─ release-notes.md          # (X) Release notes of the current version (optional)
    ├─ requirements/             # (X) Requirements of this project
    │  ├─ domain-models/         # (X) Domain models
    │  │  └─ {model-name}.md     # (X) Domain model: name, attributes, descriptions
@@ -117,10 +118,10 @@ own modus operandi; a command starts the matching role and hands it the work.
 | `/refine`      | `iap-analyst`         | none                                           | Refine DRAFT tickets and promote them to READY |
 | `/implement`   | `iap-implementor`     | at least one READY ticket                      | Claim the best READY ticket and implement it |
 | `/review`      | `iap-reviewer`        | at least one IN_REVIEW ticket                  | Verify and accept (DONE) or send back tickets |
-| `/accept`      | —                     | at least one DONE ticket                       | Merge the feature branch and close DONE tickets |
+| `/accept`      | —                     | at least one DONE ticket                       | Update release notes, merge the branch and close DONE tickets |
 | `/excavate`    | `iap-archaeologist`   | `spec/` bootstrapped, project has source       | Reverse-engineer features & domain models |
 | `/survey`      | `iap-system-architect`| `spec/` bootstrapped, project has source       | Reverse-engineer tech stack & architecture |
-| `/tickets`     | —                     | `spec/` bootstrapped                           | Summary of open tickets and available commands |
+| `/tickets`     | —                     | `spec/` bootstrapped                           | Summary of open tickets and their state |
 
 The process definition itself is packaged as the `idx-agentic-process` skill, so an
 agent that has it installed understands the whole process.
@@ -241,7 +242,7 @@ for prompts) instead of `.agents/`. On Windows, replace the symlinks/copies with
    /refine    # promote well-defined tickets to READY
    /implement # claim and build the best READY ticket
    /review    # verify, then accept it to DONE
-   /accept    # merge the branch and close the DONE tickets
+   /accept    # update release notes, merge and close the DONE tickets
    /tickets   # always see where you are
    ```
 
