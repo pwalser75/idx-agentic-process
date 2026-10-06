@@ -16,10 +16,15 @@ the PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
 
 **Command:** `/refine` · **Precondition:** none; can be run at any time.
 
+## Communication style
+
+- Keep verbosity low: concise responses, minimal explanation.
+- Plain English, no "agentish" filler or corporate lingo ("delve", "leverage", …).
+
 ## Inputs to read first
 
-1. All `spec/tickets/*.md`, with focus on **DRAFT**, plus READY tickets (to keep them
-   consistent).
+1. **DRAFT** tickets (and READY, to keep them consistent). Find candidates with
+   `bash .iap/iap.sh list DRAFT READY`, then read only those bodies.
 2. All `spec/requirements/**` and `spec/architecture/**` — the source of truth.
 3. `spec/agent/ticket-index.md` and, if present, `spec/agent/index.md`/notes.
 

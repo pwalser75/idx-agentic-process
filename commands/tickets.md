@@ -2,38 +2,40 @@
 description: Show open IAP tickets and the process commands whose preconditions are met.
 ---
 Show the status of the idx Agentic Process in this project. **Read-only — modify
-nothing.**
+nothing.** Use the shared helper `.iap/iap.sh` for fast, single-pass scans instead of
+opening ticket files one by one. If the helper is missing, run `/bootstrap` to install it
+(or fall back to `find`/`grep` inline).
 
 1. Precondition: `spec/` exists. If not, print that the project is not bootstrapped yet
-   and that `/bootstrap` should be run.
-2. Read every `spec/tickets/*.md`. Each ticket's header carries `Title`, `TYPE`,
-   `STATUS`, `CREATED-ON` and `UPDATED-ON`.
-3. Print, in this order:
+   and that `/bootstrap` should be run, then stop.
+2. Print, in this order:
 
-   **a. Open tickets** (everything not CLOSED), one row each — file name, title, STATUS,
-   CREATED-ON — **sorted by CREATED-ON ascending** (oldest first). Then a one-line count
-   per status.
+   **a. Open tickets** — every ticket whose STATUS is not CLOSED, one row each (file name,
+   title, STATUS, TYPE, CREATED-ON), sorted oldest first, then a per-status count:
+
+   ```bash
+   bash .iap/iap.sh open
+   bash .iap/iap.sh counts
+   ```
 
    **b. Inferred / unresolved items** — requirement and architecture entries marked
-   `origin: inferred`, and the open questions from
-   `spec/agent/reverse-engineering-report.md` if it exists.
+   `origin: inferred`, plus the open questions in
+   `spec/agent/reverse-engineering-report.md` if it exists:
 
-   **c. Available commands** — list only the commands whose preconditions are currently
-   met, each with a one-line reason:
+   ```bash
+   bash .iap/iap.sh inferred
+   ```
 
-   | Command | Met when |
-   |---------|----------|
-   | `/bootstrap` | always (create or refresh `spec/`) |
-   | `/facilitate` | `spec/input.md` exists and is non-empty |
-   | `/plan` | always (spec bootstrapped) |
-   | `/refine` | always (spec bootstrapped) |
-   | `/implement` | at least one READY ticket |
-   | `/review` | at least one IN_REVIEW ticket |
-   | `/accept` | at least one DONE ticket |
-   | `/excavate`, `/survey` | `spec/` bootstrapped and source code present |
-   | `/tickets` | `spec/` bootstrapped |
+   **c. Available commands** — list only those whose preconditions are currently met,
+   each with a one-line reason:
+
+   ```bash
+   bash .iap/iap.sh preconditions
+   ```
 
    **d. Pending planning** — if `spec/agent/planning-log.md` exists, note whether the
    requirements/architecture changed since the last `/plan`.
 
-4. Do not edit, create or delete any file.
+3. Do not edit, create or delete any file.
+
+Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

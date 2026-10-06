@@ -135,6 +135,12 @@ IAP is used through your agent tool. It has two installable parts:
 - **Commands** — one Markdown file per slash command under [`commands/`](commands/); each
   is a thin wrapper that starts the matching role.
 
+IAP also ships a small, read-only helper, [`scripts/iap.sh`](scripts/iap.sh), which the
+commands use to scan `spec/` in a single pass instead of opening every file. `/bootstrap`
+installs it inside the project at `.iap/iap.sh` (e.g. `bash .iap/iap.sh open`,
+`bash .iap/iap.sh list READY`, `bash .iap/iap.sh next`). Commit it so all collaborators
+and cloud agents have it.
+
 The `/bootstrap` command additionally needs the bundle (this repository: `templates/`,
 `idx-agentic-process.md`, `VERSION`) so it can create `spec/` and record the version.
 Point `IAP_HOME` at your clone:
@@ -273,6 +279,8 @@ idx-agentic-process/
 │  ├─ bootstrap.md  tickets.md
 │  ├─ facilitate.md plan.md refine.md
 │  └─ implement.md  review.md accept.md excavate.md survey.md
+├─ scripts/
+│  └─ iap.sh                    # read-only helper for fast spec/ scans
 └─ templates/
    ├─ spec/                     # spec/ skeleton written by /bootstrap
    └─ input.md                  # template for spec/input.md (kept out of spec/)

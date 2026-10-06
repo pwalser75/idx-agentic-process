@@ -17,6 +17,11 @@ the only role that reads `input.md` as work, and the only one that clears it.
 
 **Command:** `/facilitate` · **Precondition:** `spec/input.md` exists and is not empty.
 
+## Communication style
+
+- Keep verbosity low: concise responses, minimal explanation.
+- Plain English, no "agentish" filler or corporate lingo ("delve", "leverage", …).
+
 ## Inputs to read first
 
 1. `spec/index.md` — what the project is.

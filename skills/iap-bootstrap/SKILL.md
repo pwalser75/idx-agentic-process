@@ -20,6 +20,11 @@ the project's content**.
 **Command:** `/bootstrap` · **Precondition:** a project root; a `spec/` folder may or
 may not already exist.
 
+## Communication style
+
+- Keep verbosity low: concise responses, minimal explanation.
+- Plain English, no "agentish" filler or corporate lingo ("delve", "leverage", …).
+
 ## Rules
 
 - **Never overwrite existing content.** When creating `spec/`, only create files that are
@@ -96,6 +101,16 @@ if [ "$IAP_HOME" != "$TOOL_DIR/iap" ]; then
   cp -R "$IAP_HOME/templates/."        "$TOOL_DIR/iap/templates/"
   cp "$IAP_HOME/idx-agentic-process.md" "$TOOL_DIR/iap/idx-agentic-process.md"
   cp "$IAP_HOME/VERSION"                "$TOOL_DIR/iap/VERSION"
+  mkdir -p "$TOOL_DIR/iap/scripts"
+  [ -d "$IAP_HOME/scripts" ] && cp -R "$IAP_HOME/scripts/." "$TOOL_DIR/iap/scripts/"
+fi
+
+# Read-only helper, installed at a tool-independent project path so every command
+# can invoke it the same way: `bash .iap/iap.sh <subcommand>`.
+if [ -n "$IAP_HOME" ] && [ -f "$IAP_HOME/scripts/iap.sh" ]; then
+  mkdir -p "$PROJECT_ROOT/.iap"
+  cp "$IAP_HOME/scripts/iap.sh" "$PROJECT_ROOT/.iap/iap.sh"
+  chmod +x "$PROJECT_ROOT/.iap/iap.sh"
 fi
 ```
 
@@ -104,6 +119,12 @@ skips them (its skills/commands are already installed next to it). The
 `IAP_HOME != TOOL_DIR/iap` guard avoids copying a bundle into itself, and using
 `"$IAP_HOME/templates/."` (not `"$IAP_HOME/templates"`) avoids nesting
 `templates/templates` on a refresh.
+
+`scripts/iap.sh` is the shared, read-only helper the commands use for fast, single-pass
+scans of `spec/`. It is copied into the project bundle (`$TOOL_DIR/iap/scripts/`) and
+installed at the fixed, tool-independent path `.iap/iap.sh`. Commit `.iap/iap.sh` so
+collaborators and cloud agents have it; a templates-only bundle without `scripts/` skips
+it, in which case tell the human to re-run the install from the clone.
 
 The project `iap/` folder keeps the bundle discoverable for future `/bootstrap` runs, so
 creating the skeleton works offline.
@@ -149,9 +170,10 @@ cat > "$PROJECT_ROOT/spec/agent/process-version.md" <<EOF
 - **Source:** ${IAP_HOME:-unknown}
 - **Process definition:** \`spec/agent/idx-agentic-process.md\`
 
-To update: re-run \`/bootstrap\`. It refreshes only the command/skill definitions, this
-marker and the process-definition copy. The content of \`spec/requirements\`,
-\`spec/architecture\`, \`spec/tickets\` and \`spec/agent/input-ledger.md\` is never touched.
+To update: re-run \`/bootstrap\`. It refreshes only the command/skill definitions, the
+\`.iap/iap.sh\` helper, this marker and the process-definition copy. The content of
+\`spec/requirements\`, \`spec/architecture\`, \`spec/tickets\` and
+\`spec/agent/input-ledger.md\` is never touched.
 EOF
 ```
 
@@ -163,5 +185,6 @@ Summarise:
 - the `IAP_HOME` used, whether it was a full source or a templates-only bundle, and the
   IAP version;
 - the commands/skills installed and the target tool folder;
+- whether `.iap/iap.sh` was installed (or skipped because the bundle had no `scripts/`);
 - the `spec/` files created (and, on a refresh, what was intentionally left untouched);
 - the next step: write statements into `spec/input.md`, then run `/facilitate`.

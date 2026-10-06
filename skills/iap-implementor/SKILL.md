@@ -16,10 +16,16 @@ strictly within the ticket's scope.
 
 **Command:** `/implement` · **Precondition:** at least one ticket in status READY.
 
+## Communication style
+
+- Keep verbosity low: concise responses, minimal explanation.
+- Plain English, no "agentish" filler or corporate lingo ("delve", "leverage", …).
+
 ## Inputs to read first
 
-1. `spec/index.md`, the requirements and architecture the ticket links to, and the
-   ticket itself in full — including its comments.
+1. Candidate tickets via `bash .iap/iap.sh next` (highest-priority READY ticket) or
+   `bash .iap/iap.sh list READY`, then read only the chosen ticket in full (including
+   comments), plus `spec/index.md` and the requirements/architecture it links to.
 2. `spec/architecture/coding-guidelines.md` and `quality-aspects.md`; the existing
    source, tests and configuration to match conventions.
 3. Git state: current branch, working tree, recent history.

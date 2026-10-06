@@ -19,6 +19,11 @@ artifacts, and write that as provisional architecture.
 **Command:** `/survey` · **Precondition:** `spec/` is bootstrapped and the project
 contains source code.
 
+## Communication style
+
+- Keep verbosity low: concise responses, minimal explanation.
+- Plain English, no "agentish" filler or corporate lingo ("delve", "leverage", …).
+
 ## Sources to scan
 
 - Build and dependency manifests (`pom.xml`, `build.gradle(.kts)`, `package.json`,

@@ -8,3 +8,5 @@ Assume the **SYSTEM-ARCHITECT** role of the idx Agentic Process.
 2. Precondition: `spec/` is bootstrapped and the project contains source code. If not,
    report that and stop.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
+
+Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

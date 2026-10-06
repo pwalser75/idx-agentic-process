@@ -17,11 +17,17 @@ IMPLEMENTOR).
 
 **Command:** `/plan` · **Precondition:** none; can be run at any time.
 
+## Communication style
+
+- Keep verbosity low: concise responses, minimal explanation.
+- Plain English, no "agentish" filler or corporate lingo ("delve", "leverage", …).
+
 ## Inputs to read first
 
 1. `spec/index.md`, all of `spec/requirements/**` and `spec/architecture/**`.
-2. All existing `spec/tickets/*.md` and the ticket index
-   `spec/agent/ticket-index.md` (create it if missing).
+2. All ticket headers in one pass — `bash .iap/iap.sh headers` (CREATED, STATUS, TYPE,
+   FILE, TITLE) — plus the ticket index `spec/agent/ticket-index.md` (create if missing).
+   Open a ticket body only when you need to edit it or check it for duplicate work.
 3. `spec/agent/planning-log.md` (create if missing) — records the revision/hash of
    requirements+architecture seen at the last `/plan` run.
 4. Git history if the project is a repository (`git log`, current branch).

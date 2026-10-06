@@ -19,6 +19,11 @@ more certainty than the evidence supports.
 **Command:** `/excavate` · **Precondition:** `spec/` is bootstrapped and the project
 contains source code.
 
+## Communication style
+
+- Keep verbosity low: concise responses, minimal explanation.
+- Plain English, no "agentish" filler or corporate lingo ("delve", "leverage", …).
+
 ## Sources to scan
 
 - Source code (entry points, routes/controllers, services, domain/entity types, DTOs).

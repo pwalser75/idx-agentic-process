@@ -9,3 +9,5 @@ Assume the **IMPLEMENTOR** role of the idx Agentic Process.
    stop.
 3. Implement the ticket named by the human if given, otherwise select by priority
    (BUG > IMPROVEMENT > STORY). Name or guidance from the human (may be empty): $ARGUMENTS
+
+Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

@@ -17,9 +17,15 @@ review evidence, not intentions.
 
 **Command:** `/review` · **Precondition:** at least one ticket in status IN_REVIEW.
 
+## Communication style
+
+- Keep verbosity low: concise responses, minimal explanation.
+- Plain English, no "agentish" filler or corporate lingo ("delve", "leverage", …).
+
 ## Inputs to read first
 
-1. The IN_REVIEW tickets in full, including all comments and the task list.
+1. The IN_REVIEW tickets — find them with `bash .iap/iap.sh list IN_REVIEW` — in full,
+   including all comments and the task list.
 2. The requirements and architecture they link to, and the coding guidelines and
    quality aspects.
 3. The **feature branch** diff versus `main` — the reviewer reviews the branch, not the

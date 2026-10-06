@@ -150,6 +150,11 @@ Commands are invoked by humans only. Each starts a role implemented as a skill.
 
 Always check the precondition before acting; if it is not met, say so and stop.
 
+Commands use the shared, read-only helper `.iap/iap.sh` (installed by `/bootstrap`) for
+fast, single-pass scans of `spec/` — e.g. `bash .iap/iap.sh open`, `bash .iap/iap.sh list
+READY`, `bash .iap/iap.sh next`, `bash .iap/iap.sh preconditions`. Prefer it over opening
+ticket files one by one; run `/bootstrap` if it is missing.
+
 ## Golden rules for any IAP agent
 
 1. **Read before you write.** Start by reading `spec/index.md`, the requirements,
@@ -166,6 +171,9 @@ Always check the precondition before acting; if it is not met, say so and stop.
    accepted human input is appended to the ledger with date, time and author.
 7. **Humans gate the work.** Commands, feature branches and merges are human decisions.
 8. **Commit `spec/` with the code**, and follow the git rules below.
+9. **Keep verbosity low.** Answer concisely with minimal explanation.
+10. **Write plain English.** No "agentish" filler or corporate lingo ("delve",
+    "leverage", …).
 
 ## Collaboration (git)
 

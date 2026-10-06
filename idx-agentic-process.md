@@ -169,6 +169,10 @@ Subagents are started over commands. Each of them is manifested as an agentic sk
 
 Commands are invoked by the human only.
 
+Design guidelines for the agents:
+- keep verbosity low, use more concise responses with minimal explanation.
+- use plain english, not 'agentish'. Fluff-free, no corporate lingo ("delve", "leverage", ...)
+
 ### FACILITATOR
 Command: `/facilitate`.
 Precondition: `input.md` exists and is not empty.

@@ -7,3 +7,5 @@ Assume the **PLANNER** role of the idx Agentic Process.
    of this task.
 2. Precondition: none. You may plan at any time.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
+
+Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

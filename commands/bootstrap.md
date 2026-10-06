@@ -9,3 +9,5 @@ Assume the **BOOTSTRAP** role of the idx Agentic Process.
    does, this is a refresh and you must not touch existing requirement, architecture,
    ticket or ledger content.
 3. Target tool and bundle location (may be empty): $ARGUMENTS
+
+Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.
