@@ -2,60 +2,89 @@
 
 THIS DOCUMENT MUST NOT BE ALTERED BY AGENTS, ONLY BY HUMANS.
 
-The idx Agentic Process (short: IAP) is a development process primarily for building software projects at first. 
+The idx Agentic Process (short: IAP) is a development process primarily for building software projects at first.
 In later stages, it may evolve into a more generic development process, where building software is only one possible flavor.
 
-It drives the development of a project in three loops:
+It drives the development of a project in an iterative process:
 
-- Requirements loop: define and detail the requirements, define constraints for building it (Human and Agent)
-- Planning loop: create actionable tasks expressed as tickets. (Agent)
-- Implementation loop: pick a ticket, and work on it, creating and refining the project incrementally. (Agent)
+- Requirements: define and detail the requirements, define constraints for building it (Human and Agent).
+- Planning: create actionable tasks expressed as tickets. (Agent).
+- Implementation: pick a ticket, and work on it, creating and refining the project incrementally (Agent).
+- Review: review implemented tickets on feature branches, and either accept the tickets or add comments on what needs to be adjusted (Agent or Human).
 
 Participants in this process are:
 - Human, or in larger projects, multiple human collaborators.
-- Agent, employing subagents for specialized tasks. They can have a defined role/skill suitable for the task at hand.
+- Agents for specialized tasks. They can have a defined role/skill suitable for the task at hand.
+
+The implementation process enables the human-in-the-loop, but does not enforce it.
+
+## Typical human workflow
+
+The human drives the loop; the agent does the ticket work.
+
+1. **Capture input**: add facts to `spec/input.md`, then run `/facilitate`. It folds the input into the
+   requirement and architecture documents, appends it to the input ledger, and clears `input.md`.
+2. **Review (optional)**: read the updated `requirements/` and `architecture/` documents; repeat step 1
+   until the picture is stable.
+3. **Plan**: run `/plan`, then inspect the created/updated tickets with `/tickets`.
+4. **Refine**: run `/refine` to promote sufficiently defined tickets to READY.
+5. **Mark acceptance (optional)**: set `acceptance-type: HUMAN` on the tickets you want to accept
+   yourself; leave the rest on the default AUTOMATIC. This is a metadata edit — it does not change
+   the ticket's status.
+6. **Implement**: run `/implement` once. The agent works through the READY, unblocked tickets one at a
+   time until none remain; AUTOMATIC tickets are reviewed and merged automatically, HUMAN tickets are implemented and left for you.
+7. **Accept manually**: inspect the tickets awaiting your acceptance (status DONE with
+   `acceptance-type: HUMAN`) and run `/accept` to merge them, or comment on a ticket to send it
+   back to DRAFT.
+8. **Recover / re-orient**: after any interruption, or when unsure, run `/reconcile` to restore a
+   consistent state and `/guide` to see what to do next.
+
+## Definitions
+
+- main branch: the repository's default branch (commonly `main` or `master`); referred to as `main` below. Where a remote exists, its default branch is authoritative.
 
 ## Artifacts and folder structure
 
-Clear definition which files can be edited by the human (H), agent (A) or both (X).
+A clear definition of which files are owned by the human (H), agent (A) or both (X).
 ```
 project-root/
-└─ spec/                        # Root folder of the process
-   ├─ index.md                  # (X) Index file, describing the project
-   ├─ input.md                  # (H) Human user input file, (A) clear the file.
-   ├─ release-notes.md          # (X) Release notes of the current version (optional).
-   ├─ requirements/             # (X) Requirements of this project
-   │  ├─ domain-models/         # (X) Domain models
-   │  │  └─ {model-name}.md     # (X) Domain model, with name, attributes and descriptions
-   │  ├─ features/              # (X) Features of the domain
-   │  │  └─ {feature-name}.md   # (X) Document per feature, describing the feature and the functionalities
-   ├─ architecture/             # (X) Architectural design and requirements
-   │  ├─ tech-stack.md          # (X) Tech stack, programming languages, frameworks and libraries
-   │  ├─ decomposition.md       # (X) Decomposition into modules and packages
-   │  ├─ coding-guidelines.md   # (X) Additional coding guidelines
-   │  ├─ quality-aspects.md     # (X) Quality Aspects (= non-functional requirements)
-   │  └─ ...                    # (X) Additional guidelines
-   ├─ tickets/                  # (A) Tickets for the implementation
-   │  └─ {id}-{type}-{name}.md  # (A) A ticket, with a distinct id, type and name
-   └─ agent/                    # (A) Folder managed by the agent, it can document anything here
-      ├─ input-ledger.md        # (A) Input ledger, append-only, new content from input.md
-      └─ ...                    # (A) Any documents created by the agent, for the agent (or subagents)
+└─ spec/                                # Root folder of the process
+   ├─ input.md                          # (H) local-only (per human); Agent only clears it after /facilitate.
+   ├─ release-notes.md                  # (X) Release notes of the current version (optional).
+   ├─ requirements/                     # (X) Requirements of this project
+   │  ├─ domain-models/                 # (X) Domain models
+   │  │  └─ {model-name}.md             # (X) Domain model, with name, attributes and descriptions
+   │  ├─ features/                      # (X) Features of the domain
+   │  │  └─ {feature-name}.md           # (X) Document per feature, describing the feature and the functionalities
+   ├─ architecture/                     # (X) Architectural design and requirements
+   │  ├─ tech-stack.md                  # (X) Tech stack, programming languages, frameworks and libraries
+   │  ├─ decomposition.md               # (X) Decomposition into modules and packages
+   │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
+   │  ├─ quality-aspects.md             # (X) Quality Aspects (= non-functional requirements)
+   │  └─ ...                            # (X) Additional guidelines
+   ├─ tickets/                          # (X) Tickets for the implementation
+   │  └─ {id}-{type}-{name}.md          # (X) A ticket, with a distinct id, type and name
+   └─ agent/                            # (A) Folder managed by the agent, it can document anything here
+       ├─ input-ledger.md               # (A) append-only ledger: accepted input and resolved clarifications
+       ├─ ticket-index.md               # (A) tickets ↔ requirements/architecture links
+       ├─ planning-log.md               # (A) last-seen revision/hash of spec/
+       ├─ source-ledger.md              # (A) hash ledger of scanned sources
+       ├─ reverse-engineering-report.md # (A) open questions from `/excavate` & `/survey`
+       ├─ process-version.md            # (A) IAP version used
+       └─ idx-agentic-process.md        # (A) copy of this process
+
 ```
-
-## Index
-
-The index file describes the project.
 
 ## Input
 
-The idea to build the software comes from the human, which describes the project with a rough outline and expresses expectations about the domain of the project (models, functionality)
-and how it should be built. This information comes in an unstructured form, where the human states facts, expectation, behaviour etc. as a stream of statements.
+The idea to build the software comes from the human, who describes the project with a rough outline and expresses expectations about the domain of the project (models, functionality)
+and how it should be built. This information comes in an unstructured form, where the human states facts, expectations, behaviour etc. as a stream of statements.
 These statements are entered into an `input.md` file.
 
 In an input session, the human writes down statements into the input file.
-At some point, when enough new input has been collected, the human instructs the agent to facilitate the information. 
+At some point, when enough new input has been collected, the human instructs the agent to facilitate the information.
 
-The agent then 
+The agent then:
 - reviews the input
 - can prompt the user for clarification, with suggestions
 - and then appends the input (verbatim, or a corrected version thereof) to the input-ledger (with the date, time and user), and then clears the input file.
@@ -64,7 +93,15 @@ It then decides what to make out of this information (new input, in the context 
 
 - create/update the requirement documents (models, features, functions)
 - create/update the architecture documents
-- do nothing yet (unresolved input which we will periodically reviewed)
+- do nothing yet (unresolved input which we review periodically)
+
+Clarifications are input too: questions raised by FACILITATOR, PLANNER or ANALYST (technology
+choices, implementation variants, ambiguous requirements) and the human's answers are
+recorded in `input-ledger.md` before the role acts on them. Like facilitated input, these
+entries are append-only and carry date/time, human user and the resolution. FACILITATOR
+records the `input.md` it accepts and any clarification it resolves; PLAN and REFINE record
+the clarifications they resolve, so they are not lost and are not re-recorded if the same
+fact later arrives via `input.md`.
 
 ## Requirements
 
@@ -72,15 +109,15 @@ The requirements describe the features of the project. They are kept in an imple
 
 ### Feature
 
-A feature is an isolated aspect of the project to be realized. It is the overall story arch over the functions in the feature.
+A feature is an isolated aspect of the project to be realized. It is the overall story arc over the functions in the feature.
 Each feature has a set of functions describing atomic functionality as use cases, whose functionality usually revolves around the domain models
 (e.g. list, find, view, edit, delete, ...).
 
-Features drive the functional decomposition (modules, packages), whileas functions are usually manifested in external and internal APIs (e.g. REST endpoints, services, adapters).
+Features drive the functional decomposition (modules, packages), whereas functions are usually manifested in external and internal APIs (e.g. REST endpoints, services, adapters).
 
 ### Domain models
 
-A catalogue of conceptual domain models, with name, description and attributes. 
+A catalogue of conceptual domain models, with name, description and attributes.
 Each attribute also has a name, description and type (use programming-language agnostic types such as 'decimal', 'integer', 'string', 'date', 'date-time', 'currency').
 Domain models are the main drivers for downstream implementation decisions (e.g. which parts of them to use in APIs, which parts of them are persisted).
 
@@ -91,56 +128,94 @@ It's the design of the system, with choices of the technology, decomposition and
 
 ## Tickets
 
-Tickets define work units for implementing and changing the software. Tickets are created and processed without human intervention.
-They eventually log the development process of the project.
+Tickets are created and processed mostly automatically by the agent.
+Humans may occasionally write tickets themselves, using the template with a unique `id` and `status: DRAFT`.
 
-### Template:
+The human acts as:
+- an orchestrator (using `/facilitate`, `/plan`, `/refine` and `/implement`).
+- an optional reviewer for selected tickets (where acceptance-type is not AUTOMATIC).
 
-```
-    # Title
-    TYPE:   {ticket-type}
-    STATUS: {ticket-status}
-    CREATED-ON: {ISO date-time of creation}
-    UPDATED-ON: {ISO date-time of last update}
-    ---
-    {ticket-description}
-    ---
-    {comments}
-```
+The history of tickets later tells which changes were made to the project in which order (ticket number reflected in commits).
 
-### Types:
+### Metadata
+
+Ticket metadata:
+- `id`: unique ticket number, matching the filename prefix.
+- `created`: creation timestamp of the ticket, in ISO-8601 format.
+- `type`: ticket type, see "Types" below.
+- `status`: ticket status, see "Status" values below.
+- `acceptance-type`: `AUTOMATIC` (default) | `HUMAN`, see "Acceptance Type" below.
+- `blocked-by`: list of ticket ids that block this ticket, e.g. `[0007, 0008]`; omit when not blocked.
+
+### Identity and naming
+
+- A ticket's identity is its filename `{id}-{type}-{name}.md`; the front-matter `id` must match the filename prefix.
+- `{id}` is a zero-padded, monotonically increasing integer (max existing id + 1); ids are never reused. A human-written ticket takes the next free id.
+- `{type}` is the lowercase token `story` | `improvement` | `bug` in the filename and branch, and the uppercase value in metadata.
+- `{name}` is a lower-kebab-case slug of the title, unique within the id.
+- On a collision, keep the existing ticket and allocate the next free id.
+
+#### Types
 
 - STORY (functional increment)
 - IMPROVEMENT (non-functional change)
 - BUG (reported bug)
 
-### Status:
+#### Status
 
-- DRAFT (refinement and acceptance needed)
+- DRAFT (refinement and approval needed)
 - READY (ticket refined and ready to be implemented)
 - IN_PROGRESS (claimed by an agent for implementation)
 - IN_REVIEW (ticket successfully implemented, but needs to be reviewed before it can be closed)
 - DONE (ticket passed review, ready to be merged and closed)
 - CLOSED (ticket done and closed, protected from changes)
 
-Status diagram:
+#### Acceptance Type
+- AUTOMATIC (default): an agent reviews the ticket, then the orchestrating agent runs `/accept` and
+  closes it in the same run. Fully agent-driven: no human review and no human confirmation.
+- HUMAN (set by Human): an agent reviews, the DONE ticket then waits for the human, who reviews
+  again and runs `/accept`.
+
+### Template
+
+```
+---
+id: {id}
+created: {created}
+type: {type}
+status: {status}
+acceptance-type: {acceptance-type}
+blocked-by: [] # omit when not blocked
+---
+# Title
+## Description
+{what and why; link the requirement(s)}
+## Tasks
+- [ ] {task}
+## Acceptance criteria
+- {verifiable outcome}
+---
+## Comments
+```
+
+### Status diagram
 
 ```
     │ /plan (new requirement)
     │
     ▼
 ╭───────╮  /refine   ╭───────╮  /implement   ╭─────────────╮   (agent)     ╭───────────╮
-│ DRAFT │───────────▶│ READY │──────────────▶│ IN_PROGRESS │──────────────▶│ IN_REVIEW │
-╰───────╯            ╰───────╯               ╰─────────────╯               ╰───────────╯
-    ▲                    ▲                          │                            │
-    │                    ├◀────────/plan (reclaim)──┘                            │
-    │                    └◀───────────────────/review (rework)───────────────────┤
-    │                                                                            │ /review (accepted)
-    │                                                                            ▼
-    │                                                                        ╭──────╮
-    └◀──────any edit (DRAFT / READY / DONE / IN_REVIEW)──────────────────────│ DONE │
+│ DRAFT │───────────▶│ READY │──────────────▶│ IN_PROGRESS │──────────────▶│ IN_REVIEW │◀────────────────╮
+╰───────╯            ╰───────╯               ╰─────────────╯               ╰───────────╯                 │
+    ▲                    ▲                          │                            │                       │
+    │                    ├◀─────/plan (reclaim)─────┘                            │         (branch changed after review)
+    │                    └◀────────────────────────────────/review (rework)──────┤                       │
+    │                                                                            │ /review (accepted)    │
+    │                                                                            ▼                       │
+    │                                                                        ╭──────╮                    │
+    └◀────────────────────── (non-metadata edit of a ticket) ────────────────│ DONE │────────────────────┘
                                                                              ╰──────╯
-                                                                                 │ /accept (human)
+                                                                                 │ /accept (human or agent)
                                                                                  ▼
                                                                             ╭────────╮
                                                                             │ CLOSED │
@@ -148,20 +223,21 @@ Status diagram:
                                                                             (terminal)
 ```
 
-### State transitions
+#### State transitions:
 
-| FROM                       | TO          | TRIGGER                     | ACTOR      | GUARD                                         |
-|----------------------------|-------------|-----------------------------|------------|-----------------------------------------------|
-| —                          | DRAFT       | `/plan`                     | Planner    | new or changed requirement                    |
-| DRAFT                      | READY       | `/refine`                   | Analyst    | sufficiently defined and realizable           |
-| READY                      | IN_PROGRESS | `/implement`                | Implementor| claimed by setting status                     |
-| IN_PROGRESS                | IN_REVIEW   | work complete               | Implementor| tasks done, acceptance criteria fulfilled     |
-| IN_PROGRESS                | READY       | `/plan` (reclaim)           | Planner    | claim abandoned (not active, no open branch)  |
-| IN_REVIEW                  | READY       | `/review` (rework)          | Reviewer   | comments state what remains                   |
-| IN_REVIEW                  | DONE        | `/review` (accept)          | Reviewer   | accepted                                      |
-| DONE                       | CLOSED      | `/accept` (accept)          | Human      | accepted, feature branch merged               |
-| DRAFT/READY/IN_REVIEW/DONE | DRAFT       | content edit                | (anyone)   | forces re-refinement                          |
-| CLOSED                     | —           | (none, terminal)            | —          | immutable; follow-up work is a new ticket     |
+| FROM                       | TO          | TRIGGER                       | ACTOR                            | GUARD                                                                                          |
+|----------------------------|-------------|-------------------------------|----------------------------------|------------------------------------------------------------------------------------------------|
+| —                          | DRAFT       | `/plan`                       | Planner                          | new or changed requirement                                                                     |
+| DRAFT                      | READY       | `/refine`                     | Analyst                          | sufficiently defined and realizable                                                            |
+| READY                      | IN_PROGRESS | `/implement`                  | Implementor                      | branch {id}-{type}-{name} created from up-to-date main, containing only this ticket's commits. |
+| IN_PROGRESS                | IN_REVIEW   | work complete                 | Implementor                      | tasks done, acceptance criteria fulfilled                                                      |
+| IN_PROGRESS                | READY       | `/plan` (reclaim)             | Planner                          | claim abandoned (not active, no open branch)                                                   |
+| IN_REVIEW                  | READY       | `/review` (rework)            | Reviewer                         | comments state what remains                                                                    |
+| IN_REVIEW                  | DONE        | `/review` (accept)            | Reviewer                         | accepted; reviewer is independent of the implementor.                                          |
+| DONE                       | IN_REVIEW   | branch changed after review   | (anyone)                         | new commits void DONE; fresh /review required                                                  |
+| DONE                       | CLOSED      | `/accept` (accept)            | Reviewer's orchestrator or Human | branch tip equals the reviewed (DONE) commit                                                   |
+| DRAFT/READY/IN_REVIEW/DONE | DRAFT       | non-metadata edit of a ticket | (anyone)                         | forces re-refinement                                                                           |
+| CLOSED                     | —           | (none, terminal)              | —                                | immutable; follow-up work is a new ticket                                                      |
 
 ## Release Notes
 
@@ -192,65 +268,127 @@ Format of the release notes:
 
 Release notes are not bootstrapped; they are created on-the-fly by `/accept` when missing.
 
-## Subagents
+## Roles
 
-Subagents are started over commands. Each of them is manifested as an agentic skill which describes it and its modus operandi.
+Each named role is expressed as a skill, with a matching command that invokes the skill.
 
-Commands are invoked by the human only.
+Depending on the role, it can be:
+- the primary agent (Type: PRIMARY)
+- or a subagent (Type: SUBAGENT) running in its own isolated context as a subtask, so role work never pollutes the orchestrator's context.
+
+A SUBAGENT role never blocks on input: it returns its questions/blockers in the final report, and the invoking agent relays them to the human and re-invokes the role with the answers.
+
+For SUBAGENT skills, the invoking (orchestrating) agent must not perform the role's work itself — it selects the role, passes the arguments, and relays the result.
 
 Design guidelines for the agents:
 - keep verbosity low, use more concise responses with minimal explanation.
-- use plain english, not 'agentish'. Fluff-free, no corporate lingo ("delve", "leverage", ...)
+- use plain English, not 'Agentish'. Fluff-free, no corporate lingo ("delve", "leverage", ...)
+- Work only from artifacts on disk (spec/, tickets, git) and explicit arguments — never from the orchestrator's conversation history.
+- Return exactly one concise report: what was done, the evidence, and any questions/blockers.
+- If an invariant is violated, or a precondition is not met, stop and report it; never improvise around it.
+- Editing a ticket's Description, Tasks or Acceptance criteria is a non-metadata edit: set the
+  ticket back to DRAFT (the reviewer's rework comments are the exception: IN_REVIEW → READY).
+- Optimize the skills to work as efficiently as possible.
 
 ### FACILITATOR
+
+Type: PRIMARY
 Command: `/facilitate`.
+Invoked by: HUMAN.
 Precondition: `input.md` exists and is not empty.
 
 Digests the human input (collected in `input.md`) and compares it to the existing requirements and architecture documents.
 It carefully analyzes how to fit the input into the requirements and architecture.
-It can prompt the human user for clarification and suggests improvements on the input before accepting the input.
-When it accepts the input, it appends it to the `input-ledger.md` (date/time, and bullet points for each input line), 
-and creates/updates the requirements and architecture documents.
+It can prompt the human for clarification (online in the session) and suggest improvements on the input before accepting the input.
+When it accepts the input, it appends it — and any clarification it resolved — to the
+`input-ledger.md` (date/time, and bullet points for each input line), and creates/updates the
+requirements and architecture documents.
 Afterwards it clears the `input.md`, making it ready for the next round of input by the user.
+It commits the updated requirements/architecture and the appended ledger on the main branch as `facilitate: {summary}`.
+Interactive (default): it may ask the human for clarification and wait for the answer.
+Batch (no human available): it returns the open questions in its report and stops without clearing `input.md`, so the human can answer and re-invoke it.
 
 ### PLANNER
+
+Type: SUBAGENT
 Command: `/plan`.
+Invoked by: HUMAN.
 Precondition: none, can be invoked anytime.
 
-Find out which changes were made to the requirements and architecture documents since it was last invoked.
+Find out which changes have been made to the requirements and architecture documents since it was last invoked.
 It then creates or updates tickets that define which changes are to be done in the project, and links them to the requirements (internally, in the `agent` folder).
 It gives the ticket a number (sequence number, if possible) and a name, a description, a short task breakdown (checkbox list) and acceptance criteria (bullet list).
-Any change of a ticket will bring it back to status DRAFT.
-It also checks if any ticket in status IN_PROGRESS exists which is not claimed by an active subagent, and sets them back to status READY.
+It also resets IN_PROGRESS tickets that violate the branch invariant (no branch exists, not claimed by an active subagent) to READY, reporting each as a repaired violation.
+A ticket whose branch still exists is left for the RECONCILER (see Branches).
+It verifies the blocked-by attribute of existing tickets and checks if these tickets actually exist, and that no cyclic dependencies in the blockings exist.
+When it needs a decision, it returns the open questions in its report; on re-invocation with the human's answers it appends each resolved question (question, answer, date/time, human user) to `spec/agent/input-ledger.md` before creating or updating tickets.
+It commits the created/updated tickets on the main branch as `plan: {summary}`.
 
 ### ANALYST
+
+Type: SUBAGENT
 Command: `/refine`.
+Invoked by: HUMAN.
 Precondition: none, can be invoked anytime.
 
 Reviews the tickets in status DRAFT and compares them against the requirements and architecture documents.
 It can also create or update tickets (in status DRAFT, READY) to bring the tickets in line with the requirements and architecture.
-Also checks if a ticket is sufficiently defined, and can be realized, and if so, sets the ticket to status READY.
+It checks and updates the blocked-by against other tickets, and makes sure no cyclic dependencies exist.
+When it considers a ticket to be sufficiently defined and ready for implementation, it promotes the ticket's status to READY.
+When it needs a decision, it returns the open questions in its report; on re-invocation with the human's answers it appends each resolved question (question, answer, date/time, human user) to `spec/agent/input-ledger.md` before changing ticket status.
+It commits the created/updated tickets on the main branch as `refine: {summary}`.
 
 ### IMPLEMENTOR
-Command: `/implement`.
-Precondition: at least one ticket in status READY.
 
-Finds the next best ticket in status READY that can be worked on, and claims it by setting the status to IN_PROGRESS.
-Ticket priorities: BUG > IMPROVEMENT > STORY.
-Creates and updates code, tests, configuration and documentation.
-When done with the ticket (all changes implemented, tasks done and acceptance criteria fulfilled), it sets the ticket to status IN_REVIEW.
+Type: SUBAGENT
+Command: `/implement`.
+Invoked by: HUMAN.
+
+Precondition: at least one ticket READY, clean working tree, on main.
+
+Repeat while a READY, unblocked ticket exists:
+- finds the best one (BUG > IMPROVEMENT > STORY) and claims it.
+- if a branch named `{id}-{type}-{name}` already exists, resume it when it holds this ticket's claim; otherwise stop and defer to `/reconcile`.
+- create a feature branch from up-to-date main, named `{id}-{type}-{name}`. It must contain only this ticket's commits.
+  Never stack one ticket's branch on another's. If two tickets touch the same files, finish and merge the first (via `/accept`) before branching the second.
+- set the ticket STATUS: IN_PROGRESS and commit the claim on that branch.
+- implement code, tests, configuration and documentation on the branch.
+
+Tests covering the code changes are required.
+
+When done, set the ticket STATUS: IN_REVIEW, and call the REVIEWER with `/review`.
+After the reviewer finishes, continue with the next READY ticket. When a ticket was accepted (merged), sync main first. Tickets are processed sequentially (one branch at a time).
 
 ### REVIEWER
+
+Type: SUBAGENT
 Command: `/review`.
 Precondition: at least one ticket in status IN_REVIEW.
+Invoked by: IMPLEMENTOR.
 
-Looks at tickets in status IN_REVIEW and checks if they are properly and completely implemented (code, tests, configuration, documentation),
-if all tasks are done in the ticket, and verifies that the acceptance criteria is fulfilled.
-When it is satisfied with the result, it sets the ticket status to DONE.
-Otherwise, it comments on the ticket what else needs to be done before the ticket can be closed, and sets the ticket back to READY. 
+Looks at tickets in status IN_REVIEW and checks:
+- all tasks are done and every acceptance criterion is fulfilled.
+- the change is complete (code, tests, configuration, documentation) and includes tests for all new or changed behaviour.
+- the build and tests are green; no test is skipped or flaky.
+- the branch contains only changes within the ticket's scope; unrelated changes are a separate ticket.
+- the branch is clean (all work committed) and rebased on the current main.
+
+Test/coverage standards are not set here; they live in `architecture/quality-aspects.md` and `architecture/coding-guidelines.md`.
+
+When it is satisfied, it sets the ticket status to DONE and commits that change; the reviewed
+revision is frozen at that commit.
+For an AUTOMATIC ticket it must not rest at DONE: the REVIEWER returns DONE, and the orchestrating
+agent runs `/accept` for it in the same `/implement` run. A HUMAN ticket is left in DONE for the human.
+If the branch receives any commit after the DONE commit, DONE is void: return the ticket to
+IN_REVIEW and review again before `/accept`.
+The REVIEWER must run in its own context, separate from the implementor; an agent never reviews
+a ticket it implemented itself.
 
 ### ARCHAEOLOGIST
+
+Type: SUBAGENT
 Command: `/excavate`.
+Invoked by: HUMAN.
 Precondition: `spec/` is bootstrapped and the project contains source code.
 
 Reconstructs the functional reality: features, functions and domain models. It reads source code,
@@ -258,13 +396,16 @@ tests, database schemas/migrations, API specifications (e.g. OpenAPI), configura
 existing documentation, then clusters what it finds into features with their functions and the
 domain models involved.
 Writes/updates `requirements/features/*.md` and `requirements/domain-models/*.md`, marking each
-reconstructed item as inferred and citing its source (file, commit). Open questions and
-low-confidence areas go into `spec/agent/reverse-engineering-report.md`.
+reconstructed item as inferred and citing its source (file, commit).
+Open questions and low-confidence areas go into `spec/agent/reverse-engineering-report.md`.
 It is incremental and idempotent: it keeps a hash ledger of the scanned sources and only revisits
 what changed since the last run.
 
 ### SYSTEM-ARCHITECT
+
+Type: SUBAGENT
 Command: `/survey`.
+Invoked by: HUMAN.
 Precondition: `spec/` is bootstrapped and the project contains source code.
 
 Reconstructs the non-functional reality: tech stack, decomposition, coding guidelines and quality
@@ -272,13 +413,81 @@ aspects. It reads build and dependency manifests (e.g. `pom.xml`, `build.gradle`
 the module/folder structure, formatter and linter configuration, CI/CD pipelines and deployment
 definitions, and documents the conventions the code actually follows.
 Writes/updates the files under `architecture/`, again marked as inferred and with evidence.
+Open questions and low-confidence areas go into `spec/agent/reverse-engineering-report.md`.
+
+### GUIDE
+
+Type: SUBAGENT
+Command: `/guide`.
+Invoked by: HUMAN.
+Precondition: none.
+
+Read-only: it changes nothing. It inspects the tickets, the requirements and architecture documents,
+the git state and `spec/agent/`, and reports a single prioritized list of the next best actions, each
+with a reason and the concrete tickets/branches it applies to.
+
+It orders actions to unblock the process:
+1. fix a broken repo state (interrupted rebase/merge, dirty tree, wrong branch).
+2. `/facilitate` when `input.md` has unfacilitated lines.
+3. `/plan` when requirements or architecture changed since the last plan.
+4. `/refine` for tickets in DRAFT.
+5. `/review` for tickets in IN_REVIEW (re-run the reviewer).
+6. `/implement` when unblocked READY tickets exist.
+7. `/accept` for AUTOMATIC tickets that reached DONE (the orchestrator's job after `/review`) and for HUMAN tickets the
+   human has approved; flag DONE-but-unmerged tickets as stalled, because blockers clear only at CLOSED.
+8. `/reconcile` when inconsistencies are detected.
+
+It names any item that needs a human decision before the corresponding action can run.
+
+### RECONCILER
+
+Type: SUBAGENT
+Command: `/reconcile`.
+Invoked by: HUMAN.
+Precondition: none.
+
+Restores a consistent state across tickets, branches and main after an interrupted or failed run.
+It audits first, then applies only safe, idempotent, non-destructive repairs, and reports what it
+changed and what needs a human.
+
+Audit:
+- git: current branch, dirty tree, in-progress rebase/merge, stash; feature branches matching `{id}-{type}-{name}`.
+- a DONE ticket whose branch tip moved after review, or whose branch is not based on main
+  (stacked), needs a human: report it and return the ticket to IN_REVIEW for re-review.
+- tickets: status and metadata; `blocked-by` targets exist and are acyclic; ids are unique.
+- cross-checks: ticket status vs branch (missing, orphaned, already merged); a CLOSED ticket implies a
+  merged branch and no leftover branch.
+- release notes: every CLOSED ticket is covered; the version matches the build file.
+
+Safe repairs (idempotent, never discard work):
+- return to main and clean the working tree (never drop uncommitted work; stash it and report it).
+- reset an abandoned IN_PROGRESS or IN_REVIEW ticket to READY; keep its branch and report it.
+- delete branches already merged into main.
+- remove dangling `blocked-by` references; report cycles.
+- commit uncommitted planning artifacts (tickets, requirements) on main.
+- flag items it must not touch (HUMAN tickets, missing release-note entries).
+
+Never without confirmation: delete an unmerged branch, force-push, resolve content conflicts,
+discard changes, or change a ticket whose acceptance-type is HUMAN.
+
+Report: each finding with evidence and whether it was fixed or needs a human.
 
 ## Additional Commands
 
-### Open tickets
+Additional commands have no named role, but are also expressed as a skill, with a matching command that invokes the skill.
+
+### List open tickets
+
 Command: `/tickets`.
-Shows a summary of all open (non-CLOSED) tickets, one row each with the ticket id, status, type, title and created-on (primary sort criteria, ascending).
-Report tickets as one row per ticket, space-aligned, in exactly this column order:
+Invoked by: HUMAN.
+
+Shows all open (non-CLOSED) tickets, one row each, oldest first. It is mechanical and
+precomputed: the read-only helper (`iap.sh open`, installed by `/bootstrap` at a
+tool-independent path) emits the table and the agent prints it verbatim. The agent does not
+open ticket files, parse front-matter, sort, pad, filter or reformat — and computes nothing
+else. Per-status counts come from `iap.sh counts` when requested.
+
+The helper emits one row per open ticket, space-aligned in exactly this column order:
 
 | Column  | Value                                                    |
 |---------|----------------------------------------------------------|
@@ -286,36 +495,56 @@ Report tickets as one row per ticket, space-aligned, in exactly this column orde
 | STATUS  | DRAFT, READY, IN_PROGRESS, IN_REVIEW, DONE               |
 | TYPE    | STORY, IMPROVEMENT or BUG                                |
 | TITLE   | the ticket's `#` heading                                 |
-| CREATED | creation date as `MM-DD`                                 |
+| CREATED | creation date-time, ISO-8601 format                      |
 
-Separate columns with two spaces, pad each to the widest value in its column, and
-sort rows oldest first. In the open-tickets view, omit CLOSED tickets.
+Columns are separated by two spaces, each padded to the widest value in its column, rows are
+sorted oldest first, and CLOSED tickets are omitted.
 
 ### Accept
-Command: `/accept`.
 
-Accept all DONE tickets, and for each:
-- update the release notes (create on-the-fly if missing, and verify the version is correct)
-- squash the commits into one, named as `{ticket-number}-{ticket-type}: {ticket-title}`
-- rebase the feature branch onto the main branch
-- merge to the main branch.
+Command: `/accept`.
+Precondition: at least one AUTOMATIC ticket in DONE (orchestrator after `/review`) or one HUMAN ticket in DONE (human).
+Invoked by: the orchestrating agent (in the `/implement` run) for AUTOMATIC tickets after `/review`
+returns DONE, or HUMAN for the HUMAN tickets awaiting acceptance. AUTOMATIC merges need no human
+involvement.
+
+Accept the eligible DONE tickets, and for each:
+- switch to the feature branch.
+- verify the branch tip is exactly the commit the reviewer marked DONE; if it moved, abort and
+  send the ticket back to IN_REVIEW for a fresh review.
+- squash the commits into one, named as `{ticket-number}-{ticket-type}: {ticket-title}`.
+- rebase the feature branch onto the main branch, resolve conflicts.
+- update the release notes (create on-the-fly if missing), and verify the version is correct, using
+  the build file's `{major}.{minor}` version (e.g. from `pom.xml`).
+- set the accepted ticket to CLOSED.
+- amend the squashed commit with the release notes and ticket update.
+- switch back to the main branch.
+- merge the feature branch (fast-forward only).
+- delete the feature branch afterwards.
+
+If the rebase cannot be resolved automatically, abort the rebase (the ticket is still DONE, unmodified, on its branch) and report;
+never leave a half-rebased tree. `/reconcile` cleans up.
+Fast-forward-only also detects stacked branches; on a non-fast-forward in these circumstances, abort and report.
 
 ### Bootstrap
 
 Command: `/bootstrap`.
-Precondition: a project root that does not yet contain a `spec/` folder — this may be an empty
-directory, a freshly initialized repository, or an existing codebase.
+Invoked by: HUMAN.
+Precondition: a project root (empty, freshly initialized, or existing codebase).
+On an existing project it only adds missing files and refreshes the process artifacts.
 
 What it does:
-1. Installs the process commands and their subagent skills for the active agent tool (e.g.
-   `.opencode/`): FACILITATOR, PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST and
-   SYSTEM-ARCHITECT, plus the additional commands `/tickets` and `/accept`.
-2. Creates the missing parts of the `spec/` skeleton from the template: `index.md`, an empty
+1. Installs the process commands and skills for the active agent tool:
+   FACILITATOR, PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST, SYSTEM-ARCHITECT, GUIDE
+   and RECONCILER, plus the additional commands `/tickets` and `/accept`, and the read-only
+   helper `iap.sh` at the tool-independent path `.iap/iap.sh`.
+2. Creates the missing parts of the `spec/` skeleton from the template: an empty
    `input.md` and the `requirements/`, `architecture/`, `tickets/` and `agent/` folders.
    Existing content is never overwritten; only absent files are created.
-3. Writes `spec/agent/process-version.md`, recording the IAP version used, so the copy can later
+3. Creates a copy of the process in `spec/agent/idx-agentic-process.md`.
+4. Writes `spec/agent/process-version.md`, recording the IAP version used, so the copy can later
    be updated or diffed.
-4. It neither creates tickets nor invents requirements — those come from the human.
+5. It neither creates tickets nor invents requirements — those come from the human.
 
 ## Collaboration
 
@@ -324,9 +553,38 @@ Rules for collaboration when the project is a GIT repository.
 ### General
 
 - The Git repository is the single source of truth for shared artifacts; only committed state counts.
-- Edit rights (H/A/X) apply per file. An agent editing an (H) file is a process violation; a human
-  editing an (A) file is allowed but counts as new input.
-- Pull before starting work, push when a work unit is complete.
+- If a remote Git repository exists: pull before starting work, push when a work unit is complete.
+- Never run two writing roles concurrently; serialize them; coordinate via spec/agent/.
+- Setting `acceptance-type` or `blocked-by` is a metadata edit and does not change a ticket's status.
+
+### Commits
+
+Each planning role makes one commit per invocation on the main branch, a single-line message
+`{command}: {summary}` — lowercase command (`facilitate`, `plan`, `refine`), a short
+imperative summary of at most 200 characters (keep it terse), no body. If nothing changed, no
+commit is made. `input.md` is local-only and is never committed.
+
+- facilitate: payments feature, card model, retry policy
+- plan: 0007 payments, 0008 refunds, 0009 audit
+- refine: promote 0007-0009, block 0009 on 0007
+
+### Invariants
+
+These must always hold. Any role that finds one violated must report it and stop, not improvise around it:
+
+- a ticket's status matches its branch:
+  IN_PROGRESS/IN_REVIEW ⇒ its branch exists; DRAFT/READY ⇒ no branch; 
+  CLOSED ⇒ its commit is on main and the branch is deleted (CLOSED is set on the branch just before the fast-forward merge,
+  so a CLOSED ticket with an unmerged branch is a `/reconcile` finding).
+- implementation changes reach main only through `/accept`.
+- every ticket has a unique id and its filename matches the front-matter `id`.
+- `blocked-by` references existing tickets and is acyclic.
+- no two writing roles run concurrently.
+- the process document is never edited by an agent.
+- every human decision that changes requirements, architecture or tickets is recorded in `input-ledger.md`.
+- a DONE ticket's branch tip is unchanged since review, is based on main, and holds only that ticket's commits.
+
+`/reconcile` validates and repairs these; `/guide` reports violations it cannot repair.
 
 ### Multiple humans
 
@@ -334,47 +592,62 @@ Rules for collaboration when the project is a GIT repository.
   their own copy.
 - Only the input ledger is shared and versioned. It is append-only and records who made each
   change (human user name), date and time. Past entries are never rewritten or removed.
-- Conflicts in co-owned (X) documents are resolved by the human who last owned the affected
+- Conflicts in co-owned (X) documents are resolved by the human who last edited the affected
   feature/domain model; if unclear, escalate in the merge-request discussion.
 
 ### Multiple agents
 
-- Implementation happens on a feature branch, never on main, with separate commits per ticket.
-- A human decides which tickets may be implemented, creates the feature branch, and issues the
-  implementation commands for the selected tickets on that branch.
+- Implementation changes reach main only through `/accept`; planning/requirements artifacts are committed directly on main.
 - Claiming a ticket happens through a commit setting its status to IN_PROGRESS on the feature
   branch; no other agent picks up a claimed ticket.
-- The PLANNER resets a ticket to READY only when its claim is neither active nor reachable as an
-  open branch.
+- The PLANNER resets IN_PROGRESS to READY only when the ticket's branch does not exist;
+  a ticket with an existing branch is handled by the RECONCILER (see Branches).
 - An agent edits only files within the scope of its claimed ticket; unrelated changes are a new
   ticket.
-- Subagents of one agent share the branch and working tree and coordinate via `spec/agent/`.
 - Rebase before claiming, commit after each acceptance criterion, push before handover. Never
   force-push a branch another agent depends on.
 
+### Branches
+
+- A feature branch is named `{id}-{type}-{name}`, one per ticket, created by the IMPLEMENTOR.
+- Active: the ticket is IN_PROGRESS or IN_REVIEW and the branch is open.
+- Merged: the branch is an ancestor of main; `/accept` deletes it after merging, `/reconcile` deletes any leftover merged branch.
+- Abandoned: an IN_PROGRESS or IN_REVIEW ticket with no active agent and no commits since the claim (older than the threshold below, or confirmed by the human).
+  The RECONCILER resets the ticket to READY and renames the branch to `abandoned/{id}-{type}-{name}`.
+- Threshold: an abandoned branch is one idle longer than 24h unless the human confirms sooner.
+- Only `/accept` merges; only `/reconcile` cleans up branches; an unmerged branch is never deleted.
+- Untracked files that belong to the process (tickets, requirements) are committed, never discarded; unrelated untracked files are left alone.
+- Two humans never share a ticket branch; each works on their own branch and merges via `/accept`.
+- A ticket branch is based on up-to-date main and contains only that ticket's commits; branches
+  are never stacked. `/accept` merges fast-forward-only; a branch that is not fast-forwardable
+  (e.g. it sits on another ticket's work) is aborted and reported, not merged.
+
 ### Handover and review
 
-- The REVIEWER reviews the feature branch, not the working tree; a ticket can only reach CLOSED
-  once its branch is merged.
-- When the branch's tickets are done, the human creates a merge request into main. The merge is
-  fast-forward only, so rebase the branch onto main first.
+- The REVIEWER reviews the feature branch, not the working tree; the ticket's CLOSED commit is created on the branch immediately before the fast-forward merge.
 - A rejected ticket returns to READY; rebase onto main before rework.
 - A CLOSED ticket is protected; follow-up work becomes a new ticket.
+- For acceptance-type other than AUTOMATIC, the human reviews DONE tickets and runs `/accept` to merge them.
+- For AUTOMATIC tickets the orchestrating agent drives DONE → CLOSED in the same run via `/accept`; the reviewer does not leave them DONE.
+- The reviewed revision is frozen between DONE and `/accept`; any change to the branch after review
+  voids DONE and requires a fresh `/review`.
 
 ## Setup
 
 ### Installation
 
-For a project-local installation, copy the `skills` and `commands` folder to the following
+For a project-local installation, copy the `skills` and `commands` folders to the following
 folder in your project:
 
-- `.agents` (unified installation for OpenCode, Copilot, Cursor, Codex, ...)
+- `.opencode` (for OpenCode)
 - `.claude` (for Claude Code)
 
-For a global installation, copy the `skills` and `commands` folder to:
+For a global installation, copy the `skills` and `commands` folders to:
 
-- `~/.agents` (unified installation for OpenCode, Copilot, Cursor, Codex, ...)
+- `~/.opencode` (for OpenCode)
 - `~/.claude` (for Claude Code)
+
+Also copy `scripts/iap.sh` to `.iap/iap.sh` (tool-independent, outside the tool folders).
 
 ### Bootstrapping projects
 
@@ -386,12 +659,16 @@ After bootstrap:
 3. Repeat the requirements loop until the picture is stable.
 4. `/plan` creates tickets; `/refine` promotes them to READY.
 5. `/implement` and `/review` drive the implementation loop.
-6. `/accept` closes the implementation and merges the code (Human-in-the-loop).
+6. `/accept` closes the implementation and merges the code.
 7. Commit `spec/` together with the code.
 
 Updating the process: re-run `/bootstrap` (or copy the template again). It only refreshes the
-command/skill definitions and the process marker; the content of `spec/requirements`,
+command/skill definitions, the read-only helper (`.iap/iap.sh`), the process copy
+(`spec/agent/idx-agentic-process.md`) and the process marker; the content of `spec/requirements`,
 `spec/architecture`, `spec/tickets` and `spec/agent/input-ledger.md` is never touched.
+When a process change alters statuses, metadata fields or role contracts, re-running `/bootstrap`
+updates the definitions and the process copy; the human then runs `/reconcile` to migrate existing
+tickets and ledgers, and appends a short note to `spec/agent/input-ledger.md`.
 
 ### How to use this process in existing projects
 
@@ -413,7 +690,5 @@ Order of adoption:
 Provenance:
 - Requirement and architecture items may carry a marker such as `origin: human | inferred` and,
   optionally, a confidence.
-- Inferred content stays provisional until a human confirms it; a status/gap view (e.g. `/tickets`)
-  lists what is still inferred or unresolved.
 - The first entry in `spec/agent/input-ledger.md` records the reverse-engineering event: date,
   source revision/commit, and the commands that were run.

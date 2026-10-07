@@ -1,22 +1,22 @@
-# {Title}
-
-TYPE:   {STORY | IMPROVEMENT | BUG}
-STATUS: {DRAFT | READY | IN_PROGRESS | IN_REVIEW | DONE | CLOSED}
-CREATED-ON: {ISO date-time of creation}
-UPDATED-ON: {ISO date-time of last update}
-
 ---
+id: {id}
+created: {created}
+type: {type}
+status: {status}
+acceptance-type: {acceptance-type}
+blocked-by: {blocked-by}
+---
+# {Title}
 
 ## Description
 
-{What is to be done and why, in a few sentences. Link the requirement(s) and
-architecture document(s) this ticket addresses.}
+{What is to be done and why. Link the requirement(s) and architecture document(s) this
+ticket addresses.}
 
 ## Tasks
 
 - [ ] {task 1}
 - [ ] {task 2}
-- [ ] {task 3}
 
 ## Acceptance criteria
 
@@ -27,4 +27,4 @@ architecture document(s) this ticket addresses.}
 
 ## Comments
 
-<!-- Append-only running log: /refine, /implement and /review notes, with date-time. -->
+<!-- Append-only running log: dated /refine, /implement and /review notes. -->

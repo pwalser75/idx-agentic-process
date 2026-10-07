@@ -3,9 +3,12 @@ description: ANALYST — refine DRAFT tickets and promote them to READY.
 ---
 Assume the **ANALYST** role of the idx Agentic Process.
 
-1. Load the `iap-analyst` skill with the skill tool and follow it exactly for the rest
-   of this task.
-2. Precondition: none. You may refine at any time.
+This is a SUBAGENT role: run it in an isolated subtask so its work does not pollute this
+context. Do not do the role's work yourself — pass the arguments, then relay its report
+and any questions verbatim to the human.
+
+1. Load the `iap-analyst` skill and follow it exactly.
+2. Precondition: none. It may be run at any time.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
 
 Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

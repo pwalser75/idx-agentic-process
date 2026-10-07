@@ -1,13 +1,18 @@
 ---
-description: IMPLEMENTOR — claim the best READY ticket and implement it.
+description: IMPLEMENTOR — work through READY, unblocked tickets one at a time.
 ---
 Assume the **IMPLEMENTOR** role of the idx Agentic Process.
 
-1. Load the `iap-implementor` skill with the skill tool and follow it exactly for the
-   rest of this task.
-2. Precondition: at least one ticket in status READY. If there is none, report that and
-   stop.
-3. Implement the ticket named by the human if given, otherwise select by priority
-   (BUG > IMPROVEMENT > STORY). Name or guidance from the human (may be empty): $ARGUMENTS
+This is a SUBAGENT role: run it in an isolated subtask so its work does not pollute this
+context. Do not do the role's work yourself — pass the arguments, then relay its report
+and any questions verbatim to the human.
 
-Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.
+1. Load the `iap-implementor` skill and follow it exactly.
+2. Precondition: at least one ticket in status READY, a clean working tree, on `main`.
+   If not, report it and stop.
+3. Implement the ticket named by the human if given, otherwise select by priority
+   (BUG > IMPROVEMENT > STORY). Name/guidance from the human (may be empty): $ARGUMENTS
+
+The implementor calls `/review` for each ticket it finishes, and for AUTOMATIC tickets the
+orchestrating agent runs `/accept`; it keeps working through the READY, unblocked tickets
+until none remain. Keep verbosity low and use plain English.

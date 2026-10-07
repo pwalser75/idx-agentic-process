@@ -1,7 +1,7 @@
 # idx Agentic Process (IAP)
 
-A human + agent development process for building software with AI agents, driven by a
-set of slash commands and role-based agent skills.
+A human + agent development process for building software with AI agents, driven by a set
+of slash commands and role-based agent skills.
 
 The process keeps the **why** (requirements, constraints), the **what** (tickets) and the
 **how** (architecture, code) in a single, reviewable `spec/` folder, and lets agents move
@@ -15,16 +15,17 @@ work forward in small, gated loops without ever silently overwriting what a huma
 
 ## The idea in one picture
 
-IAP runs development in **three loops**:
+IAP drives development iteratively:
 
-1. **Requirements loop** — the human states facts, expectations and constraints in
+1. **Requirements** — the human states facts, expectations and constraints in
    `spec/input.md`; the agent (`/facilitate`) digests them into implementation-agnostic
    requirements and architecture documents.
-2. **Planning loop** — agents (`/plan`, `/refine`) turn requirement and architecture
-   changes into refined, actionable tickets.
-3. **Implementation loop** — agents (`/implement`, `/review`) pick tickets, build, test
-   and verify them; the human then merges and closes the review-accepted tickets
-   (`/accept`).
+2. **Planning** — agents (`/plan`, `/refine`) turn requirement and architecture changes
+   into refined, actionable tickets.
+3. **Implementation** — agents (`/implement`) claim tickets, build and test them; the
+   reviewer (`/review`) verifies and accepts them (DONE).
+4. **Review / acceptance** — `/accept` updates the release notes, squashes, rebases and
+   merges the feature branch, closing the ticket (CLOSED).
 
 ## Highlights & principles
 
@@ -34,14 +35,19 @@ IAP runs development in **three loops**:
   agent-only or **(X)** co-owned. An agent editing an (H) file is a process violation.
 - **Unstructured in, structured out** — the human writes free-form statements to
   `input.md`; the agent restructures them, and only then clears the input.
-- **Append-only input ledger** — every accepted input is recorded with date, time and
-  author in `spec/agent/input-ledger.md`, and never rewritten.
-- **Tickets are the unit of work** — created and processed without human intervention,
-  each with a type, status, task breakdown and acceptance criteria.
-- **Human gates, not agent gates** — commands are invoked by humans; agents never
-  invent requirements or push to `main` on their own.
-- **Incremental & idempotent reverse-engineering** — existing codebases can be adopted
-  via `/excavate` and `/survey`, writing *provisional* (`origin: inferred`) content with
+- **Append-only input ledger** — every accepted input and every resolved clarification is
+  recorded with date, time and author in `spec/agent/input-ledger.md`, and never rewritten.
+- **Self-committing planning** — `/facilitate`, `/plan` and `/refine` commit their work on
+  `main` automatically, one commit per run: `facilitate:`/`plan:`/`refine:` plus a short
+  summary (single line, at most 200 characters).
+- **Tickets are the unit of work** — each has an id, type, status, `acceptance-type`,
+  optional `blocked-by`, a task breakdown and acceptance criteria.
+- **Human gates, not agent gates** — commands are invoked by humans; agents never invent
+  requirements, and implementation reaches `main` only through `/accept`.
+- **Subagent roles** — specialised roles run in isolated contexts, so their work never
+  pollutes the orchestrator; they return one concise report and never block on input.
+- **Incremental & idempotent reverse-engineering** — existing codebases can be adopted via
+  `/excavate` and `/survey`, writing *provisional* (`origin: inferred`) content with
   evidence rather than overwriting human knowledge.
 - **Portable artifacts** — plain Markdown files in `spec/`, committed together with the
   code, readable by any agent or human.
@@ -52,49 +58,66 @@ Each entry is tagged with who may edit it: **(H)** human, **(A)** agent, **(X)**
 
 ```
 project-root/
-└─ spec/                        # Root folder of the process
-   ├─ index.md                  # (X) Index file, describing the project
-   ├─ input.md                  # (H) Human user input file, (A) clear the file
-   ├─ release-notes.md          # (X) Release notes of the current version (optional)
-   ├─ requirements/             # (X) Requirements of this project
-   │  ├─ domain-models/         # (X) Domain models
-   │  │  └─ {model-name}.md     # (X) Domain model: name, attributes, descriptions
-   │  ├─ features/              # (X) Features of the domain
-   │  │  └─ {feature-name}.md   # (X) Feature: description and functionalities
-   ├─ architecture/             # (X) Architectural design and requirements
-   │  ├─ tech-stack.md          # (X) Languages, frameworks and libraries
-   │  ├─ decomposition.md       # (X) Modules and packages
-   │  ├─ coding-guidelines.md   # (X) Additional coding guidelines
-   │  ├─ quality-aspects.md     # (X) Non-functional requirements
-   │  └─ ...                    # (X) Additional guidelines
-   ├─ tickets/                  # (A) Tickets for the implementation
-   │  └─ {id}-{type}-{name}.md  # (A) A ticket with id, type and name
-   └─ agent/                    # (A) Folder managed by the agent
-      ├─ input-ledger.md        # (A) Append-only ledger of accepted input
-      └─ ...                    # (A) Any documents created by the agent
+└─ spec/
+   ├─ input.md                          # (X) Human writes input; agent only clears it
+   ├─ release-notes.md                  # (X) Release notes (optional; created by /accept)
+   ├─ requirements/                     # (X) Requirements of this project
+   │  ├─ domain-models/{model-name}.md  # (X) Domain model: name, attributes, descriptions
+   │  ├─ features/{feature-name}.md     # (X) Feature: description and functionalities
+   ├─ architecture/                     # (X) Architectural design and requirements
+   │  ├─ tech-stack.md                  # (X) Languages, frameworks and libraries
+   │  ├─ decomposition.md               # (X) Modules and packages
+   │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
+   │  ├─ quality-aspects.md             # (X) Non-functional requirements
+   │  └─ ...                            # (X) Additional guidelines
+   ├─ tickets/{id}-{type}-{name}.md     # (X) A ticket with id, type and name
+   └─ agent/                            # (A) Folder managed by the agent
+      ├─ input-ledger.md                # (A) Append-only seed: accepted input + clarifications
+      ├─ ticket-index.md                # (A) Tickets <-> requirements/architecture links
+      ├─ planning-log.md                # (A) Last-seen revision/hash of spec/
+      ├─ source-ledger.md               # (A) Hash ledger of scanned sources
+      ├─ reverse-engineering-report.md  # (A) Open questions from /excavate & /survey
+      ├─ process-version.md             # (A) IAP version used
+      └─ idx-agentic-process.md         # (A) Copy of the process definition
 ```
 
 ## Tickets
 
-A ticket is a Markdown file managed entirely by agents. It carries a type, a status,
-a task breakdown and acceptance criteria, and it eventually logs the development of
-the project.
+A ticket is a Markdown file named `{id}-{type}-{name}.md` under `spec/tickets/`, with YAML
+front matter:
 
-```
+```markdown
+---
+id: 0007
+created: 2026-10-07T12:00:00Z
+type: STORY
+status: DRAFT
+acceptance-type: AUTOMATIC
+blocked-by: 0005, 0006
+---
 # Title
-TYPE:   {STORY | IMPROVEMENT | BUG}
-STATUS: {DRAFT | READY | IN_PROGRESS | IN_REVIEW | DONE | CLOSED}
-CREATED-ON: {ISO date-time}
-UPDATED-ON: {ISO date-time}
+
+## Description
+{what and why; link the requirement(s)}
+
+## Tasks
+- [ ] {task}
+
+## Acceptance criteria
+- {verifiable outcome}
+
 ---
-{description, task breakdown (checkbox list), acceptance criteria}
----
-{comments}
+
+## Comments
 ```
 
-Statuses (see the source document for the full transition table): DRAFT (needs
-refinement) → READY → IN_PROGRESS → IN_REVIEW → DONE (review-accepted) → CLOSED
-(merged). A content change to a DRAFT/READY/IN_REVIEW/DONE ticket resets it to DRAFT.
+**Metadata:** `id` (zero-padded, monotonic, never reused), `created` (ISO-8601), `type`,
+`status`, `acceptance-type` (`AUTOMATIC` default | `HUMAN`), `blocked-by` (ids of blocking
+tickets). The filename's `id`/`type` must match the front matter.
+
+**Types:** `STORY` (functional increment) · `IMPROVEMENT` (non-functional change) · `BUG`.
+
+**Statuses:** `DRAFT` → `READY` → `IN_PROGRESS` → `IN_REVIEW` → `DONE` → `CLOSED`.
 
 ```
 DRAFT ──/refine──▶ READY ──/implement──▶ IN_PROGRESS ──(work done)──▶ IN_REVIEW
@@ -103,105 +126,83 @@ DRAFT ──/refine──▶ READY ──/implement──▶ IN_PROGRESS ──(
                                             /review (accept) ──▶ DONE ──/accept──▶ CLOSED
 ```
 
+A non-metadata edit (Description, Tasks, Acceptance criteria, Comments) of a ticket in
+DRAFT/READY/IN_REVIEW/DONE resets it to DRAFT. Setting `acceptance-type` or `blocked-by` is
+a metadata edit and does not change the status.
+
 Priorities when picking work: **BUG > IMPROVEMENT > STORY**.
 
 ## Commands & roles
 
-Commands are invoked by the human. Each role is implemented as an agent skill with its
-own modus operandi; a command starts the matching role and hands it the work.
+Commands are invoked by humans. Each role is a skill; a command starts the matching skill.
+A SUBAGENT role runs in an isolated context; the orchestrator selects the role, passes the
+arguments and relays the result — it never does the role's work itself.
 
-| Command        | Role / skill          | Precondition                                   | Purpose |
-|----------------|-----------------------|------------------------------------------------|---------|
-| `/bootstrap`   | `iap-bootstrap`       | project root (no `spec/` yet, else refresh)    | Install commands/skills and create the `spec/` skeleton |
-| `/facilitate`  | `iap-facilitator`     | `input.md` exists and is not empty             | Digest human input into requirements & architecture |
-| `/plan`        | `iap-planner`         | none                                           | Create/update tickets from requirement changes |
-| `/refine`      | `iap-analyst`         | none                                           | Refine DRAFT tickets and promote them to READY |
-| `/implement`   | `iap-implementor`     | at least one READY ticket                      | Claim the best READY ticket and implement it |
-| `/review`      | `iap-reviewer`        | at least one IN_REVIEW ticket                  | Verify and accept (DONE) or send back tickets |
-| `/accept`      | —                     | at least one DONE ticket                       | Update release notes, merge the branch and close DONE tickets |
-| `/excavate`    | `iap-archaeologist`   | `spec/` bootstrapped, project has source       | Reverse-engineer features & domain models |
-| `/survey`      | `iap-system-architect`| `spec/` bootstrapped, project has source       | Reverse-engineer tech stack & architecture |
-| `/tickets`     | —                     | `spec/` bootstrapped                           | Summary of open tickets and their state |
+| Command        | Role / skill          | Type     | Precondition                                |
+|----------------|-----------------------|----------|---------------------------------------------|
+| `/bootstrap`   | `iap-bootstrap`       | —        | project root (no `spec/`, else refresh)     |
+| `/facilitate`  | `iap-facilitator`     | PRIMARY  | `input.md` exists and is not empty          |
+| `/plan`        | `iap-planner`         | SUBAGENT | none                                        |
+| `/refine`      | `iap-analyst`         | SUBAGENT | none                                        |
+| `/implement`   | `iap-implementor`     | SUBAGENT | ≥1 READY ticket, clean tree, on main        |
+| `/review`      | `iap-reviewer`        | SUBAGENT | ≥1 IN_REVIEW ticket                         |
+| `/accept`      | `iap-accept`          | —        | ≥1 DONE ticket (AUTOMATIC or HUMAN)         |
+| `/tickets`     | `iap-tickets`         | —        | `spec/` bootstrapped                        |
+| `/excavate`    | `iap-archaeologist`   | SUBAGENT | `spec/` bootstrapped, source present        |
+| `/survey`      | `iap-system-architect`| SUBAGENT | `spec/` bootstrapped, source present        |
+| `/guide`       | `iap-guide`           | SUBAGENT | none (read-only)                            |
+| `/reconcile`   | `iap-reconciler`      | SUBAGENT | none (audit + safe repairs)                 |
 
-The process definition itself is packaged as the `idx-agentic-process` skill, so an
-agent that has it installed understands the whole process.
+The process definition itself is packaged as the `idx-agentic-process` skill, so an agent
+that has it installed understands the whole process.
 
 ## Installation
 
-IAP is used through your agent tool. It has two installable parts:
+IAP has two installable parts:
 
-- **Skills** — one folder per role under [`skills/`](skills/), each with a `SKILL.md`
-  (the open [Agent Skills](https://agentskills.io) standard), defining the roles and the
+- **Skills** — one folder per role under [`skills/`](skills/), each with a `SKILL.md` (the
+  open [Agent Skills](https://agentskills.io) standard), defining the roles and the
   process itself.
 - **Commands** — one Markdown file per slash command under [`commands/`](commands/); each
-  is a thin wrapper that starts the matching role.
+  is a thin wrapper that starts the matching skill.
 
-IAP also ships a small, read-only helper, [`scripts/iap.sh`](scripts/iap.sh), which the
-commands use to scan `spec/` in a single pass instead of opening every file. `/bootstrap`
-installs it inside the project at `.iap/iap.sh` (e.g. `bash .iap/iap.sh open`,
-`bash .iap/iap.sh list READY`, `bash .iap/iap.sh next`). Commit it so all collaborators
-and cloud agents have it.
+One helper is derived from the process and installed alongside: the read-only
+[`scripts/iap.sh`](scripts/iap.sh), which the commands use to scan `spec/` in a single pass
+instead of opening every file. `/bootstrap` installs it inside the project at `.iap/iap.sh`
+(e.g. `bash .iap/iap.sh open`, `bash .iap/iap.sh list READY`, `bash .iap/iap.sh next`).
+Commit it so all collaborators and cloud agents have it.
 
-The `/bootstrap` command additionally needs the bundle (this repository: `templates/`,
-`idx-agentic-process.md`, `VERSION`) so it can create `spec/` and record the version.
-Point `IAP_HOME` at your clone:
+The `/bootstrap` command needs the bundle (this repository: `templates/`,
+`idx-agentic-process.md`, `VERSION`) so it can create `spec/` and record the version. Point
+`IAP_HOME` at your clone:
 
 ```bash
 git clone git@github.com:pwalser75/idx-agentic-process.git ~/idx-agentic-process
 export IAP_HOME="$HOME/idx-agentic-process"    # add to your shell profile
 ```
 
-You can install **globally** (once per machine, in every project) or **project-local**
-(committed to the repository, so every collaborator and cloud agent gets it).
-Project-local wins when both are present.
-
 ### Where each tool loads skills and commands
 
-| Tool | Skills (project) | Skills (global) | Commands (project) | Commands (global) |
-|---|---|---|---|---|
-| OpenCode | `.opencode/skills/` | `~/.config/opencode/skills/` | `.opencode/commands/` | `~/.config/opencode/commands/` |
-| Claude Code | `.claude/skills/` | `~/.claude/skills/` | `.claude/commands/` | `~/.claude/commands/` |
-| GitHub Copilot | `.github/skills/` (also `.agents/skills/`, `.claude/skills/`) | `~/.copilot/skills/` (also `~/.agents/skills/`) | `.github/prompts/` (`*.prompt.md`) | user prompts (editor) |
-| OpenAI Codex | `.agents/skills/` | `~/.agents/skills/` | `$CODEX_HOME/prompts/` (`~/.codex/prompts/`) | same |
-| Cursor | `.cursor/skills/` (also `.agents/skills/`) | `~/.cursor/skills/` (also `~/.agents/skills/`) | — (skills are `/skill-name`) | — |
-
-Every tool except Claude Code also reads the cross-tool `.agents/skills/` location, so a
-single install there covers OpenCode, Copilot, Codex and Cursor at once; add
-`.claude/skills/` for Claude Code. In tools where slash commands *are* skills (Claude Code,
-Codex, Cursor, Copilot) the roles are invokable directly (`/iap-facilitator`,
-`$iap-implementor`, …); the `commands/` wrappers (`/facilitate`) are mainly needed for
-OpenCode.
+| Tool        | Project            | Global             |
+|-------------|--------------------|--------------------|
+| OpenCode    | `.opencode/`       | `~/.opencode/`     |
+| Claude Code | `.claude/`         | `~/.claude/`       |
 
 ### Global install
 
-**OpenCode**
-
 ```bash
-git clone git@github.com:pwalser75/idx-agentic-process.git ~/.config/opencode/iap
-mkdir -p ~/.config/opencode/skills ~/.config/opencode/commands
-ln -s ~/.config/opencode/iap/skills/*   ~/.config/opencode/skills/
-ln -s ~/.config/opencode/iap/commands/* ~/.config/opencode/commands/
-```
+# OpenCode
+git clone git@github.com:pwalser75/idx-agentic-process.git ~/.opencode/iap
+mkdir -p ~/.opencode/skills ~/.opencode/commands
+ln -s ~/.opencode/iap/skills/*   ~/.opencode/skills/
+ln -s ~/.opencode/iap/commands/* ~/.opencode/commands/
 
-**Claude Code**
-
-```bash
+# Claude Code
 git clone git@github.com:pwalser75/idx-agentic-process.git ~/.claude/iap
 mkdir -p ~/.claude/skills ~/.claude/commands
 ln -s ~/.claude/iap/skills/*   ~/.claude/skills/
 ln -s ~/.claude/iap/commands/* ~/.claude/commands/
 ```
-
-**GitHub Copilot, OpenAI Codex, Cursor** (shared `.agents/skills/`)
-
-```bash
-mkdir -p ~/.agents/skills
-ln -s ~/idx-agentic-process/skills/* ~/.agents/skills/
-```
-
-- Copilot also accepts personal skills in `~/.copilot/skills/`.
-- Codex custom prompts (`/prompts:<name>`) go in `~/.codex/prompts/`.
-- Cursor also accepts personal skills in `~/.cursor/skills/`.
 
 ### Project-local install
 
@@ -209,15 +210,12 @@ Commit these into the repository and every collaborator (and cloud agent) gets I
 
 ```bash
 REPO=~/idx-agentic-process
-
-mkdir -p .agents/skills && cp -R "$REPO"/skills/* .agents/skills/            # OpenCode/Copilot/Codex/Cursor
-mkdir -p .claude/skills && cp -R "$REPO"/skills/* .claude/skills/            # Claude Code
-mkdir -p .opencode/commands && cp -R "$REPO"/commands/* .opencode/commands/  # OpenCode slash commands
+mkdir -p .opencode/skills && cp -R "$REPO"/skills/*   .opencode/skills/    # OpenCode
+mkdir -p .opencode/commands && cp -R "$REPO"/commands/* .opencode/commands/
+# Claude Code: use .claude/skills/ and .claude/commands/ instead.
 ```
 
-For Copilot you can use the canonical `.github/skills/` (and `.github/prompts/*.prompt.md`
-for prompts) instead of `.agents/`. On Windows, replace the symlinks/copies with
-`mklink /D` or plain copies.
+On Windows, replace the symlinks/copies with `mklink /D` or plain copies.
 
 ## Quick start
 
@@ -240,10 +238,11 @@ for prompts) instead of `.agents/`. On Windows, replace the symlinks/copies with
    ```
    /plan      # derive tickets from the requirements
    /refine    # promote well-defined tickets to READY
-   /implement # claim and build the best READY ticket
-   /review    # verify, then accept it to DONE
-   /accept    # update release notes, merge and close the DONE tickets
+   /implement # work through READY, unblocked tickets
+   /review    # verify and accept a ticket to DONE
+   /accept    # update release notes, merge and close DONE tickets
    /tickets   # always see where you are
+   /guide     # ask what to do next
    ```
 
 4. Commit `spec/` together with the code.
@@ -251,10 +250,12 @@ for prompts) instead of `.agents/`. On Windows, replace the symlinks/copies with
 ### Adopting an existing codebase
 
 1. `/bootstrap` the process in the existing repository.
-2. `/survey` and `/excavate` to reconstruct the architecture and requirements
-   (repeat as the code changes).
+2. `/survey` and `/excavate` to reconstruct the architecture and requirements (repeat as
+   the code changes).
 3. Review the inferred documents, correct and accept them (requirements loop).
-4. `/plan`, `/refine`, `/implement`, `/review` as usual.
+4. `/plan`, `/refine`, `/implement`, `/review` and `/accept` as usual.
+
+If anything gets inconsistent, run `/reconcile` to audit and safely repair it.
 
 ## Repository layout
 
@@ -263,23 +264,19 @@ idx-agentic-process/
 ├─ README.md                    # this file
 ├─ .gitignore
 ├─ idx-agentic-process.md       # canonical process definition (read-only for agents)
-├─ VERSION                      # IAP version (1.0.0)
+├─ VERSION                      # IAP version
 ├─ LICENSE                      # Apache License 2.0
 ├─ NOTICE                       # copyright notice
 ├─ skills/                      # agent skills (one folder per skill)
 │  ├─ idx-agentic-process/      # the process overview skill
-│  ├─ iap-bootstrap/
-│  ├─ iap-facilitator/
-│  ├─ iap-planner/
-│  ├─ iap-analyst/
-│  ├─ iap-implementor/
-│  ├─ iap-reviewer/
-│  ├─ iap-archaeologist/
-│  └─ iap-system-architect/
-├─ commands/                    # slash commands (opencode / Claude Code)
-│  ├─ bootstrap.md  tickets.md
-│  ├─ facilitate.md plan.md refine.md
-│  └─ implement.md  review.md accept.md excavate.md survey.md
+│  ├─ iap-bootstrap/  iap-facilitator/  iap-planner/  iap-analyst/
+│  ├─ iap-implementor/  iap-reviewer/  iap-archaeologist/
+│  ├─ iap-system-architect/  iap-guide/  iap-reconciler/
+│  └─ iap-accept/  iap-tickets/
+├─ commands/                    # slash commands
+│  ├─ bootstrap.md  facilitate.md  plan.md  refine.md
+│  ├─ implement.md  review.md  accept.md  tickets.md
+│  └─ excavate.md  survey.md  guide.md  reconcile.md
 ├─ scripts/
 │  └─ iap.sh                    # read-only helper for fast spec/ scans
 └─ templates/
