@@ -62,7 +62,7 @@ Every artifact carries an edit right: **(H)** human-only, **(A)** agent-only, **
 ```
 project-root/
 └─ spec/
-   ├─ input.md                          # (H) local-only (per human); agent only clears it after /facilitate
+   ├─ input.md                          # (X) human writes input; agent only clears it after /facilitate, never edits content
    ├─ release-notes.md                  # (X) release notes of the current version (optional)
    ├─ requirements/                     # (X) implementation-agnostic requirements
    │  ├─ domain-models/{model-name}.md  # (X) name, description, attributes
@@ -75,7 +75,7 @@ project-root/
    │  └─ ...                            # (X) additional guidelines
    ├─ tickets/{id}-{type}-{name}.md     # (X) work units
    └─ agent/                            # (A) agent-owned workspace
-      ├─ input-ledger.md                # (A) append-only ledger: accepted input + clarifications
+      ├─ input-ledger.md                # (A) append-only seed: accepted input + clarifications
       ├─ ticket-index.md                # (A) tickets <-> requirements/architecture links
       ├─ planning-log.md                # (A) last-seen revision/hash of spec/
       ├─ source-ledger.md               # (A) hash ledger of scanned sources
@@ -119,7 +119,7 @@ created: {created}
 type: {type}
 status: {status}
 acceptance-type: {acceptance-type}
-blocked-by: []
+blocked-by: {blocked-by}
 ---
 # Title
 ## Description
@@ -177,8 +177,7 @@ DRAFT ──/refine──▶ READY ──/implement──▶ IN_PROGRESS ──(
 A non-metadata edit (Description, Tasks, Acceptance criteria, Comments) of a ticket in
 DRAFT/READY/IN_REVIEW/DONE resets it to DRAFT. Setting `acceptance-type` or `blocked-by`
 is a metadata edit and does not change the status. A reviewer's rework comment is the one
-exception: it moves IN_REVIEW → READY. A DONE ticket whose branch changes after review
-returns to IN_REVIEW for a fresh review before `/accept`.
+exception: it moves IN_REVIEW → READY.
 
 ## Roles
 
@@ -187,6 +186,12 @@ isolated context as a subtask, so its work never pollutes the orchestrator's con
 SUBAGENT never blocks on input: it returns its questions in its report, and the invoking
 agent relays them and re-invokes it with the answers. The orchestrator must not do a
 SUBAGENT's work itself.
+
+The IMPLEMENTOR loops only up to the handover: when it leaves a ticket IN_REVIEW and
+reports, the orchestrating agent runs the REVIEWER in a separate SUBAGENT context for that
+ticket, then for an AUTOMATIC ticket runs `/accept`, and re-invokes the IMPLEMENTOR for the
+next READY ticket. Roles never invoke each other — only the orchestrator sequences them,
+one writing role at a time.
 
 | Role                  | Type     | Command       | Precondition                              |
 |-----------------------|----------|---------------|-------------------------------------------|
@@ -243,10 +248,8 @@ and merge DONE tickets).
 
 ### Invariants
 
-- A ticket's status matches its branch: IN_PROGRESS/IN_REVIEW ⇒ branch exists;
-  DRAFT/READY ⇒ no branch; CLOSED ⇒ its commit is on `main` and the branch is deleted
-  (CLOSED is set on the branch just before the fast-forward merge, so a CLOSED ticket with
-  an unmerged branch is a `/reconcile` finding).
+- A ticket's status matches its branch: IN_PROGRESS/IN_REVIEW ⇒ its branch exists;
+  DRAFT/READY ⇒ no branch; CLOSED ⇒ merged and branch gone.
 - Implementation changes reach `main` only through `/accept`.
 - Every ticket has a unique id and its filename matches the front-matter `id`.
 - `blocked-by` references existing tickets and is acyclic.
@@ -254,8 +257,6 @@ and merge DONE tickets).
 - The process document is never edited by an agent.
 - Every human decision that changes requirements, architecture or tickets is recorded in
   `spec/agent/input-ledger.md`.
-- A DONE ticket's branch tip is unchanged since review, is based on `main`, and holds only
-  that ticket's commits.
 
 `/reconcile` validates and repairs these; `/guide` reports violations it cannot repair.
 

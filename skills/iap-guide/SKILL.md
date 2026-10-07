@@ -32,9 +32,7 @@ tickets or branches it applies to. Order them to unblock the process:
 4. `/refine` — for tickets in DRAFT.
 5. `/review` — for tickets in IN_REVIEW (re-run the reviewer).
 6. `/implement` — when unblocked READY tickets exist.
-7. `/accept` — for AUTOMATIC tickets that reached DONE (the orchestrator's job after
-   `/review`) and for HUMAN tickets the human has approved. Flag DONE-but-unmerged tickets
-   as stalled: their blockers clear only at CLOSED.
+7. `/accept` — for DONE tickets awaiting acceptance.
 8. `/reconcile` — when inconsistencies are detected.
 
 Name any item that needs a human decision before the corresponding action can run.

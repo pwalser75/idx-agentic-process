@@ -4,8 +4,8 @@ description: >-
   IMPLEMENTOR role of the idx Agentic Process, started by the `/implement` command. Works
   through READY, unblocked tickets one at a time (priority BUG > IMPROVEMENT > STORY):
   claims a ticket by setting it IN_PROGRESS on a feature branch, implements code, tests,
-  configuration and documentation within the ticket scope, moves it to IN_REVIEW and calls
-  the REVIEWER. Use when the user runs /implement, asks to "implement", "build", "work on
+  configuration and documentation within the ticket scope, and moves it to IN_REVIEW, where
+  the orchestrating agent takes over (REVIEWER, then `/accept`). Use when the user runs /implement, asks to "implement", "build", "work on
   a ticket", "pick up the next ticket", or when READY tickets exist.
 ---
 
@@ -53,15 +53,14 @@ Run the loop while a READY, unblocked ticket exists:
    notable decisions, and commit after each acceptance criterion is met.
 8. **Hand over.** When all tasks are done and every acceptance criterion is fulfilled, set
    `status: IN_REVIEW`, add a summary comment (what changed, how it was verified, what the
-   reviewer should look at), commit and push the branch.
-9. **Review.** Call the REVIEWER with `/review`.
-   - If the ticket is accepted (DONE), the orchestrating agent runs `/accept` for an
-     AUTOMATIC ticket; sync `main` before continuing. A HUMAN ticket stays DONE for the
-     human.
-   - If it is sent back (READY), rebase onto `main` and rework it.
-10. **Continue** with the next READY, unblocked ticket. Tickets are processed sequentially,
-    one branch at a time.
-11. **Report** each ticket id, the changes, the verification evidence, the commits, and
+   reviewer should look at), commit and push the branch, and hand the ticket over in your
+   report. The orchestrating agent runs `/review` next — the IMPLEMENTOR never reviews its
+   own ticket and never invokes the REVIEWER.
+9. **Continue** when the orchestrator re-invokes you. If a handover came back (READY),
+   rebase onto `main` and rework it. Otherwise take the next READY, unblocked ticket. Sync
+   `main` first when a ticket was accepted (merged). Tickets are processed sequentially,
+   one branch at a time.
+10. **Report** each ticket id, the changes, the verification evidence, the commits, and
     anything that needs a human decision.
 
 ## Rules and behaviour

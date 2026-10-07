@@ -20,9 +20,6 @@ only safe, idempotent, non-destructive repairs.
 
 - **git:** current branch, dirty tree, in-progress rebase/merge, stash; feature branches
   matching `{id}-{type}-{name}`.
-- **DONE tickets:** a DONE ticket whose branch tip moved after review, or whose branch is
-  not based on `main` (stacked), needs a human: report it and return the ticket to
-  IN_REVIEW for re-review.
 - **tickets:** status and metadata; `blocked-by` targets exist and are acyclic; ids are
   unique.
 - **cross-checks:** ticket status vs branch (missing, orphaned, already merged); a CLOSED

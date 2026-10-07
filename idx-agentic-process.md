@@ -16,7 +16,7 @@ Participants in this process are:
 - Human, or in larger projects, multiple human collaborators.
 - Agents for specialized tasks. They can have a defined role/skill suitable for the task at hand.
 
-The implementation process enables the human-in-the-loop, but does not enforce it.
+The process enables the human-in-the-loop, but does not enforce it.
 
 ## Typical human workflow
 
@@ -32,7 +32,8 @@ The human drives the loop; the agent does the ticket work.
    yourself; leave the rest on the default AUTOMATIC. This is a metadata edit — it does not change
    the ticket's status.
 6. **Implement**: run `/implement` once. The agent works through the READY, unblocked tickets one at a
-   time until none remain; AUTOMATIC tickets are reviewed and merged automatically, HUMAN tickets are implemented and left for you.
+   time until none remain; AUTOMATIC tickets are reviewed and accepted (merged) automatically, HUMAN
+   tickets are implemented and left for you.
 7. **Accept manually**: inspect the tickets awaiting your acceptance (status DONE with
    `acceptance-type: HUMAN`) and run `/accept` to merge them, or comment on a ticket to send it
    back to DRAFT.
@@ -49,7 +50,7 @@ A clear definition of which files are owned by the human (H), agent (A) or both 
 ```
 project-root/
 └─ spec/                                # Root folder of the process
-   ├─ input.md                          # (H) local-only (per human); Agent only clears it after /facilitate.
+   ├─ input.md                          # (X) Human writes input; Agent only clears it after `/facilitate`, never edits content.
    ├─ release-notes.md                  # (X) Release notes of the current version (optional).
    ├─ requirements/                     # (X) Requirements of this project
    │  ├─ domain-models/                 # (X) Domain models
@@ -65,7 +66,7 @@ project-root/
    ├─ tickets/                          # (X) Tickets for the implementation
    │  └─ {id}-{type}-{name}.md          # (X) A ticket, with a distinct id, type and name
    └─ agent/                            # (A) Folder managed by the agent, it can document anything here
-       ├─ input-ledger.md               # (A) append-only ledger: accepted input and resolved clarifications
+       ├─ input-ledger.md               # (A) append-only seed: accepted input and resolved clarifications
        ├─ ticket-index.md               # (A) tickets ↔ requirements/architecture links
        ├─ planning-log.md               # (A) last-seen revision/hash of spec/
        ├─ source-ledger.md              # (A) hash ledger of scanned sources
@@ -145,7 +146,7 @@ Ticket metadata:
 - `type`: ticket type, see "Types" below.
 - `status`: ticket status, see "Status" values below.
 - `acceptance-type`: `AUTOMATIC` (default) | `HUMAN`, see "Acceptance Type" below.
-- `blocked-by`: list of ticket ids that block this ticket, e.g. `[0007, 0008]`; omit when not blocked.
+- `blocked-by`: list of ids of the tickets that block this ticket. Can be absent when not blocked.
 
 ### Identity and naming
 
@@ -171,10 +172,8 @@ Ticket metadata:
 - CLOSED (ticket done and closed, protected from changes)
 
 #### Acceptance Type
-- AUTOMATIC (default): an agent reviews the ticket, then the orchestrating agent runs `/accept` and
-  closes it in the same run. Fully agent-driven: no human review and no human confirmation.
-- HUMAN (set by Human): an agent reviews, the DONE ticket then waits for the human, who reviews
-  again and runs `/accept`.
+- AUTOMATIC (default, Agent reviews and accepts the ticket)
+- HUMAN (set by Human, Agent reviews, Human reviews again and accepts the ticket)
 
 ### Template
 
@@ -185,7 +184,7 @@ created: {created}
 type: {type}
 status: {status}
 acceptance-type: {acceptance-type}
-blocked-by: [] # omit when not blocked
+blocked-by: {blocked-by}
 ---
 # Title
 ## Description
@@ -205,15 +204,15 @@ blocked-by: [] # omit when not blocked
     │
     ▼
 ╭───────╮  /refine   ╭───────╮  /implement   ╭─────────────╮   (agent)     ╭───────────╮
-│ DRAFT │───────────▶│ READY │──────────────▶│ IN_PROGRESS │──────────────▶│ IN_REVIEW │◀────────────────╮
-╰───────╯            ╰───────╯               ╰─────────────╯               ╰───────────╯                 │
-    ▲                    ▲                          │                            │                       │
-    │                    ├◀─────/plan (reclaim)─────┘                            │         (branch changed after review)
-    │                    └◀────────────────────────────────/review (rework)──────┤                       │
-    │                                                                            │ /review (accepted)    │
-    │                                                                            ▼                       │
-    │                                                                        ╭──────╮                    │
-    └◀────────────────────── (non-metadata edit of a ticket) ────────────────│ DONE │────────────────────┘
+│ DRAFT │───────────▶│ READY │──────────────▶│ IN_PROGRESS │──────────────▶│ IN_REVIEW │
+╰───────╯            ╰───────╯               ╰─────────────╯               ╰───────────╯
+    ▲                    ▲                          │                            │
+    │                    ├◀─────/plan (reclaim)─────┘                            │
+    │                    └◀────────────────────────────────/review (rework)──────┤
+    │                                                                            │ /review (accepted)
+    │                                                                            ▼
+    │                                                                        ╭──────╮
+    └◀─────────────────────── non-metadata edit of a ticket──────────────────│ DONE │
                                                                              ╰──────╯
                                                                                  │ /accept (human or agent)
                                                                                  ▼
@@ -225,19 +224,18 @@ blocked-by: [] # omit when not blocked
 
 #### State transitions:
 
-| FROM                       | TO          | TRIGGER                       | ACTOR                            | GUARD                                                                                          |
-|----------------------------|-------------|-------------------------------|----------------------------------|------------------------------------------------------------------------------------------------|
-| —                          | DRAFT       | `/plan`                       | Planner                          | new or changed requirement                                                                     |
-| DRAFT                      | READY       | `/refine`                     | Analyst                          | sufficiently defined and realizable                                                            |
-| READY                      | IN_PROGRESS | `/implement`                  | Implementor                      | branch {id}-{type}-{name} created from up-to-date main, containing only this ticket's commits. |
-| IN_PROGRESS                | IN_REVIEW   | work complete                 | Implementor                      | tasks done, acceptance criteria fulfilled                                                      |
-| IN_PROGRESS                | READY       | `/plan` (reclaim)             | Planner                          | claim abandoned (not active, no open branch)                                                   |
-| IN_REVIEW                  | READY       | `/review` (rework)            | Reviewer                         | comments state what remains                                                                    |
-| IN_REVIEW                  | DONE        | `/review` (accept)            | Reviewer                         | accepted; reviewer is independent of the implementor.                                          |
-| DONE                       | IN_REVIEW   | branch changed after review   | (anyone)                         | new commits void DONE; fresh /review required                                                  |
-| DONE                       | CLOSED      | `/accept` (accept)            | Reviewer's orchestrator or Human | branch tip equals the reviewed (DONE) commit                                                   |
-| DRAFT/READY/IN_REVIEW/DONE | DRAFT       | non-metadata edit of a ticket | (anyone)                         | forces re-refinement                                                                           |
-| CLOSED                     | —           | (none, terminal)              | —                                | immutable; follow-up work is a new ticket                                                      |
+| FROM                       | TO          | TRIGGER                       | ACTOR                                     | GUARD                                        |
+|----------------------------|-------------|-------------------------------|-------------------------------------------|----------------------------------------------|
+| —                          | DRAFT       | `/plan`                       | Planner                                   | new or changed requirement                   |
+| DRAFT                      | READY       | `/refine`                     | Analyst                                   | sufficiently defined and realizable          |
+| READY                      | IN_PROGRESS | `/implement`                  | Implementor                               | claimed by setting status                    |
+| IN_PROGRESS                | IN_REVIEW   | work complete                 | Implementor                               | tasks done, acceptance criteria fulfilled    |
+| IN_PROGRESS                | READY       | `/plan` (reclaim)             | Planner                                   | claim abandoned (not active, no open branch) |
+| IN_REVIEW                  | READY       | `/review` (rework)            | Reviewer                                  | comments state what remains                  |
+| IN_REVIEW                  | DONE        | `/review` (accept)            | Reviewer                                  | accepted                                     |
+| DONE                       | CLOSED      | `/accept` (accept)            | Orchestrator (AUTOMATIC) or Human (HUMAN) | accepted, feature branch can be merged       |
+| DRAFT/READY/IN_REVIEW/DONE | DRAFT       | non-metadata edit of a ticket | (anyone)                                  | forces re-refinement                         |
+| CLOSED                     | —           | (none, terminal)              | —                                         | immutable; follow-up work is a new ticket    |
 
 ## Release Notes
 
@@ -280,14 +278,22 @@ A SUBAGENT role never blocks on input: it returns its questions/blockers in the 
 
 For SUBAGENT skills, the invoking (orchestrating) agent must not perform the role's work itself — it selects the role, passes the arguments, and relays the result.
 
+### Role loop (handover)
+
+The IMPLEMENTOR loops only up to the handover. When it sets a ticket to IN_REVIEW and
+reports, the *orchestrating agent* (the one that invoked `/implement`) runs the REVIEWER in
+a separate SUBAGENT context for that ticket; if the reviewer accepts an AUTOMATIC ticket
+(DONE), the orchestrator then runs `/accept` and re-invokes the IMPLEMENTOR for the next
+READY ticket. Roles never invoke each other — only the orchestrator sequences them, one
+writing role at a time.
+
 Design guidelines for the agents:
 - keep verbosity low, use more concise responses with minimal explanation.
 - use plain English, not 'Agentish'. Fluff-free, no corporate lingo ("delve", "leverage", ...)
 - Work only from artifacts on disk (spec/, tickets, git) and explicit arguments — never from the orchestrator's conversation history.
 - Return exactly one concise report: what was done, the evidence, and any questions/blockers.
 - If an invariant is violated, or a precondition is not met, stop and report it; never improvise around it.
-- Editing a ticket's Description, Tasks or Acceptance criteria is a non-metadata edit: set the
-  ticket back to DRAFT (the reviewer's rework comments are the exception: IN_REVIEW → READY).
+- Editing a ticket's Description, Tasks, Acceptance criteria or Comments is a non-metadata edit: set the ticket back to DRAFT.
 - Optimize the skills to work as efficiently as possible.
 
 ### FACILITATOR
@@ -318,7 +324,7 @@ Precondition: none, can be invoked anytime.
 Find out which changes have been made to the requirements and architecture documents since it was last invoked.
 It then creates or updates tickets that define which changes are to be done in the project, and links them to the requirements (internally, in the `agent` folder).
 It gives the ticket a number (sequence number, if possible) and a name, a description, a short task breakdown (checkbox list) and acceptance criteria (bullet list).
-It also resets IN_PROGRESS tickets that violate the branch invariant (no branch exists, not claimed by an active subagent) to READY, reporting each as a repaired violation.
+It also checks if any ticket in status IN_PROGRESS exists which is not claimed by an active subagent and whose branch does not exist, and sets it back to status READY.
 A ticket whose branch still exists is left for the RECONCILER (see Branches).
 It verifies the blocked-by attribute of existing tickets and checks if these tickets actually exist, and that no cyclic dependencies in the blockings exist.
 When it needs a decision, it returns the open questions in its report; on re-invocation with the human's answers it appends each resolved question (question, answer, date/time, human user) to `spec/agent/input-ledger.md` before creating or updating tickets.
@@ -349,22 +355,24 @@ Precondition: at least one ticket READY, clean working tree, on main.
 Repeat while a READY, unblocked ticket exists:
 - finds the best one (BUG > IMPROVEMENT > STORY) and claims it.
 - if a branch named `{id}-{type}-{name}` already exists, resume it when it holds this ticket's claim; otherwise stop and defer to `/reconcile`.
-- create a feature branch from up-to-date main, named `{id}-{type}-{name}`. It must contain only this ticket's commits.
-  Never stack one ticket's branch on another's. If two tickets touch the same files, finish and merge the first (via `/accept`) before branching the second.
+- create a feature branch from up-to-date main, named `{id}-{type}-{name}`.
 - set the ticket STATUS: IN_PROGRESS and commit the claim on that branch.
 - implement code, tests, configuration and documentation on the branch.
 
 Tests covering the code changes are required.
 
-When done, set the ticket STATUS: IN_REVIEW, and call the REVIEWER with `/review`.
-After the reviewer finishes, continue with the next READY ticket. When a ticket was accepted (merged), sync main first. Tickets are processed sequentially (one branch at a time).
+When done, set the ticket STATUS: IN_REVIEW, commit, and hand it over in the report — the
+orchestrating agent runs `/review` next. Never review your own ticket. The orchestrating
+agent re-invokes the IMPLEMENTOR for the next READY ticket after the reviewer finishes; sync
+main first when a ticket was accepted (merged). Tickets are processed sequentially, one
+branch at a time.
 
 ### REVIEWER
 
 Type: SUBAGENT
 Command: `/review`.
 Precondition: at least one ticket in status IN_REVIEW.
-Invoked by: IMPLEMENTOR.
+Invoked by: the orchestrating agent, after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 
 Looks at tickets in status IN_REVIEW and checks:
 - all tasks are done and every acceptance criterion is fulfilled.
@@ -375,14 +383,9 @@ Looks at tickets in status IN_REVIEW and checks:
 
 Test/coverage standards are not set here; they live in `architecture/quality-aspects.md` and `architecture/coding-guidelines.md`.
 
-When it is satisfied, it sets the ticket status to DONE and commits that change; the reviewed
-revision is frozen at that commit.
-For an AUTOMATIC ticket it must not rest at DONE: the REVIEWER returns DONE, and the orchestrating
-agent runs `/accept` for it in the same `/implement` run. A HUMAN ticket is left in DONE for the human.
-If the branch receives any commit after the DONE commit, DONE is void: return the ticket to
-IN_REVIEW and review again before `/accept`.
-The REVIEWER must run in its own context, separate from the implementor; an agent never reviews
-a ticket it implemented itself.
+When it is satisfied with the result, it sets the ticket status to DONE and commits that change.
+Otherwise, it comments on the ticket what else needs to be done before the ticket can be closed, and sets the ticket back to READY.
+For an AUTOMATIC ticket the reviewer returns DONE so the orchestrating agent runs `/accept`; a HUMAN ticket stays DONE for the human.
 
 ### ARCHAEOLOGIST
 
@@ -433,8 +436,7 @@ It orders actions to unblock the process:
 4. `/refine` for tickets in DRAFT.
 5. `/review` for tickets in IN_REVIEW (re-run the reviewer).
 6. `/implement` when unblocked READY tickets exist.
-7. `/accept` for AUTOMATIC tickets that reached DONE (the orchestrator's job after `/review`) and for HUMAN tickets the
-   human has approved; flag DONE-but-unmerged tickets as stalled, because blockers clear only at CLOSED.
+7. `/accept` for DONE tickets awaiting human acceptance.
 8. `/reconcile` when inconsistencies are detected.
 
 It names any item that needs a human decision before the corresponding action can run.
@@ -452,8 +454,6 @@ changed and what needs a human.
 
 Audit:
 - git: current branch, dirty tree, in-progress rebase/merge, stash; feature branches matching `{id}-{type}-{name}`.
-- a DONE ticket whose branch tip moved after review, or whose branch is not based on main
-  (stacked), needs a human: report it and return the ticket to IN_REVIEW for re-review.
 - tickets: status and metadata; `blocked-by` targets exist and are acyclic; ids are unique.
 - cross-checks: ticket status vs branch (missing, orphaned, already merged); a CLOSED ticket implies a
   merged branch and no leftover branch.
@@ -503,28 +503,23 @@ sorted oldest first, and CLOSED tickets are omitted.
 ### Accept
 
 Command: `/accept`.
-Precondition: at least one AUTOMATIC ticket in DONE (orchestrator after `/review`) or one HUMAN ticket in DONE (human).
-Invoked by: the orchestrating agent (in the `/implement` run) for AUTOMATIC tickets after `/review`
-returns DONE, or HUMAN for the HUMAN tickets awaiting acceptance. AUTOMATIC merges need no human
-involvement.
+Precondition: at least one AUTOMATIC ticket in DONE (reviewer) or one HUMAN ticket in DONE (human).
+Invoked by: the orchestrating agent (for the AUTOMATIC ticket(s) `/review` just accepted) or
+HUMAN (for HUMAN tickets).
 
 Accept the eligible DONE tickets, and for each:
 - switch to the feature branch.
-- verify the branch tip is exactly the commit the reviewer marked DONE; if it moved, abort and
-  send the ticket back to IN_REVIEW for a fresh review.
+- update the release notes (create on-the-fly if missing), and verify the version is correct, using the build file's `{major}.{minor}` version (e.g. from `pom.xml`).
+- set the accepted ticket to CLOSED.
+- commit the release notes and ticket update on the feature branch.
 - squash the commits into one, named as `{ticket-number}-{ticket-type}: {ticket-title}`.
 - rebase the feature branch onto the main branch, resolve conflicts.
-- update the release notes (create on-the-fly if missing), and verify the version is correct, using
-  the build file's `{major}.{minor}` version (e.g. from `pom.xml`).
-- set the accepted ticket to CLOSED.
-- amend the squashed commit with the release notes and ticket update.
 - switch back to the main branch.
 - merge the feature branch (fast-forward only).
 - delete the feature branch afterwards.
 
-If the rebase cannot be resolved automatically, abort the rebase (the ticket is still DONE, unmodified, on its branch) and report;
-never leave a half-rebased tree. `/reconcile` cleans up.
-Fast-forward-only also detects stacked branches; on a non-fast-forward in these circumstances, abort and report.
+If the rebase cannot be resolved automatically, abort the rebase, leave the ticket DONE on its branch,
+and report; never leave a half-rebased tree. `/reconcile` cleans up.
 
 ### Bootstrap
 
@@ -572,17 +567,13 @@ commit is made. `input.md` is local-only and is never committed.
 
 These must always hold. Any role that finds one violated must report it and stop, not improvise around it:
 
-- a ticket's status matches its branch:
-  IN_PROGRESS/IN_REVIEW ⇒ its branch exists; DRAFT/READY ⇒ no branch; 
-  CLOSED ⇒ its commit is on main and the branch is deleted (CLOSED is set on the branch just before the fast-forward merge,
-  so a CLOSED ticket with an unmerged branch is a `/reconcile` finding).
+- a ticket's status matches its branch: IN_PROGRESS/IN_REVIEW ⇒ its branch exists; DRAFT/READY ⇒ no branch; CLOSED ⇒ merged and branch gone.
 - implementation changes reach main only through `/accept`.
 - every ticket has a unique id and its filename matches the front-matter `id`.
 - `blocked-by` references existing tickets and is acyclic.
 - no two writing roles run concurrently.
 - the process document is never edited by an agent.
 - every human decision that changes requirements, architecture or tickets is recorded in `input-ledger.md`.
-- a DONE ticket's branch tip is unchanged since review, is based on main, and holds only that ticket's commits.
 
 `/reconcile` validates and repairs these; `/guide` reports violations it cannot repair.
 
@@ -611,26 +602,21 @@ These must always hold. Any role that finds one violated must report it and stop
 
 - A feature branch is named `{id}-{type}-{name}`, one per ticket, created by the IMPLEMENTOR.
 - Active: the ticket is IN_PROGRESS or IN_REVIEW and the branch is open.
-- Merged: the branch is an ancestor of main; `/accept` deletes it after merging, `/reconcile` deletes any leftover merged branch.
-- Abandoned: an IN_PROGRESS or IN_REVIEW ticket with no active agent and no commits since the claim (older than the threshold below, or confirmed by the human).
-  The RECONCILER resets the ticket to READY and renames the branch to `abandoned/{id}-{type}-{name}`.
-- Threshold: an abandoned branch is one idle longer than 24h unless the human confirms sooner.
+- Merged: the branch is an ancestor of main; it is safe to delete and is removed by `/accept` or `/reconcile`.
+- Abandoned: an IN_PROGRESS or IN_REVIEW ticket with no active agent and no commits since the claim
+  (older than the configured threshold, or confirmed by the human). The RECONCILER resets the ticket to
+  READY and renames the branch to `abandoned/{id}-{type}-{name}`.
 - Only `/accept` merges; only `/reconcile` cleans up branches; an unmerged branch is never deleted.
 - Untracked files that belong to the process (tickets, requirements) are committed, never discarded; unrelated untracked files are left alone.
 - Two humans never share a ticket branch; each works on their own branch and merges via `/accept`.
-- A ticket branch is based on up-to-date main and contains only that ticket's commits; branches
-  are never stacked. `/accept` merges fast-forward-only; a branch that is not fast-forwardable
-  (e.g. it sits on another ticket's work) is aborted and reported, not merged.
+- Abandoned branches are renamed `abandoned/{id}-{type}-{name}` by `/reconcile`; a merged branch is deleted.
 
 ### Handover and review
 
-- The REVIEWER reviews the feature branch, not the working tree; the ticket's CLOSED commit is created on the branch immediately before the fast-forward merge.
+- The REVIEWER reviews the feature branch, not the working tree; a ticket is set to CLOSED before the branch is merged.
 - A rejected ticket returns to READY; rebase onto main before rework.
 - A CLOSED ticket is protected; follow-up work becomes a new ticket.
 - For acceptance-type other than AUTOMATIC, the human reviews DONE tickets and runs `/accept` to merge them.
-- For AUTOMATIC tickets the orchestrating agent drives DONE → CLOSED in the same run via `/accept`; the reviewer does not leave them DONE.
-- The reviewed revision is frozen between DONE and `/accept`; any change to the branch after review
-  voids DONE and requires a fresh `/review`.
 
 ## Setup
 
@@ -647,7 +633,8 @@ For a global installation, copy the `skills` and `commands` folders to:
 - `~/.opencode` (for OpenCode)
 - `~/.claude` (for Claude Code)
 
-Also copy `scripts/iap.sh` to `.iap/iap.sh` (tool-independent, outside the tool folders).
+`/bootstrap` also installs the read-only helper at `.iap/iap.sh` (tool-independent, outside
+the tool folders). Commit it so collaborators and cloud agents have it.
 
 ### Bootstrapping projects
 
