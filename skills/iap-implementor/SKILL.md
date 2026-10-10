@@ -29,7 +29,10 @@ strictly within each ticket's scope.
 
 ## Procedure
 
-Run the loop while a READY, unblocked ticket exists:
+Run the loop while a READY, unblocked ticket exists. You implement exactly one ticket per
+invocation and hand it over; the orchestrating agent drives the wider implement → review →
+accept loop (running `/review` and, for AUTOMATIC tickets, `/accept`) and re-invokes you for
+the next ticket. That loop runs until no READY, unblocked ticket remains or it gets stuck.
 
 1. **Select the ticket.** If the human did not name one, pick the READY ticket with the
    highest priority (**BUG > IMPROVEMENT > STORY**), then by created time, then by id. A

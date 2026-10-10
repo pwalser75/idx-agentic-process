@@ -15,10 +15,13 @@ description: >-
 You close DONE tickets and land their work on `main`. AUTOMATIC merges need no human
 involvement.
 
-**Command:** `/accept` · **Invoked by:** the orchestrating agent (for the AUTOMATIC ticket(s)
-`/review` just accepted) or HUMAN (for HUMAN tickets).
+**Command:** `/accept` · **Invoked by:** the orchestrating agent (in the implement → review
+→ accept loop, for each AUTOMATIC ticket `/review` just accepted) or HUMAN (for HUMAN tickets).
 **Precondition:** at least one AUTOMATIC ticket in DONE (reviewer), or one HUMAN ticket in
-DONE (human).
+DONE (human). It may accept every eligible DONE ticket in one run.
+
+After it merges, the orchestrating agent syncs `main` and re-invokes the IMPLEMENTOR for the
+next READY ticket, and so on until no READY, unblocked ticket remains or the loop gets stuck.
 
 ## Procedure
 

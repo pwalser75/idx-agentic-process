@@ -42,14 +42,19 @@ The process enables the human-in-the-loop but does not enforce it.
    and clears `input.md`.
 2. **Review (optional)** — read the updated `requirements/` and `architecture/` documents;
    repeat step 1 until the picture is stable.
-3. **Plan** — run `/plan`, then inspect tickets with `/tickets`.
-4. **Refine** — run `/refine` to promote sufficiently defined tickets to READY.
+3. **Plan** — run `/plan`, then inspect tickets with `/tickets`. It surfaces any gap or
+   impediment that needs your decision — with the options and its advice — and records the
+   decision in the input ledger before continuing.
+4. **Refine** — run `/refine` to promote sufficiently defined tickets to READY. It likewise
+   surfaces the decisions it needs from you before promoting a ticket.
 5. **Mark acceptance (optional)** — set `acceptance-type: HUMAN` on tickets you want to
    accept yourself; the rest stay on the default AUTOMATIC. This is a metadata edit and
    does not change the ticket's status.
-6. **Implement** — run `/implement` once. The agent works through READY, unblocked tickets
-   one at a time; AUTOMATIC tickets are reviewed and accepted (merged) automatically,
-   HUMAN tickets are implemented and left for you.
+6. **Implement** — run `/implement` once. It drives the implement → review → accept loop:
+   the agent works through READY, unblocked tickets one at a time; AUTOMATIC tickets are
+   reviewed and accepted (merged) automatically, HUMAN tickets are implemented and left for
+   you. The loop runs until nothing workable remains or it gets stuck, then reports what is
+   left and why.
 7. **Accept manually** — inspect DONE tickets with `acceptance-type: HUMAN` and run
    `/accept` to merge them, or comment on a ticket to send it back to DRAFT.
 8. **Recover / re-orient** — after any interruption, or when unsure, run `/reconcile` to
@@ -92,8 +97,8 @@ Rules that follow:
 - **Never silently overwrite (X) content.** When inferring, keep human content and add
   provisional material marked `origin: inferred` with evidence.
 - **`spec/agent/input-ledger.md` is append-only.** FACILITATOR records accepted input and
-  resolved clarifications; PLANNER and ANALYST append the clarifications they resolve.
-  Never rewrite, reorder or remove past entries.
+  resolved clarifications; PLANNER and ANALYST append the clarifications and decisions they
+  resolve (with the human's clearance). Never rewrite, reorder or remove past entries.
 - **`spec/tickets/` is (X).** Agents create and process tickets; a human may write one,
   using the template with a unique `id` and `status: DRAFT`.
 
@@ -191,9 +196,11 @@ SUBAGENT's work itself.
 
 The IMPLEMENTOR loops only up to the handover: when it leaves a ticket IN_REVIEW and
 reports, the orchestrating agent runs the REVIEWER in a separate SUBAGENT context for that
-ticket, then for an AUTOMATIC ticket runs `/accept`, and re-invokes the IMPLEMENTOR for the
-next READY ticket. Roles never invoke each other — only the orchestrator sequences them,
-one writing role at a time.
+ticket, then for an AUTOMATIC ticket runs `/accept`, syncs `main`, and re-invokes the
+IMPLEMENTOR for the next READY ticket. Roles never invoke each other — only the orchestrator
+sequences them, one writing role at a time — and it drives this implement → review → accept
+loop automatically until no READY, unblocked ticket remains or the loop gets stuck (an
+impediment, a violated invariant, or a decision that needs a human).
 
 | Role                  | Type     | Command       | Precondition                              |
 |-----------------------|----------|---------------|-------------------------------------------|

@@ -11,4 +11,8 @@ and any questions verbatim to the human.
 2. Precondition: none. It may be run at any time.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
 
+The planner surfaces any gap or impediment that needs a human decision, with the options and
+its recommendation. Relay those verbatim and re-invoke it with the human's answers; the
+planner records each resolved decision in `spec/agent/input-ledger.md` before acting on it.
+
 Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

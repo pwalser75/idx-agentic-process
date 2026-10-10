@@ -14,6 +14,9 @@ and any questions verbatim to the human.
    (BUG > IMPROVEMENT > STORY). Name/guidance from the human (may be empty): $ARGUMENTS
 
 The implementor hands each finished ticket over in IN_REVIEW; you (the orchestrating
-agent) then run `/review` in a separate context and, for AUTOMATIC tickets, `/accept`, and
-re-invoke the implementor for the next READY, unblocked ticket until none remain. Keep
-verbosity low and use plain English.
+agent) then run `/review` in a separate context and, for AUTOMATIC tickets, `/accept`, then
+sync `main` and re-invoke the implementor for the next READY, unblocked ticket. Drive this
+implement → review → accept loop automatically until no READY, unblocked ticket remains or
+the loop gets stuck (an impediment, a violated invariant, or a decision that needs a human),
+then report what remains and why. A HUMAN ticket accepted by the reviewer stays DONE for the
+human. Keep verbosity low and use plain English.

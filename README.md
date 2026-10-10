@@ -21,9 +21,13 @@ IAP drives development iteratively:
    `spec/input.md`; the agent (`/facilitate`) digests them into implementation-agnostic
    requirements and architecture documents.
 2. **Planning** — agents (`/plan`, `/refine`) turn requirement and architecture changes
-   into refined, actionable tickets.
+   into refined, actionable tickets. Where a gap or an impediment needs a human decision
+   (a missing requirement, a technology or implementation choice, a blocker), they state it,
+   advise on the options and ask for clearance before continuing.
 3. **Implementation** — agents (`/implement`) claim tickets, build and test them; the
-   reviewer (`/review`) verifies and accepts them (DONE).
+   reviewer (`/review`) verifies and accepts them (DONE). The orchestrator drives
+   implement → review → accept as one loop, closing AUTOMATIC tickets — including the merge
+   (`/accept`) — until no workable ticket remains or it gets stuck.
 4. **Review / acceptance** — `/accept` updates the release notes, squashes, rebases and
    merges the feature branch, closing the ticket (CLOSED).
 
@@ -44,6 +48,12 @@ IAP drives development iteratively:
   optional `blocked-by`, a task breakdown and acceptance criteria.
 - **Human gates, not agent gates** — commands are invoked by humans; agents never invent
   requirements, and implementation reaches `main` only through `/accept`.
+- **Ask before you assume** — `/plan` and `/refine` never guess past a gap or impediment:
+  they state it, advise on the options, ask the human for clearance, and record the decision
+  in the input ledger before acting on it.
+- **Implement until stuck** — the orchestrator runs `implement → review → accept` as a single
+  loop, fully closing AUTOMATIC tickets (merge included) and pausing only for HUMAN
+  acceptance or a decision that needs a human.
 - **Subagent roles** — specialised roles run in isolated contexts, so their work never
   pollutes the orchestrator; they return one concise report and never block on input.
 - **Incremental & idempotent reverse-engineering** — existing codebases can be adopted via
@@ -237,11 +247,11 @@ On Windows, replace the symlinks/copies with `mklink /D` or plain copies.
 3. Repeat the requirements loop until the picture is stable. Then:
 
    ```
-   /plan      # derive tickets from the requirements
-   /refine    # promote well-defined tickets to READY
-   /implement # work through READY, unblocked tickets
-   /review    # verify and accept a ticket to DONE
-   /accept    # update release notes, merge and close DONE tickets
+   /plan      # derive tickets; surfaces decisions it needs from you
+   /refine    # promote well-defined tickets to READY; surfaces open decisions
+   /implement # loop: implement, review and accept (merge) workable tickets until stuck
+   /review    # (run automatically in the loop) verify and accept a ticket to DONE
+   /accept    # (run automatically in the loop) release notes, merge, close
    /tickets   # always see where you are
    /guide     # ask what to do next
    ```

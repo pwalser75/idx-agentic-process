@@ -31,9 +31,11 @@ The human drives the loop; the agent does the ticket work.
 5. **Mark acceptance (optional)**: set `acceptance-type: HUMAN` on the tickets you want to accept
    yourself; leave the rest on the default AUTOMATIC. This is a metadata edit — it does not change
    the ticket's status.
-6. **Implement**: run `/implement` once. The agent works through the READY, unblocked tickets one at a
-   time until none remain; AUTOMATIC tickets are reviewed and accepted (merged) automatically, HUMAN
-   tickets are implemented and left for you.
+6. **Implement**: run `/implement` once. It drives the implement → review → accept loop: the agent
+   works through the READY, unblocked tickets one at a time, AUTOMATIC tickets are reviewed and
+   accepted (merged) automatically, and HUMAN tickets are implemented and left for you. The loop
+   runs until no workable ticket remains or it gets stuck (an impediment, or a decision that needs
+   you), then reports what remains and why.
 7. **Accept manually**: inspect the tickets awaiting your acceptance (status DONE with
    `acceptance-type: HUMAN`) and run `/accept` to merge them, or comment on a ticket to send it
    back to DRAFT.
@@ -104,6 +106,14 @@ entries are append-only and carry date/time, human user and the resolution. FACI
 records the `input.md` it accepts and any clarification it resolves; PLAN and REFINE record
 the clarifications they resolve, so they are not lost and are not re-recorded if the same
 fact later arrives via `input.md`.
+
+PLANNER and ANALYST do not guess past ambiguity. When they find a gap or an impediment that
+needs a human decision (missing or ambiguous requirements, a technology or implementation
+choice, conflicting constraints, a blocker, a ticket that cannot be made READY), they state
+the gap, advise on the options — with a recommendation and the trade-offs — and ask the
+human for clearance. They never block and never improvise around it: they return the open
+questions in their report and stop. Only once the human has decided do they record the
+decision (gap, advice, decision, date/time, human user) in `input-ledger.md` and continue.
 
 ## Requirements
 
@@ -284,10 +294,25 @@ For SUBAGENT skills, the invoking (orchestrating) agent must not perform the rol
 
 The IMPLEMENTOR loops only up to the handover. When it sets a ticket to IN_REVIEW and
 reports, the *orchestrating agent* (the one that invoked `/implement`) runs the REVIEWER in
-a separate SUBAGENT context for that ticket; if the reviewer accepts an AUTOMATIC ticket
-(DONE), the orchestrator then runs `/accept` and re-invokes the IMPLEMENTOR for the next
-READY ticket. Roles never invoke each other — only the orchestrator sequences them, one
-writing role at a time.
+a separate SUBAGENT context for that ticket. Roles never invoke each other — only the
+orchestrator sequences them, one writing role at a time.
+
+The orchestrator then drives implement → review → accept as a single loop, without returning
+to the human after each ticket:
+
+1. run the REVIEWER on the IN_REVIEW ticket;
+2. if the reviewer rejected it (READY), re-invoke the IMPLEMENTOR to rework that ticket;
+3. if the reviewer accepted an AUTOMATIC ticket (DONE), run `/accept` to merge and close it,
+   then sync `main` and re-invoke the IMPLEMENTOR for the next READY ticket;
+4. a HUMAN ticket accepted by the reviewer stays DONE — leave it for the human and continue
+   with the other workable tickets;
+5. repeat until no READY, unblocked ticket remains, or it is stuck — an impediment, a
+   violated invariant, or a decision that needs a human. On a stuck loop it stops and reports
+   what remains and why.
+
+This is the "implement as much as possible until stuck" loop: it closes AUTOMATIC tickets end
+to end (implement, review, accept) in one run, and only pauses for HUMAN acceptance or a
+human decision.
 
 Design guidelines for the agents:
 - keep verbosity low, use more concise responses with minimal explanation.
@@ -306,7 +331,8 @@ Invoked by: HUMAN.
 Precondition: `input.md` exists and is not empty.
 
 Digests the human input (collected in `input.md`) and compares it to the existing requirements and architecture documents.
-It carefully analyzes how to fit the input into the requirements and architecture.
+The input may be fresh input, or may be a copy of a previously existing input-ledger, in which case the original authoring information (author, date and time) should be retained.
+It carefully analyzes how to fit the input into the requirements and architecture documents (it may also create additional architecture documents if none of the existing ones are a good fit).
 It can prompt the human for clarification (online in the session) and suggest improvements on the input before accepting the input.
 When it accepts the input, it appends it — and any clarification it resolved — to the
 `input-ledger.md` (date/time, and bullet points for each input line), and creates/updates the
@@ -329,7 +355,11 @@ It gives the ticket a number (sequence number, if possible) and a name, a descri
 It also checks if any ticket in status IN_PROGRESS exists which is not claimed by an active subagent and whose branch does not exist, and sets it back to status READY.
 A ticket whose branch still exists is left for the RECONCILER (see Branches).
 It verifies the blocked-by attribute of existing tickets and checks if these tickets actually exist, and that no cyclic dependencies in the blockings exist.
-When it needs a decision, it returns the open questions in its report; on re-invocation with the human's answers it appends each resolved question (question, answer, date/time, human user) to `spec/agent/input-ledger.md` before creating or updating tickets.
+When it needs a decision, it surfaces the gap or impediment explicitly — the open question,
+the viable options, and which it recommends — and returns them in its report; it never
+guesses and never blocks. On re-invocation with the human's answers (the human's clearance)
+it records each resolved decision (gap, advice, decision, date/time, human user) in
+`spec/agent/input-ledger.md` before creating or updating tickets.
 It commits the created/updated tickets on the main branch as `plan: {summary}`.
 
 ### ANALYST
@@ -343,7 +373,11 @@ Reviews the tickets in status DRAFT and compares them against the requirements a
 It can also create or update tickets (in status DRAFT, READY) to bring the tickets in line with the requirements and architecture.
 It checks and updates the blocked-by against other tickets, and makes sure no cyclic dependencies exist.
 When it considers a ticket to be sufficiently defined and ready for implementation, it promotes the ticket's status to READY.
-When it needs a decision, it returns the open questions in its report; on re-invocation with the human's answers it appends each resolved question (question, answer, date/time, human user) to `spec/agent/input-ledger.md` before changing ticket status.
+When it needs a decision, it surfaces the gap or impediment explicitly — the open question,
+the viable options, and which it recommends — and returns them in its report; it never
+guesses and never blocks. On re-invocation with the human's answers (the human's clearance)
+it records each resolved decision (gap, advice, decision, date/time, human user) in
+`spec/agent/input-ledger.md` before changing ticket status.
 It commits the created/updated tickets on the main branch as `refine: {summary}`.
 
 ### IMPLEMENTOR
@@ -365,9 +399,10 @@ Tests covering the code changes are required.
 
 When done, set the ticket STATUS: IN_REVIEW, commit, and hand it over in the report — the
 orchestrating agent runs `/review` next. Never review your own ticket. The orchestrating
-agent re-invokes the IMPLEMENTOR for the next READY ticket after the reviewer finishes; sync
-main first when a ticket was accepted (merged). Tickets are processed sequentially, one
-branch at a time.
+agent drives the implement → review → accept loop and re-invokes the IMPLEMENTOR for the
+next READY ticket after the reviewer finishes; sync main first when a ticket was accepted
+(merged). The loop runs until no READY, unblocked ticket remains or it gets stuck. Tickets
+are processed sequentially, one branch at a time.
 
 ### REVIEWER
 
@@ -508,7 +543,9 @@ sorted oldest first, and CLOSED tickets are omitted.
 Command: `/accept`.
 Precondition: at least one AUTOMATIC ticket in DONE (reviewer) or one HUMAN ticket in DONE (human).
 Invoked by: the orchestrating agent (for the AUTOMATIC ticket(s) `/review` just accepted) or
-HUMAN (for HUMAN tickets).
+HUMAN (for HUMAN tickets). In the implement/review/accept loop the orchestrator runs it
+automatically for each accepted AUTOMATIC ticket; it may accept every eligible DONE ticket in
+one run.
 
 Accept the eligible DONE tickets, and for each:
 - switch to the feature branch.
@@ -598,7 +635,7 @@ These must always hold. Any role that finds one violated must report it and stop
   a ticket with an existing branch is handled by the RECONCILER (see Branches).
 - An agent edits only files within the scope of its claimed ticket; unrelated changes are a new
   ticket.
-- Rebase before claiming, commit after each acceptance criterion, push before handover. Never
+- Rebase before claiming, commit after each acceptance criterion, and if a remote repository exists: push before handover. Never
   force-push a branch another agent depends on.
 
 ### Branches

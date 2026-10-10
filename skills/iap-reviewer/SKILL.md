@@ -50,8 +50,9 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 3. **If it is correct, accept it.** Set `status: DONE`, add a dated acceptance comment
    stating what was verified and how, and commit.
 4. **Leave the merge to the orchestrator.** For an `AUTOMATIC` ticket, return it as DONE in
-   your report so the orchestrating agent runs `/accept`; a `HUMAN` ticket stays DONE for
-   the human.
+   your report so the orchestrating agent runs `/accept` in the implement → review → accept
+   loop, then syncs `main` and re-invokes the IMPLEMENTOR for the next ticket; a `HUMAN`
+   ticket stays DONE for the human.
 5. **Report** accepted (DONE) and rejected (READY) tickets, with reasons.
 
 ## Rules and behaviour
