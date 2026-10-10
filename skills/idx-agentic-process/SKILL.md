@@ -286,9 +286,12 @@ and merge DONE tickets).
 
 ## Installation
 
-Copy the `skills/` and `commands/` folders into your project's agent folder — `.opencode`
-(OpenCode) or `.claude` (Claude Code) — for a project-local install, or into `~/.opencode`
-/ `~/.claude` for a global install. See `README.md` for details.
+The distribution bundle is the `skills/` folder plus the process definition
+`idx-agentic-process.md`. Each role skill carries its own command wrapper, templates and
+scripts inside its folder, so copying `skills/` is enough. Copy it into your project's agent
+folder — `.opencode` (OpenCode) or `.claude` (Claude Code) — for a project-local install, or
+into `~/.opencode` / `~/.claude` for a global install. `/bootstrap` then installs the command
+wrappers and creates the `spec/` skeleton. See `README.md` for details.
 
 ## Where to look next
 

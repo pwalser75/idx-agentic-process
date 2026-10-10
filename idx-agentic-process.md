@@ -569,11 +569,12 @@ Precondition: a project root (empty, freshly initialized, or existing codebase).
 On an existing project it only adds missing files and refreshes the process artifacts.
 
 What it does:
-1. Installs the process commands and skills for the active agent tool:
-   FACILITATOR, PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST, SYSTEM-ARCHITECT, GUIDE
-   and RECONCILER, plus the additional commands `/tickets` and `/accept`, and the read-only
+1. Installs the process skills for the active agent tool — one skill per role: FACILITATOR,
+   PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST, SYSTEM-ARCHITECT, GUIDE and
+   RECONCILER — and lifts each skill's command wrapper into the tool's `commands` folder,
+   including the additional commands `/tickets` and `/accept`. It also installs the read-only
    helper `iap.sh` at the tool-independent path `.iap/iap.sh`.
-2. Creates the missing parts of the `spec/` skeleton from the template: an empty
+2. Creates the missing parts of the `spec/` skeleton from the skill-bundled template: an empty
    `input.md` and the `requirements/`, `architecture/`, `tickets/` and `agent/` folders.
    Existing content is never overwritten; only absent files are created.
 3. Creates a copy of the process in `spec/agent/idx-agentic-process.md`.
@@ -662,19 +663,24 @@ These must always hold. Any role that finds one violated must report it and stop
 
 ### Installation
 
-For a project-local installation, copy the `skills` and `commands` folders to the following
-folder in your project:
+The distribution bundle is the `skills` folder together with the process definition
+`idx-agentic-process.md` (and `VERSION`). Everything the process needs lives inside `skills`:
+every role skill carries its own command wrapper, templates and scripts in its folder.
+
+For a project-local installation, copy the `skills` folder to the following folder in your
+project:
 
 - `.opencode` (for OpenCode)
 - `.claude` (for Claude Code)
 
-For a global installation, copy the `skills` and `commands` folders to:
+For a global installation, copy the `skills` folder to:
 
 - `~/.opencode` (for OpenCode)
 - `~/.claude` (for Claude Code)
 
-`/bootstrap` also installs the read-only helper at `.iap/iap.sh` (tool-independent, outside
-the tool folders). Commit it so collaborators and cloud agents have it.
+`/bootstrap` installs the command wrappers into the tool's `commands` folder and the
+read-only helper at `.iap/iap.sh` (tool-independent, outside the tool folders). Commit
+`.iap/iap.sh` so collaborators and cloud agents have it.
 
 ### Bootstrapping projects
 
@@ -689,8 +695,8 @@ After bootstrap:
 6. `/accept` closes the implementation and merges the code.
 7. Commit `spec/` together with the code.
 
-Updating the process: re-run `/bootstrap` (or copy the template again). It only refreshes the
-command/skill definitions, the read-only helper (`.iap/iap.sh`), the process copy
+Updating the process: re-run `/bootstrap` (or copy the bundle again). It only refreshes the
+skill (and command) definitions, the read-only helper (`.iap/iap.sh`), the process copy
 (`spec/agent/idx-agentic-process.md`) and the process marker; the content of `spec/requirements`,
 `spec/architecture`, `spec/tickets` and `spec/agent/input-ledger.md` is never touched.
 When a process change alters statuses, metadata fields or role contracts, re-running `/bootstrap`
