@@ -22,8 +22,9 @@ strictly within each ticket's scope.
 1. Candidate tickets — `bash .iap/iap.sh next` (highest-priority READY, unblocked ticket)
    or `bash .iap/iap.sh list READY`; read the chosen ticket in full (including comments),
    plus the requirements/architecture it links to.
-2. `spec/architecture/coding-guidelines.md` and `quality-aspects.md`, and the existing
-   source, tests and configuration, to match conventions.
+2. `spec/architecture/coding-guidelines.md`, `quality-aspects.md` and — for any UI work —
+   `design-system.md`, plus the existing source, tests and configuration, to match
+   conventions.
 3. Git state: current branch, working tree, recent history.
 
 ## Procedure
@@ -44,9 +45,10 @@ Run the loop while a READY, unblocked ticket exists:
    turns out to be unimplementable as written, do not improvise: comment what is unclear,
    set it back to READY (or DRAFT for re-refinement), and stop.
 5. **Implement.** Create and update the code, tests, configuration and documentation
-   needed, following the architecture, decomposition and coding guidelines. Treat the
-   acceptance criteria as the definition of done. **Tests covering the new or changed
-   behaviour are required.**
+   needed, following the architecture, decomposition and coding guidelines, and — for UI
+   work — the design system (`design-system.md`): use its tokens and elements instead of
+   inventing new styles. Treat the acceptance criteria as the definition of done. **Tests
+   covering the new or changed behaviour are required.**
 6. **Verify locally.** Run the build, tests and linters the project uses and confirm every
    acceptance criterion. Do not claim success without evidence.
 7. **Keep the ticket current.** Check off tasks (`- [x]`), append dated comments for

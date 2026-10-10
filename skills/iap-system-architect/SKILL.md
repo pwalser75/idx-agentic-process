@@ -3,11 +3,12 @@ name: iap-system-architect
 description: >-
   SYSTEM-ARCHITECT role of the idx Agentic Process, started by the `/survey` command.
   Reverse-engineers the non-functional reality of an existing codebase — tech stack,
-  decomposition, coding guidelines and quality aspects — from build and dependency
-  manifests, module structure, formatter/linter config, CI/CD and deployment definitions,
-  writing provisional `spec/architecture/**` entries marked `origin: inferred` with
-  evidence. Use when the user runs /survey, asks to "survey", "document the
-  architecture/tech stack", or adopts IAP in an existing project.
+  decomposition, coding guidelines, quality aspects and the UI design system — from build
+  and dependency manifests, module structure, formatter/linter config, CI/CD, deployment
+  definitions and UI/style sources, writing provisional `spec/architecture/**` entries
+  marked `origin: inferred` with evidence. Use when the user runs /survey, asks to "survey",
+  "document the architecture/tech stack or design system", or adopts IAP in an existing
+  project.
 ---
 
 # SYSTEM-ARCHITECT
@@ -25,6 +26,9 @@ artifacts, and write that as provisional architecture.
 - Module/folder structure and dependency direction between modules.
 - Formatter, linter, static-analysis and test configuration.
 - CI/CD pipelines and deployment definitions (Dockerfiles, Compose, Kubernetes, pipelines).
+- UI, theming and styling sources, where a UI exists: stylesheets and CSS/local variables,
+  theme/token definitions (e.g. Android resources, Swing `UIManager`, design-token files),
+  icon sets and reusable UI components.
 - Existing architecture docs and READMEs.
 
 Exclude generated code, vendored dependencies and build output.
@@ -46,13 +50,19 @@ Exclude generated code, vendored dependencies and build output.
 5. **Document the quality aspects** into `spec/architecture/quality-aspects.md` where
    observable: performance, scalability, security, availability, observability,
    maintainability, compatibility, and the mechanisms that implement them.
-6. **Mark provenance.** Every reconstructed item carries `origin: inferred` and cites
+6. **Document the UI design system** into `spec/architecture/design-system.md` **only when
+   the project has a UI**: the design tokens actually in use (colors/modes, typography,
+   spacing, shape, motion), the theme set, the icon set, and the recurring UI elements.
+   Start from the packaged default preset and adjust it to match the observed reality,
+   keeping whatever is not contradicted. If there is no UI, leave the preset untouched and
+   say so.
+7. **Mark provenance.** Every reconstructed item carries `origin: inferred` and cites
    evidence (`{manifest}:{line}`, config path, folder, commit). Keep existing human content
    — add to it, never silently replace it; conflicts go to
    `spec/agent/reverse-engineering-report.md`.
-7. **Update the ledger** (`spec/agent/source-ledger.md`) with the new hashes, commit and run
+8. **Update the ledger** (`spec/agent/source-ledger.md`) with the new hashes, commit and run
    date-time.
-8. **Report** what was reconstructed, what changed, and the open questions.
+9. **Report** what was reconstructed, what changed, and the open questions.
 
 ## Rules and behaviour
 

@@ -31,7 +31,7 @@ If `input.md` is missing or empty, stop and tell the human there is nothing to f
 
 1. **Read and understand.** Parse every statement in `input.md`. Classify it as a
    requirement (feature, function, domain model), architecture (tech stack, decomposition,
-   quality aspect, guideline), constraint, or unresolved/ambiguous.
+   quality aspect, design system, guideline), constraint, or unresolved/ambiguous.
 2. **Clarify before accepting.** If a statement is ambiguous, contradictory or has a
    risky consequence, ask the human and **propose concrete suggestions** to choose from.
    You may also suggest clearer wording. Only proceed once the human is satisfied, or the
@@ -54,7 +54,8 @@ If `input.md` is missing or empty, stop and tell the human there is nothing to f
    - create/update a requirement document — `requirements/features/{feature}.md` for
      features and their functions, `requirements/domain-models/{model}.md` for domain
      models (name, description, attributes with name/description/language-agnostic type);
-   - create/update an architecture document under `architecture/`;
+   - create/update an architecture document under `architecture/` — reach for
+     `architecture/design-system.md` for UI design decisions (tokens, themes, elements);
    - **do nothing yet** and keep it as unresolved input for a later round.
 5. **Clear `spec/input.md`.** Leave it completely blank — no statements and no comment,
    header or placeholder.

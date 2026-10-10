@@ -59,6 +59,7 @@ project-root/
    │  │  └─ {feature-name}.md           # (X) Document per feature, describing the feature and the functionalities
    ├─ architecture/                     # (X) Architectural design and requirements
    │  ├─ tech-stack.md                  # (X) Tech stack, programming languages, frameworks and libraries
+   │  ├─ design-system.md               # (X) UI design system
    │  ├─ decomposition.md               # (X) Decomposition into modules and packages
    │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
    │  ├─ quality-aspects.md             # (X) Quality Aspects (= non-functional requirements)
@@ -125,7 +126,8 @@ Domain models are the main drivers for downstream implementation decisions (e.g.
 ## Architecture
 
 The architecture describes the non-functional aspects of the project (how it's built).
-It's the design of the system, with choices of the technology, decomposition and quality aspects.
+It's the design of the system, with choices of the technology, decomposition, quality aspects and,
+for projects with a user interface, the design system.
 
 ## Tickets
 
@@ -411,10 +413,11 @@ Command: `/survey`.
 Invoked by: HUMAN.
 Precondition: `spec/` is bootstrapped and the project contains source code.
 
-Reconstructs the non-functional reality: tech stack, decomposition, coding guidelines and quality
-aspects. It reads build and dependency manifests (e.g. `pom.xml`, `build.gradle`, `package.json`),
-the module/folder structure, formatter and linter configuration, CI/CD pipelines and deployment
-definitions, and documents the conventions the code actually follows.
+Reconstructs the non-functional reality: tech stack, decomposition, coding guidelines, quality
+aspects and — where a UI exists — the design system. It reads build and dependency manifests
+(e.g. `pom.xml`, `build.gradle`, `package.json`), the module/folder structure, formatter and linter
+configuration, CI/CD pipelines and deployment definitions, UI/theming/style sources, and documents
+the conventions the code actually follows.
 Writes/updates the files under `architecture/`, again marked as inferred and with evidence.
 Open questions and low-confidence areas go into `spec/agent/reverse-engineering-report.md`.
 

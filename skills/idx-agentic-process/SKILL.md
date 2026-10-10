@@ -69,6 +69,7 @@ project-root/
    │  └─ features/{feature-name}.md     # (X) feature + its functions/use cases
    ├─ architecture/                     # (X) non-functional design and constraints
    │  ├─ tech-stack.md                  # (X) languages, frameworks, libraries
+   │  ├─ design-system.md               # (X) UI design system (default preset)
    │  ├─ decomposition.md               # (X) modules and packages
    │  ├─ coding-guidelines.md           # (X) naming, structure, error handling, testing
    │  ├─ quality-aspects.md             # (X) non-functional requirements
@@ -105,7 +106,8 @@ Rules that follow:
   description and a language-agnostic type (`string`, `integer`, `decimal`, `date`,
   `date-time`, `currency`, …).
 - **Architecture** describes *how* it is built: tech stack, decomposition into
-  modules/packages, coding guidelines and quality aspects (non-functional requirements).
+  modules/packages, coding guidelines, quality aspects (non-functional requirements) and,
+  for projects with a UI, the design system.
 
 ## Tickets
 

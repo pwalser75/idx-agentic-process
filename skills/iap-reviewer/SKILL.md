@@ -25,7 +25,8 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 1. The IN_REVIEW tickets — `bash .iap/iap.sh list IN_REVIEW` — in full, including all
    comments and the task list.
 2. The requirements/architecture they link to, and `spec/architecture/quality-aspects.md`
-   and `coding-guidelines.md` (the test and coverage standards live there).
+   and `coding-guidelines.md` (the test and coverage standards live there) — plus
+   `design-system.md` when the ticket changes the UI.
 3. The **feature branch** diff versus `main` — you review the branch, not the working
    tree: the responsible commits, the changed files, the tests.
 4. The build/test/lint output (re-run it if you can).
@@ -37,7 +38,8 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
    - Is every acceptance criterion fulfilled, demonstrably (not just asserted)?
    - Is the change complete — code, tests, configuration and documentation — with tests
      for all new or changed behaviour?
-   - Does it follow the architecture, decomposition, coding guidelines and quality aspects?
+   - Does it follow the architecture, decomposition, coding guidelines and quality aspects —
+     and, for UI changes, the design system's tokens and elements?
    - Is the scope confined to the ticket, with no unrelated changes?
    - Are the build and tests green on the branch, with no test skipped or flaky?
    - Is the branch clean (all work committed) and rebased on the current `main`?
