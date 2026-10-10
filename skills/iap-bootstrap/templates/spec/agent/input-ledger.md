@@ -6,5 +6,8 @@
   date-time, human user, then a bullet for each accepted input statement (verbatim or a
   corrected version thereof) or resolved question (question -> answer). PLANNER and ANALYST
   record the gaps/impediments they surfaced together with the advice and the human's decision
-  (gap -> advice -> decision) before acting on it.
+  (gap -> advice -> decision) before acting on it. Every entry is ticket-agnostic and
+  implementation-agnostic: a plain fact, requirement, constraint or decision, never
+  referencing tickets or existing code, because the ledger drives the tickets and the
+  implementation downstream.
 -->

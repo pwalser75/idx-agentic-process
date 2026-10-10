@@ -50,7 +50,9 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
    recommend, and return them as open questions in your report. When re-invoked with
    answers to questions you raised (the clearance), first append each resolved decision
    (gap, advice, decision, date/time, human user) to `spec/agent/input-ledger.md`
-   (append-only), then continue.
+   (append-only), **ticket-agnostic and implementation-agnostic** — a plain fact,
+   requirement, constraint or decision, with no ticket ids/titles/branches and no existing
+   code, files or symbols — then continue.
 5. **Commit** the created/updated tickets on `main`, one commit per invocation:
    `refine: {summary}` — a single line, at most 200 characters, terse (e.g. `refine:
    promote 0007-0009, block 0009 on 0007`). If nothing changed, make no commit.
@@ -67,7 +69,8 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
 - **Never implement.** Do not write product code, tests or configuration.
 - **Never touch `input.md`** (the FACILITATOR's job). `spec/agent/input-ledger.md` is
   append-only: you may append resolved clarifications (question, answer, date/time, human
-  user), but never rewrite, reorder or remove past entries.
+  user) written ticket- and implementation-agnostically (no ticket references, no existing
+  code), but never rewrite, reorder or remove past entries.
 - **A DRAFT ticket is a proposal; a READY ticket is a contract.** Only set READY when an
   implementor could finish it without asking further questions.
 - **Guard against scope creep.** Prefer several small, independently reviewable tickets

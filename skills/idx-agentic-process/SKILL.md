@@ -98,7 +98,10 @@ Rules that follow:
   provisional material marked `origin: inferred` with evidence.
 - **`spec/agent/input-ledger.md` is append-only.** FACILITATOR records accepted input and
   resolved clarifications; PLANNER and ANALYST append the clarifications and decisions they
-  resolve (with the human's clearance). Never rewrite, reorder or remove past entries.
+  resolve (with the human's clearance). Entries are ticket-agnostic and
+  implementation-agnostic — plain facts, requirements, constraints or decisions, never
+  referencing tickets or existing code, because the ledger drives the tickets and the
+  implementation downstream. Never rewrite, reorder or remove past entries.
 - **`spec/tickets/` is (X).** Agents create and process tickets; a human may write one,
   using the template with a unique `id` and `status: DRAFT`.
 
@@ -286,12 +289,12 @@ and merge DONE tickets).
 
 ## Installation
 
-The distribution bundle is the `skills/` folder plus the process definition
-`idx-agentic-process.md`. Each role skill carries its own command wrapper, templates and
-scripts inside its folder, so copying `skills/` is enough. Copy it into your project's agent
-folder — `.opencode` (OpenCode) or `.claude` (Claude Code) — for a project-local install, or
-into `~/.opencode` / `~/.claude` for a global install. `/bootstrap` then installs the command
-wrappers and creates the `spec/` skeleton. See `README.md` for details.
+The distribution bundle is the `skills/` and `commands/` folders plus the process definition
+`idx-agentic-process.md`. The skills hold the role logic with their templates and scripts;
+`commands/` holds the thin slash-command wrappers. Copy both into your project's agent folder
+— `.opencode` (OpenCode) or `.claude` (Claude Code) — for a project-local install, or into
+`~/.opencode` / `~/.claude` for a global install. `/bootstrap` then creates the `spec/`
+skeleton. See `README.md` for details.
 
 ## Where to look next
 

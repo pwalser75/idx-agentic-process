@@ -107,13 +107,20 @@ records the `input.md` it accepts and any clarification it resolves; PLAN and RE
 the clarifications they resolve, so they are not lost and are not re-recorded if the same
 fact later arrives via `input.md`.
 
+Recorded input is ticket-agnostic and implementation-agnostic. Every ledger entry states a
+fact, requirement, constraint or decision in plain terms, without referencing tickets (no
+ids, titles, branches) and without referencing existing code (no files, symbols or
+implementation details). The ledger drives the tickets and the implementation, which happen
+downstream; the tickets and the code never flow back into the ledger.
+
 PLANNER and ANALYST do not guess past ambiguity. When they find a gap or an impediment that
 needs a human decision (missing or ambiguous requirements, a technology or implementation
 choice, conflicting constraints, a blocker, a ticket that cannot be made READY), they state
 the gap, advise on the options — with a recommendation and the trade-offs — and ask the
 human for clearance. They never block and never improvise around it: they return the open
 questions in their report and stop. Only once the human has decided do they record the
-decision (gap, advice, decision, date/time, human user) in `input-ledger.md` and continue.
+decision (gap, advice, decision, date/time, human user) in `input-ledger.md`, phrased as
+ticket-agnostic, implementation-agnostic input, and continue.
 
 ## Requirements
 
@@ -359,7 +366,8 @@ When it needs a decision, it surfaces the gap or impediment explicitly — the o
 the viable options, and which it recommends — and returns them in its report; it never
 guesses and never blocks. On re-invocation with the human's answers (the human's clearance)
 it records each resolved decision (gap, advice, decision, date/time, human user) in
-`spec/agent/input-ledger.md` before creating or updating tickets.
+`spec/agent/input-ledger.md` — phrased as ticket-agnostic, implementation-agnostic input —
+before creating or updating tickets.
 It commits the created/updated tickets on the main branch as `plan: {summary}`.
 
 ### ANALYST
@@ -377,7 +385,8 @@ When it needs a decision, it surfaces the gap or impediment explicitly — the o
 the viable options, and which it recommends — and returns them in its report; it never
 guesses and never blocks. On re-invocation with the human's answers (the human's clearance)
 it records each resolved decision (gap, advice, decision, date/time, human user) in
-`spec/agent/input-ledger.md` before changing ticket status.
+`spec/agent/input-ledger.md` — phrased as ticket-agnostic, implementation-agnostic input —
+before changing ticket status.
 It commits the created/updated tickets on the main branch as `refine: {summary}`.
 
 ### IMPLEMENTOR
@@ -569,10 +578,9 @@ Precondition: a project root (empty, freshly initialized, or existing codebase).
 On an existing project it only adds missing files and refreshes the process artifacts.
 
 What it does:
-1. Installs the process skills for the active agent tool — one skill per role: FACILITATOR,
-   PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST, SYSTEM-ARCHITECT, GUIDE and
-   RECONCILER — and lifts each skill's command wrapper into the tool's `commands` folder,
-   including the additional commands `/tickets` and `/accept`. It also installs the read-only
+1. Installs the process commands and skills for the active agent tool:
+   FACILITATOR, PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST, SYSTEM-ARCHITECT, GUIDE
+   and RECONCILER, plus the additional commands `/tickets` and `/accept`, and the read-only
    helper `iap.sh` at the tool-independent path `.iap/iap.sh`.
 2. Creates the missing parts of the `spec/` skeleton from the skill-bundled template: an empty
    `input.md` and the `requirements/`, `architecture/`, `tickets/` and `agent/` folders.
@@ -663,24 +671,23 @@ These must always hold. Any role that finds one violated must report it and stop
 
 ### Installation
 
-The distribution bundle is the `skills` folder together with the process definition
-`idx-agentic-process.md` (and `VERSION`). Everything the process needs lives inside `skills`:
-every role skill carries its own command wrapper, templates and scripts in its folder.
+The distribution bundle is the `skills` and `commands` folders together with the process
+definition `idx-agentic-process.md` (and `VERSION`). `skills` holds the role logic plus its
+templates and scripts; `commands` holds the thin slash-command wrappers, one per skill.
 
-For a project-local installation, copy the `skills` folder to the following folder in your
-project:
+For a project-local installation, copy the `skills` and `commands` folders to the following
+folder in your project:
 
 - `.opencode` (for OpenCode)
 - `.claude` (for Claude Code)
 
-For a global installation, copy the `skills` folder to:
+For a global installation, copy the `skills` and `commands` folders to:
 
 - `~/.opencode` (for OpenCode)
 - `~/.claude` (for Claude Code)
 
-`/bootstrap` installs the command wrappers into the tool's `commands` folder and the
-read-only helper at `.iap/iap.sh` (tool-independent, outside the tool folders). Commit
-`.iap/iap.sh` so collaborators and cloud agents have it.
+`/bootstrap` also installs the read-only helper at `.iap/iap.sh` (tool-independent, outside
+the tool folders). Commit `.iap/iap.sh` so collaborators and cloud agents have it.
 
 ### Bootstrapping projects
 
@@ -696,7 +703,7 @@ After bootstrap:
 7. Commit `spec/` together with the code.
 
 Updating the process: re-run `/bootstrap` (or copy the bundle again). It only refreshes the
-skill (and command) definitions, the read-only helper (`.iap/iap.sh`), the process copy
+command/skill definitions, the read-only helper (`.iap/iap.sh`), the process copy
 (`spec/agent/idx-agentic-process.md`) and the process marker; the content of `spec/requirements`,
 `spec/architecture`, `spec/tickets` and `spec/agent/input-ledger.md` is never touched.
 When a process change alters statuses, metadata fields or role contracts, re-running `/bootstrap`

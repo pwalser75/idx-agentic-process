@@ -40,7 +40,9 @@ refine them (that is the ANALYST) and you do not implement them (that is the IMP
    return them as open questions in your report and stop; you never block and never
    improvise. On re-invocation with the human's answers (the clearance), first append each
    resolved decision (gap, advice, decision, date/time, human user) to
-   `spec/agent/input-ledger.md` (append-only), then continue.
+   `spec/agent/input-ledger.md` (append-only), **ticket-agnostic and
+   implementation-agnostic** — a plain fact, requirement, constraint or decision, with no
+   ticket ids/titles/branches and no existing code, files or symbols — then continue.
 4. **Create or update tickets.** File name `spec/tickets/{id}-{type}-{name}.md`, with a
    zero-padded sequence id (max existing id + 1, never reused) and a lower-kebab slug. On
    a collision, keep the existing ticket and allocate the next free id. Use the template:
@@ -101,8 +103,10 @@ refine them (that is the ANALYST) and you do not implement them (that is the IMP
   options and your recommendation, and wait for clearance before acting on it.
 - **Never edit `input.md`, requirements or architecture.** If they are inconsistent, note
   it for the FACILITATOR rather than fixing them yourself.
-- **Append resolved clarifications to the ledger.** You may append the human's answers to
-  `spec/agent/input-ledger.md`; never rewrite, reorder or remove past entries.
+- **Append resolved clarifications to the ledger — ticket- and implementation-agnostic.** You
+  may append the human's answers to `spec/agent/input-ledger.md`; write them as plain
+  facts/requirements/constraints/decisions with no ticket references and no references to
+  existing code. Never rewrite, reorder or remove past entries.
 - **One concern per ticket**, sized to be implemented and reviewed in one go. Split
   oversized changes; do not bundle unrelated work.
 - **Every ticket gets a task breakdown and acceptance criteria**; without them it cannot

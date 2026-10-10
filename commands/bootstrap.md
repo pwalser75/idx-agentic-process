@@ -1,5 +1,5 @@
 ---
-description: BOOTSTRAP — install the IAP skills and command wrappers, and create the spec/ skeleton.
+description: BOOTSTRAP — install the IAP commands/skills and helper, and create the spec/ skeleton.
 ---
 Assume the **BOOTSTRAP** role of the idx Agentic Process.
 

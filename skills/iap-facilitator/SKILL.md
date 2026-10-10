@@ -50,7 +50,10 @@ If `input.md` is missing or empty, stop and tell the human there is nothing to f
    If the human's name is unknown, ask (or use their git user name). Corrected wording
    must not add or lose facts. If `input.md` is a copy of an existing input-ledger (or a
    part of one), **retain the original authoring information** — author, date and time —
-   instead of restamping it with the current date.
+   instead of restamping it with the current date. Every entry is **ticket-agnostic and
+   implementation-agnostic**: a plain fact, requirement, constraint or decision, with no
+   ticket references and no references to existing code — the ledger drives the tickets and
+   the implementation downstream.
 4. **Distribute the information** into the spec, in the context of what exists. For each
    item, either:
    - create/update a requirement document — `requirements/features/{feature}.md` for

@@ -2,7 +2,7 @@
 name: iap-bootstrap
 description: >-
   BOOTSTRAP role of the idx Agentic Process, started by the `/bootstrap` command. Installs
-  the IAP skills and their command wrappers into the project for the active tool (`.opencode/` or
+  the IAP commands and skills into the project for the active tool (`.opencode/` or
   `.claude/`) and creates the `spec/` skeleton from the packaged templates, writing
   `spec/agent/process-version.md`. Never overwrites existing spec content and never
   invents requirements or tickets. Use when the user runs /bootstrap, or asks to
@@ -12,10 +12,9 @@ description: >-
 
 # BOOTSTRAP
 
-Initialise the idx Agentic Process in a project: install the skills and their command
-wrappers, create the `spec/` skeleton, and record the process version. It is also the upgrade
-path — re-running bootstrap refreshes the process machinery **without touching project
-content**.
+Initialise the idx Agentic Process in a project: install the commands and skills, create
+the `spec/` skeleton, and record the process version. It is also the upgrade path —
+re-running bootstrap refreshes the process machinery **without touching project content**.
 
 **Command:** `/bootstrap` · **Invoked by:** HUMAN · **Precondition:** a project root;
 `spec/` may or may not exist.
@@ -25,18 +24,18 @@ content**.
 - **Never overwrite existing content.** When creating `spec/`, create only files that are
   absent. `spec/requirements`, `spec/architecture`, `spec/tickets` and
   `spec/agent/input-ledger.md` are never touched, including on a refresh.
-- On a refresh, only the skill and command definitions, the helper script, `spec/agent/process-version.md`
+- On a refresh, only the command/skill definitions, the helper script, `spec/agent/process-version.md`
   and the `spec/agent/idx-agentic-process.md` copy are replaced.
 - **Never create tickets, requirements or architecture** — those come from the human.
 - Target the active tool: `.opencode/` for OpenCode, `.claude/` for Claude Code.
 
 ## 1. Locate the IAP bundle
 
-The bundle is the `skills/` folder together with `idx-agentic-process.md` and `VERSION`.
-Everything the process needs — every role skill, its command wrapper, its templates and
-scripts — lives inside `skills/`. Find the first candidate that contains a real bundle and
-set `IAP_HOME` (resolve symlinks physically, so a globally symlinked skill leads back to the
-clone root):
+The bundle is the `skills/` and `commands/` folders together with `idx-agentic-process.md`
+and `VERSION`. The skills hold the role logic plus their templates and scripts; the commands
+are the thin slash-command wrappers that start a skill. Find the first candidate that
+contains a real bundle and set `IAP_HOME` (resolve symlinks physically, so a globally
+symlinked skill leads back to the clone root):
 
 ```bash
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -56,8 +55,8 @@ echo "IAP_HOME=${IAP_HOME:-<not found>}"
 ```
 
 If `IAP_HOME` is empty, create the minimal skeleton yourself (step 3 fallback), record the
-marker with version `unknown`, and tell the human to install the skills and run `/bootstrap`
-again.
+marker with version `unknown`, and tell the human to install the skills and commands and run
+`/bootstrap` again.
 
 ## 2. Install commands, skills and the helper
 
@@ -75,20 +74,12 @@ fi
 if [ "$TOOL" = "claude" ]; then TOOL_DIR="$PROJECT_ROOT/.claude"; else TOOL_DIR="$PROJECT_ROOT/.opencode"; fi
 ```
 
-Copy the whole `skills/` tree, then lift each skill's command wrapper out of its folder into
-the tool's `commands/` folder (the wrapper is the top-level `*.md` next to `SKILL.md`):
+Copy the `skills/` and `commands/` folders, then the process definition, version and helper:
 
 ```bash
 mkdir -p "$TOOL_DIR/skills" "$TOOL_DIR/commands" "$TOOL_DIR/iap"
-[ -d "$IAP_HOME/skills" ] && cp -R "$IAP_HOME/skills/." "$TOOL_DIR/skills/"
-
-for d in "$TOOL_DIR"/skills/*/; do
-  for f in "$d"*.md; do
-    [ -f "$f" ] || continue
-    [ "$(basename "$f")" = "SKILL.md" ] && continue
-    cp "$f" "$TOOL_DIR/commands/$(basename "$f")"
-  done
-done
+[ -d "$IAP_HOME/skills" ]   && cp -R "$IAP_HOME/skills/."   "$TOOL_DIR/skills/"
+[ -d "$IAP_HOME/commands" ] && cp -R "$IAP_HOME/commands/." "$TOOL_DIR/commands/"
 
 cp "$IAP_HOME/idx-agentic-process.md" "$TOOL_DIR/iap/idx-agentic-process.md"
 cp "$IAP_HOME/VERSION"                "$TOOL_DIR/iap/VERSION"
@@ -102,8 +93,8 @@ fi
 ```
 
 Commit `.iap/iap.sh` so collaborators and cloud agents have it. The project `iap/` folder
-keeps the process definition and version record next to the installed skills, so the bundle
-stays discoverable for future `/bootstrap` runs.
+keeps the process definition and version record next to the installed skills and commands, so
+the bundle stays discoverable for future `/bootstrap` runs.
 
 ## 3. Create the `spec/` skeleton
 
@@ -146,7 +137,7 @@ cat > "$PROJECT_ROOT/spec/agent/process-version.md" <<EOF
 - **Source:** ${IAP_HOME:-unknown}
 - **Process definition:** \`spec/agent/idx-agentic-process.md\`
 
-To update: re-run \`/bootstrap\`. It refreshes only the skill and command definitions, the
+To update: re-run \`/bootstrap\`. It refreshes only the command/skill definitions, the
 \`.iap/iap.sh\` helper, this marker and the process-definition copy. The content of
 \`spec/requirements\`, \`spec/architecture\`, \`spec/tickets\` and
 \`spec/agent/input-ledger.md\` is never touched.
@@ -155,7 +146,7 @@ EOF
 
 ## 5. Report
 
-Summarise: first bootstrap or refresh; the `IAP_HOME` and IAP version; the skills and their
-command wrappers installed and the target tool folder; whether `.iap/iap.sh` was installed; the `spec/`
+Summarise: first bootstrap or refresh; the `IAP_HOME` and IAP version; the commands/skills
+installed and the target tool folder; whether `.iap/iap.sh` was installed; the `spec/`
 files created (and, on a refresh, what was left untouched); and the next step — write
 statements into `spec/input.md`, then run `/facilitate`.

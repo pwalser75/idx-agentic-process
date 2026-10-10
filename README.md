@@ -9,7 +9,7 @@ work forward in small, gated loops without ever silently overwriting what a huma
 
 > The canonical process definition lives in [idx-agentic-process.md](idx-agentic-process.md).
 > It is **read-only for agents** and only ever changed by humans. Everything in this
-> repository (the skills, and the commands and templates they carry) is derived from it.
+> repository (skills, commands, templates) is derived from it.
 
 ---
 
@@ -41,6 +41,8 @@ IAP drives development iteratively:
   `input.md`; the agent restructures them, and only then clears the input.
 - **Append-only input ledger** — every accepted input and every resolved clarification is
   recorded with date, time and author in `spec/agent/input-ledger.md`, and never rewritten.
+  Entries are ticket-agnostic and implementation-agnostic — plain facts/requirements/decisions
+  that drive the tickets and code downstream, never referencing them.
 - **Self-committing planning** — `/facilitate`, `/plan` and `/refine` commit their work on
   `main` automatically, one commit per run: `facilitate:`/`plan:`/`refine:` plus a short
   summary (single line, at most 200 characters).
@@ -169,25 +171,24 @@ that has it installed understands the whole process.
 
 ## Installation
 
-IAP ships as a single bundle: the [`skills/`](skills/) folder (one folder per role, each with
-a `SKILL.md` per the open [Agent Skills](https://agentskills.io) standard) plus the process
-definition [`idx-agentic-process.md`](idx-agentic-process.md) and `VERSION`. Each skill keeps
-its own resources next to `SKILL.md`:
+IAP ships as a bundle: the [`skills/`](skills/) folder (one folder per role, each with a
+`SKILL.md` per the open [Agent Skills](https://agentskills.io) standard), the
+[`commands/`](commands/) folder (one thin wrapper per slash command) plus the process
+definition [`idx-agentic-process.md`](idx-agentic-process.md) and `VERSION`. Templates and
+scripts live inside the skill that uses them:
 
-- its **command wrapper** (`<command>.md`) — the thin file that starts the skill as a slash
-  command;
-- its **templates** where it needs them — the `spec/` skeleton in `iap-bootstrap`, the input
-  template in `iap-facilitator`, the ticket template in `iap-planner`;
+- **templates** — the `spec/` skeleton in `iap-bootstrap`, the input template in
+  `iap-facilitator`, the ticket template in `iap-planner`;
 - the read-only helper [`iap.sh`](skills/iap-tickets/scripts/iap.sh) in `iap-tickets`, which
   the commands use to scan `spec/` in a single pass.
 
-`/bootstrap` copies the skills into the tool folder, lifts each command wrapper into the
-tool's `commands/` folder, and installs `iap.sh` inside the project at `.iap/iap.sh` (e.g.
-`bash .iap/iap.sh open`, `bash .iap/iap.sh list READY`, `bash .iap/iap.sh next`). Commit
-`.iap/iap.sh` so all collaborators and cloud agents have it.
+Each command wrapper (`commands/<command>.md`) is a thin file that starts the matching skill.
+`/bootstrap` copies the skills and commands into the tool folders and installs `iap.sh` inside
+the project at `.iap/iap.sh` (e.g. `bash .iap/iap.sh open`, `bash .iap/iap.sh list READY`,
+`bash .iap/iap.sh next`). Commit `.iap/iap.sh` so all collaborators and cloud agents have it.
 
-The `/bootstrap` command needs the bundle (`skills/`, `idx-agentic-process.md`, `VERSION`) so
-it can create `spec/` and record the version. Point `IAP_HOME` at your clone:
+The `/bootstrap` command needs the bundle (`skills/`, `commands/`, `idx-agentic-process.md`,
+`VERSION`) so it can create `spec/` and record the version. Point `IAP_HOME` at your clone:
 
 ```bash
 git clone git@github.com:pwalser75/idx-agentic-process.git ~/idx-agentic-process
@@ -206,13 +207,15 @@ export IAP_HOME="$HOME/idx-agentic-process"    # add to your shell profile
 ```bash
 # OpenCode
 git clone git@github.com:pwalser75/idx-agentic-process.git ~/.opencode/iap
-mkdir -p ~/.opencode/skills
-ln -s ~/.opencode/iap/skills/* ~/.opencode/skills/
+mkdir -p ~/.opencode/skills ~/.opencode/commands
+ln -s ~/.opencode/iap/skills/*   ~/.opencode/skills/
+ln -s ~/.opencode/iap/commands/* ~/.opencode/commands/
 
 # Claude Code
 git clone git@github.com:pwalser75/idx-agentic-process.git ~/.claude/iap
-mkdir -p ~/.claude/skills
-ln -s ~/.claude/iap/skills/* ~/.claude/skills/
+mkdir -p ~/.claude/skills ~/.claude/commands
+ln -s ~/.claude/iap/skills/*   ~/.claude/skills/
+ln -s ~/.claude/iap/commands/* ~/.claude/commands/
 ```
 
 ### Project-local install
@@ -221,11 +224,12 @@ Commit these into the repository and every collaborator (and cloud agent) gets I
 
 ```bash
 REPO=~/idx-agentic-process
-mkdir -p .opencode/skills && cp -R "$REPO"/skills/* .opencode/skills/    # OpenCode
-# Claude Code: use .claude/skills/ instead.
+mkdir -p .opencode/skills   && cp -R "$REPO"/skills/*   .opencode/skills/    # OpenCode
+mkdir -p .opencode/commands && cp -R "$REPO"/commands/* .opencode/commands/
+# Claude Code: use .claude/skills/ and .claude/commands/ instead.
 ```
 
-Then run `/bootstrap` in the project: it installs the command wrappers and creates `spec/`.
+Then run `/bootstrap` in the project to create `spec/`.
 
 On Windows, replace the symlinks/copies with `mklink /D` or plain copies.
 
@@ -233,7 +237,7 @@ On Windows, replace the symlinks/copies with `mklink /D` or plain copies.
 
 1. In your project, run the bootstrap command — assuming IAP is installed (see
    [Installation](#installation)) — which creates `spec/` if missing and installs this
-   process's skills and command wrappers into the project:
+   process's commands/skills into the project:
 
    ```
    /bootstrap
@@ -279,24 +283,22 @@ idx-agentic-process/
 ├─ VERSION                      # IAP version
 ├─ LICENSE                      # Apache License 2.0
 ├─ NOTICE                       # copyright notice
-└─ skills/                      # the distribution bundle (one folder per skill)
+├─ commands/                    # slash commands (one thin wrapper per skill)
+│  ├─ bootstrap.md  facilitate.md  plan.md  refine.md
+│  ├─ implement.md  review.md  accept.md  tickets.md
+│  └─ excavate.md  survey.md  guide.md  reconcile.md
+└─ skills/                      # one folder per skill
    ├─ idx-agentic-process/      # process overview skill
-   ├─ iap-bootstrap/            # SKILL.md + bootstrap.md + templates/spec/
-   ├─ iap-facilitator/          # SKILL.md + facilitate.md + templates/input.md
-   ├─ iap-planner/              # SKILL.md + plan.md + templates/ticket-template.md
-   ├─ iap-analyst/              # SKILL.md + refine.md
-   ├─ iap-implementor/          # SKILL.md + implement.md
-   ├─ iap-reviewer/             # SKILL.md + review.md
-   ├─ iap-accept/               # SKILL.md + accept.md
-   ├─ iap-tickets/              # SKILL.md + tickets.md + scripts/iap.sh
-   ├─ iap-archaeologist/        # SKILL.md + excavate.md
-   ├─ iap-system-architect/     # SKILL.md + survey.md
-   ├─ iap-guide/                # SKILL.md + guide.md
-   └─ iap-reconciler/           # SKILL.md + reconcile.md
+   ├─ iap-bootstrap/            # SKILL.md + templates/spec/
+   ├─ iap-facilitator/          # SKILL.md + templates/input.md
+   ├─ iap-planner/              # SKILL.md + templates/ticket-template.md
+   ├─ iap-tickets/              # SKILL.md + scripts/iap.sh
+   ├─ iap-analyst/  iap-implementor/  iap-reviewer/  iap-accept/
+   └─ iap-archaeologist/  iap-system-architect/  iap-guide/  iap-reconciler/
 ```
 
-Each skill folder holds its `SKILL.md`, its command wrapper (`<command>.md`) and any
-templates or scripts it needs; the bundle is self-contained under `skills/`.
+The `commands/` folder holds the slash-command wrappers; each `skills/<skill>/` folder holds
+its `SKILL.md` plus any templates or scripts it needs.
 
 ## License
 
