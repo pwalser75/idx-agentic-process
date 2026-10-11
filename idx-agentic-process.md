@@ -116,8 +116,8 @@ downstream; the tickets and the code never flow back into the ledger.
 PLANNER and ANALYST do not guess past ambiguity. When they find a gap or an impediment that
 needs a human decision (missing or ambiguous requirements, a technology or implementation
 choice, conflicting constraints, a blocker, a ticket that cannot be made READY), they state
-the gap, advise on the options — with a recommendation and the trade-offs — and ask the
-human for clearance. They never block and never improvise around it: they return the open
+the gap, advise on the options — with a recommendation and the trade-offs — and prompt the human to capture the decision.
+They never block and never improvise around it: they return the open
 questions in their report and stop. Only once the human has decided do they record the
 decision (gap, advice, decision, date/time, human user) in `input-ledger.md`, phrased as
 ticket-agnostic, implementation-agnostic input, and continue.
@@ -166,6 +166,8 @@ Ticket metadata:
 - `status`: ticket status, see "Status" values below.
 - `acceptance-type`: `AUTOMATIC` (default) | `HUMAN`, see "Acceptance Type" below.
 - `blocked-by`: list of ids of the tickets that block this ticket. Can be absent when not blocked.
+
+Setting `acceptance-type` or `blocked-by` is a metadata edit and does not change a ticket's status.
 
 ### Identity and naming
 
@@ -296,6 +298,8 @@ Depending on the role, it can be:
 A SUBAGENT role never blocks on input: it returns its questions/blockers in the final report, and the invoking agent relays them to the human and re-invokes the role with the answers.
 
 For SUBAGENT skills, the invoking (orchestrating) agent must not perform the role's work itself — it selects the role, passes the arguments, and relays the result.
+
+Each agent starts with a clean context (to prevent context pollution).
 
 ### Role loop (handover)
 
@@ -565,7 +569,7 @@ Accept the eligible DONE tickets, and for each:
 - rebase the feature branch onto the main branch, resolve conflicts.
 - switch back to the main branch.
 - merge the feature branch (fast-forward only).
-- delete the feature branch afterwards.
+- delete the feature branch afterward, and the remote of the feature branch as well, if it exists.
 
 If the rebase cannot be resolved automatically, abort the rebase, leave the ticket DONE on its branch,
 and report; never leave a half-rebased tree. `/reconcile` cleans up.
@@ -592,14 +596,9 @@ What it does:
 
 ## Collaboration
 
-Rules for collaboration when the project is a GIT repository.
-
-### General
-
-- The Git repository is the single source of truth for shared artifacts; only committed state counts.
-- If a remote Git repository exists: pull before starting work, push when a work unit is complete.
-- Never run two writing roles concurrently; serialize them; coordinate via spec/agent/.
-- Setting `acceptance-type` or `blocked-by` is a metadata edit and does not change a ticket's status.
+The project has to be a Git repository, with either `master` (default) or `main` as the _main branch_.
+The `/bootstrap` action will create the repository, if it does not exist yet.
+A remote is optional, `git push` and `git pull` are executed by the human only.
 
 ### Commits
 
@@ -649,16 +648,9 @@ These must always hold. Any role that finds one violated must report it and stop
 
 ### Branches
 
-- A feature branch is named `{id}-{type}-{name}`, one per ticket, created by the IMPLEMENTOR.
-- Active: the ticket is IN_PROGRESS or IN_REVIEW and the branch is open.
-- Merged: the branch is an ancestor of main; it is safe to delete and is removed by `/accept` or `/reconcile`.
-- Abandoned: an IN_PROGRESS or IN_REVIEW ticket with no active agent and no commits since the claim
-  (older than the configured threshold, or confirmed by the human). The RECONCILER resets the ticket to
-  READY and renames the branch to `abandoned/{id}-{type}-{name}`.
-- Only `/accept` merges; only `/reconcile` cleans up branches; an unmerged branch is never deleted.
-- Untracked files that belong to the process (tickets, requirements) are committed, never discarded; unrelated untracked files are left alone.
-- Two humans never share a ticket branch; each works on their own branch and merges via `/accept`.
-- Abandoned branches are renamed `abandoned/{id}-{type}-{name}` by `/reconcile`; a merged branch is deleted.
+- Tickets are implemented on feature branches. Ticket branches are named `{id}-{type}-{name}`, one per ticket, created by the IMPLEMENTOR.
+- Facilitation, planning and refinement can be done on non-ticket branches (by multiple humans), but usually are done on the main branch.
+- Only `/accept` can merge ticket branches.
 
 ### Handover and review
 
