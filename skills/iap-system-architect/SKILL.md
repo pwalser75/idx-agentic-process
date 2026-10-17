@@ -52,10 +52,12 @@ Exclude generated code, vendored dependencies and build output.
    maintainability, compatibility, and the mechanisms that implement them.
 6. **Document the UI design system** into `spec/architecture/design-system.md` **only when
    the project has a UI**: the design tokens actually in use (colors/modes, typography,
-   spacing, shape, motion), the theme set, the icon set, and the recurring UI elements.
-   Start from the packaged default preset and adjust it to match the observed reality,
-   keeping whatever is not contradicted. If there is no UI, leave the preset untouched and
-   say so.
+   spacing, shape, motion), the theme set, the icon set, the recurring UI elements,
+   component/pattern usage and content rules. Start from the packaged default preset and
+   adjust it to match the observed reality, keeping whatever is not contradicted.
+   `spec/architecture/gui-spec.md` is the bundled normative `gui-v1` format; read it to
+   interpret screens but do not reconstruct or rewrite it. If there is no UI, leave the
+   preset untouched and say so.
 7. **Mark provenance.** Every reconstructed item carries `origin: inferred` and cites
    evidence (`{manifest}:{line}`, config path, folder, commit). Keep existing human content
    — add to it, never silently replace it; conflicts go to

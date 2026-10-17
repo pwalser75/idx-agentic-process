@@ -60,8 +60,10 @@ If `input.md` is missing or empty, stop and tell the human there is nothing to f
      features and their functions, `requirements/domain-models/{model}.md` for domain
      models (name, description, attributes with name/description/language-agnostic type);
    - create/update an architecture document under `architecture/` — reach for
-     `architecture/design-system.md` for UI design decisions (tokens, themes, elements);
-     create a **new** architecture document when none of the existing ones is a good fit;
+     `architecture/design-system.md` for UI decisions (principles, tokens, themes,
+     component usage, patterns), and `architecture/gui-spec.md` for the normative screen
+     syntax and component behavior; create a **new** architecture document when none of
+     the existing ones is a good fit;
    - **do nothing yet** and keep it as unresolved input for a later round.
 5. **Clear `spec/input.md`.** Leave it completely blank — no statements and no comment,
    header or placeholder.

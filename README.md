@@ -78,7 +78,8 @@ project-root/
    │  ├─ features/{feature-name}.md     # (X) Feature: description and functionalities
    ├─ architecture/                     # (X) Architectural design and requirements
    │  ├─ tech-stack.md                  # (X) Languages, frameworks and libraries
-   │  ├─ design-system.md               # (X) UI design system
+   │  ├─ design-system.md               # (X) UI design system (entry point)
+   │  ├─ gui-spec.md                    # (X) Normative gui-v1 screen format
    │  ├─ decomposition.md               # (X) Modules and packages
    │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
    │  ├─ quality-aspects.md             # (X) Non-functional requirements

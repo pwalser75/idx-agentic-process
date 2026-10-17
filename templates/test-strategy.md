@@ -3,7 +3,8 @@
 The strategy is platform- and technology-agnostic: it defines test **levels** by the scope
 of the system under test and by what is real versus faked, never by tooling. The concrete
 tools for each level live in [`coding-guidelines.md`](coding-guidelines.md); the
-presentation reference for L4 lives in [`design-system.md`](design-system.md).
+presentation references for L4 live in [`design-system.md`](design-system.md) and
+[`gui-spec.md`](gui-spec.md).
 
 ## Levels
 

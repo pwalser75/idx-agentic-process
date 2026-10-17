@@ -114,7 +114,8 @@ fi
 This creates an empty `spec/input.md`, `spec/.gitignore` (keeping `input.md` local-only),
 `spec/requirements/{features,domain-models}/`, the architecture stubs (`tech-stack.md`,
 `decomposition.md`, `coding-guidelines.md`, `quality-aspects.md`) plus the filled
-`design-system.md` preset, `spec/tickets/` and `spec/agent/input-ledger.md`.
+`design-system.md` preset and its normative companion `gui-spec.md`, `spec/tickets/` and
+`spec/agent/input-ledger.md`.
 **Release notes are not created** — `/accept` creates them on the fly.
 
 **Fallback** (only when `IAP_HOME` was not found): create those same files yourself.

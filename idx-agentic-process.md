@@ -62,7 +62,8 @@ project-root/
    ├─ architecture/                     # (X) Architectural design and requirements
    │  ├─ tech-stack.md                  # (X) Tech stack, programming languages, frameworks and libraries
    │  ├─ integration.md                 # (X) Integration with other systems, APIs (ports and adapters).
-   │  ├─ design-system.md               # (X) UI design system
+   │  ├─ design-system.md               # (X) UI design system (entry point for UI decisions)
+   │  ├─ gui-spec.md                    # (X) Normative gui-v1 screen format and rendering contract
    │  ├─ decomposition.md               # (X) Parts of the project, decomposition into modules and packages
    │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
    │  ├─ quality-aspects.md             # (X) Quality Aspects (= non-functional requirements)
@@ -146,6 +147,30 @@ Domain models are the main drivers for downstream implementation decisions (e.g.
 The architecture describes the non-functional aspects of the project (how it's built).
 It's the design of the system, with choices of the technology, decomposition, quality aspects and,
 for projects with a user interface, the design system.
+
+UI work uses two companion documents under `architecture/`:
+
+- `design-system.md` is the entry point and the human/co-owned record of principles,
+  foundations, project tokens and themes, component usage, patterns, content rules,
+  accessibility policy, assets and governance.
+- `gui-spec.md` is the normative, versioned `gui-v1` screen format: syntax, defaults,
+  layout, component attributes, validation, platform mapping and conformance tests. It is
+  a reference, not a per-project design decision; projects adapt the design system, not
+  the format.
+
+Which agents use them:
+
+- **Specifying agents** (FACILITATOR, PLANNER, ANALYST) use `design-system.md` for UI
+  decisions and component/pattern choice, and `gui-spec.md` to write or validate screen
+  definitions. They do not invent tokens, components or layout rules.
+- **Implementing agents** (IMPLEMENTOR) use both: the design system for intent and the
+  spec for tokens, layout, component behavior, platform mapping and tests.
+- **The REVIEWER** checks UI changes against both, including tokens, component usage,
+  accessibility and conformance.
+- **The SYSTEM-ARCHITECT** reconstructs `design-system.md` from the observed UI. It does
+  not rewrite `gui-spec.md`; the format is a bundled normative reference.
+- Projects without a UI leave the design system preset untouched and do not use
+  `gui-spec.md`.
 
 ## Tickets
 
@@ -236,7 +261,7 @@ blocked-by: {blocked-by}
     │                                                                        ╭──────╮
     └◀─────────────────────── non-metadata edit of a ticket──────────────────│ DONE │
                                                                              ╰──────╯
-                                                                                 │ /accept (human or agent)
+                                                                                 | /accept (human or agent)
                                                                                  ▼
                                                                             ╭────────╮
                                                                             │ CLOSED │
@@ -348,7 +373,9 @@ It carefully analyzes how to fit the input into the requirements and architectur
 It can prompt the human for clarification (online in the session) and suggest improvements on the input before accepting the input.
 When it accepts the input, it appends it — and any clarification it resolved — to the
 `input-ledger.md` (date/time, and bullet points for each input line), and creates/updates the
-requirements and architecture documents.
+requirements and architecture documents. For UI input it records design decisions in
+`architecture/design-system.md`; screen syntax and normative component behavior stay in
+`architecture/gui-spec.md`.
 Afterwards it clears the `input.md`, making it ready for the next round of input by the user.
 It commits the updated requirements/architecture and the appended ledger on the main branch as `facilitate: {summary}`.
 Interactive (default): it may ask the human for clarification and wait for the answer.
@@ -364,6 +391,7 @@ Precondition: none, can be invoked anytime.
 Find out which changes have been made to the requirements and architecture documents since it was last invoked.
 It then creates or updates tickets that define which changes are to be done in the project, and links them to the requirements (internally, in the `agent` folder).
 It gives the ticket a number (sequence number, if possible) and a name, a description, a short task breakdown (checkbox list) and acceptance criteria (bullet list).
+For UI tickets, it links the applicable `architecture/design-system.md` decisions and `architecture/gui-spec.md` sections so the implementor does not have to infer the intended tokens, components or patterns.
 It also checks if any ticket in status IN_PROGRESS exists which is not claimed by an active subagent and whose branch does not exist, and sets it back to status READY.
 A ticket whose branch still exists is left for the RECONCILER (see Branches).
 It verifies the blocked-by attribute of existing tickets and checks if these tickets actually exist, and that no cyclic dependencies in the blockings exist.
@@ -383,6 +411,7 @@ Invoked by: HUMAN.
 Precondition: none, can be invoked anytime.
 
 Reviews the tickets in status DRAFT and compares them against the requirements and architecture documents.
+For UI tickets it also checks that the ticket names the relevant `design-system.md` decisions and `gui-spec.md` sections, and that it does not invent new tokens, components or layout rules.
 It can also create or update tickets (in status DRAFT, READY) to bring the tickets in line with the requirements and architecture.
 It checks and updates the blocked-by against other tickets, and makes sure no cyclic dependencies exist.
 When it considers a ticket to be sufficiently defined and ready for implementation, it promotes the ticket's status to READY.
@@ -408,6 +437,9 @@ Repeat while a READY, unblocked ticket exists:
 - create a feature branch from up-to-date main, named `{id}-{type}-{name}`.
 - set the ticket STATUS: IN_PROGRESS and commit the claim on that branch.
 - implement code, tests, configuration and documentation on the branch.
+- for UI work, follow `architecture/design-system.md` for tokens, components, patterns and
+  content, and `architecture/gui-spec.md` for syntax, layout, behavior, accessibility and
+  platform mapping. Use existing tokens and components instead of inventing new styles.
 
 Tests covering the code changes are required.
 
@@ -431,6 +463,9 @@ Looks at tickets in status IN_REVIEW and checks:
 - the build and tests are green; no test is skipped or flaky.
 - the branch contains only changes within the ticket's scope; unrelated changes are a separate ticket.
 - the branch is clean (all work committed) and rebased on the current main.
+- for UI work, the change follows `architecture/design-system.md` (tokens, components,
+  patterns, content, accessibility) and `architecture/gui-spec.md` (syntax, defaults,
+  layout, validation, platform mapping).
 
 Test/coverage standards are not set here; they live in `architecture/quality-aspects.md` and `architecture/coding-guidelines.md`.
 
@@ -468,6 +503,8 @@ aspects and — where a UI exists — the design system. It reads build and depe
 configuration, CI/CD pipelines and deployment definitions, UI/theming/style sources, and documents
 the conventions the code actually follows.
 Writes/updates the files under `architecture/`, again marked as inferred and with evidence.
+It reconstructs `design-system.md` (observed tokens, themes, icons and recurring UI elements);
+`gui-spec.md` is the bundled normative format and is not reconstructed.
 Open questions and low-confidence areas go into `spec/agent/reverse-engineering-report.md`.
 
 ### GUIDE
