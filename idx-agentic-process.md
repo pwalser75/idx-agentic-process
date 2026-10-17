@@ -61,8 +61,9 @@ project-root/
    │  │  └─ {feature-name}.md           # (X) Document per feature, describing the feature and the functionalities
    ├─ architecture/                     # (X) Architectural design and requirements
    │  ├─ tech-stack.md                  # (X) Tech stack, programming languages, frameworks and libraries
+   │  ├─ integration.md                 # (X) Integration with other systems, APIs (ports and adapters).
    │  ├─ design-system.md               # (X) UI design system
-   │  ├─ decomposition.md               # (X) Decomposition into modules and packages
+   │  ├─ decomposition.md               # (X) Parts of the project, decomposition into modules and packages
    │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
    │  ├─ quality-aspects.md             # (X) Quality Aspects (= non-functional requirements)
    │  └─ ...                            # (X) Additional guidelines
