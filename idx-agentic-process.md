@@ -27,36 +27,44 @@ The human drives the loop; the agent does the ticket work.
    requirement and architecture documents, appends it to the input ledger, and clears `input.md`.
 2. **Review (optional)**: read the updated `requirements/` and `architecture/` documents; repeat step 1
    until the picture is stable.
-3. **Design UI (projects with a UI)**: run `/design` to create or update the affected screen
+3. **Settle the project shape (before planning)**: run `/facilitate` for the artifact and
+   tech-stack interview — what the project delivers, and the language, language version and
+   stack. A single-subproject project records this in `architecture/tech-stack.md`; a project
+   with more than one subproject uses `spec/modules/{module}/`. `/plan` refuses until the shape
+   is `agreed`. Existing projects can start from `/survey`'s inferred shape.
+4. **Design UI (projects with a UI)**: run `/design` to create or update the affected screen
    documents and the review prototype. Review the prototype and the screen documents, answer open
    questions, and repeat until the screen documents are `approved`. Skip this step for projects
    without a UI. UI design is iterative with step 1; rerun `/design` when requirements or
    architecture change.
-4. **Plan**: run `/plan`, then inspect the created/updated tickets with `/tickets`. UI tickets are
+5. **Plan**: run `/plan`, then inspect the created/updated tickets with `/tickets`. UI tickets are
    created only from `approved` screen documents.
-5. **Refine**: run `/refine` to promote sufficiently defined tickets to READY. UI tickets stay DRAFT
+6. **Refine**: run `/refine` to promote sufficiently defined tickets to READY. UI tickets stay DRAFT
    until their screen documents are approved and the documented data, actions, navigation,
    interactions and states are covered.
-6. **Mark acceptance (optional)**: set `acceptance-type: HUMAN` on the tickets you want to accept
+7. **Mark acceptance (optional)**: set `acceptance-type: HUMAN` on the tickets you want to accept
    yourself; leave the rest on the default AUTOMATIC. UI tickets that change user-visible screens
    default to HUMAN. This is a metadata edit — it does not change the ticket's status.
-7. **Implement**: run `/implement` once. It drives the implement → review → accept loop: the agent
+8. **Implement**: run `/implement` once. It drives the implement → review → accept loop: the agent
    works through the READY, unblocked tickets one at a time, AUTOMATIC tickets are reviewed and
    accepted (merged) automatically, and HUMAN tickets are implemented and left for you. The loop
    runs until no workable ticket remains or it gets stuck (an impediment, or a decision that needs
    you), then reports what remains and why.
-8. **Accept manually**: inspect the tickets awaiting your acceptance (status DONE with
+9. **Accept manually**: inspect the tickets awaiting your acceptance (status DONE with
    `acceptance-type: HUMAN`) and run `/accept` to merge them, or comment on a ticket to send it
    back to DRAFT.
-9. **Recover / re-orient**: after any interruption, or when unsure, run `/reconcile` to restore a
-   consistent state and `/guide` to see what to do next.
+10. **Recover / re-orient**: after any interruption, or when unsure, run `/reconcile` to restore a
+    consistent state and `/guide` to see what to do next.
 
 ## Definitions
 
 - main branch: the repository's default branch (commonly `main` or `master`); referred to as `main` below. Where a remote exists, its default branch is authoritative.
+- project shape: the artifact kind(s) and tech stack(s) of the project. A single-subproject project records it in `spec/architecture/tech-stack.md`; a multi-subproject project records one module per subproject under `spec/modules/{module}/`.
+- module: a subproject with its own build/package unit and tech stack, used only when the project has more than one subproject.
+- agreed shape: a single-subproject `tech-stack.md` with `status: agreed`, or every module with `status: agreed`, in both cases naming the artifact kind, language and version; only an agreed shape may be planned.
 - screen document: a co-owned Markdown file under `spec/screens/` containing one primary `gui-v2` screen definition plus purpose, data, actions, navigation, interactions, states, accessibility notes and open questions. Its status is `draft`, `review`, `approved`, `implemented` or `deprecated`.
 - approved screen: a screen document with status `approved`; the only state from which UI implementation tickets may be planned.
-- prototype: a generated HTML review artifact under `prototypes/`, built from a screen document and example data. It is not production code and is never hand-edited.
+- prototype: a generated HTML review artifact under `prototypes/`, built by the project's prototype builder from a screen document and example data. The builder is project tooling — created or maintained by UI-DESIGNER on first use and committed with the project — not a predefined IAP component. It is not production code and is never hand-edited.
 - UI ticket: a ticket that changes a user-visible screen. It references one or more `ui-screens`, and defaults to `acceptance-type: HUMAN` unless the change is mechanical and covered by screenshot/visual regression tests.
 
 ## Artifacts and folder structure
@@ -73,14 +81,19 @@ project-root/
 │  │  ├─ features/                      # (X) Features of the domain
 │  │  │  └─ {feature-name}.md           # (X) Document per feature, describing the feature and the functionalities
 │  ├─ architecture/                     # (X) Architectural design and requirements
-│  │  ├─ tech-stack.md                  # (X) Tech stack, programming languages, frameworks and libraries
+│  │  ├─ tech-stack.md                  # (X) Single-subproject shape (created by shape refinement)
 │  │  ├─ integration.md                 # (X) Integration with other systems, APIs (ports and adapters).
 │  │  ├─ gui-spec.md                    # (X) Bundled UI design guide and normative gui-v2 specification
 │  │  ├─ screen-workflow.md             # (X) Bundled screen authoring, review and prototype workflow
-│  │  ├─ decomposition.md               # (X) Parts of the project, decomposition into modules and packages
+│  │  ├─ prototype-builder.md           # (X) Project prototype-builder contract and command
+│  │  ├─ decomposition.md               # (X) Project-level module map (multi) or package map (single)
 │  │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
 │  │  ├─ quality-aspects.md             # (X) Quality Aspects (= non-functional requirements)
 │  │  └─ ...                            # (X) Additional guidelines
+│  ├─ modules/                          # (X) Only when the project has more than one subproject
+│  │  └─ {module}/                      # (X) One folder per module
+│  │     ├─ module.md                    # (X) Artifact kind, purpose, boundaries, dependencies, status
+│  │     └─ tech-stack.md                # (X) Language/version, frameworks, runtime, libraries, tooling
 │  ├─ screens/                          # (X) Screen documents, one primary screen per file
 │  │  └─ {screen-name}.md               # (X) Screen definition + data, actions, navigation, interactions, states
 │  ├─ flows/                            # (X) Multi-screen journeys
@@ -98,6 +111,7 @@ project-root/
 │     ├─ planning-log.md                # (A) last-seen revision/hash of spec/
 │     ├─ source-ledger.md               # (A) hash ledger of scanned sources
 │     ├─ reverse-engineering-report.md  # (A) open questions from `/excavate` & `/survey`
+│     ├─ lessons-learned-{role}.md      # (A) reusable lessons for one role (see Reflection)
 │     ├─ process-version.md             # (A) IAP version used
 │     └─ idx-agentic-process.md         # (A) copy of this process
 └─ prototypes/                          # (A) Generated review HTML; do not edit by hand
@@ -178,6 +192,120 @@ The architecture describes the non-functional aspects of the project (how it's b
 It's the design of the system, with choices of the technology, decomposition, quality aspects
 and, for projects with a user interface, the UI design artifacts.
 
+### Project shape: artifacts and tech stack
+
+Before planning, settle what the project delivers and how it is built. A project has one or
+more artifacts: a backend service, a library, a web app, a mobile app, a desktop app, a CLI
+tool, and so on.
+
+**A project with one subproject does not need modules.** Record its shape in
+`spec/architecture/tech-stack.md`:
+
+```markdown
+---
+artifact-kind: {backend | library | web-app | mobile-app | desktop-app | cli | ...}
+status: draft | agreed
+---
+# Tech Stack
+
+- **Language:** {language}
+- **Language version:** {exact version}
+- **Framework / runtime:** {framework and version, or not applicable}
+- **Key libraries:** {libraries and versions, or not applicable}
+- **Build / package tooling:** {tool, or not applicable}
+- **Test tooling:** {tool, or not applicable}
+- **Infrastructure / deployment:** {platform, or not applicable}
+```
+
+If one package combines kinds (for example a library and its CLI), list them in
+`artifact-kind` and explain the packaging. There is no `spec/modules/` folder for a
+single-subproject project.
+
+**A project with more than one subproject uses modules.** Each subproject is a module under
+`spec/modules/{module}/`:
+
+```
+spec/modules/{module}/
+├─ module.md      # (X) artifact kind, purpose, responsibilities, boundaries, dependencies, status
+└─ tech-stack.md  # (X) language and version, frameworks, runtime, libraries, build/test tooling
+```
+
+`{module}` is a lower-kebab-case name, unique in the project.
+
+`module.md` has front matter:
+
+```markdown
+---
+module: {module}
+artifact-kind: {backend | library | web-app | mobile-app | desktop-app | cli | ...}
+status: draft | agreed
+---
+# {Module}
+
+## Purpose
+## Responsibilities
+## Boundaries
+## Dependencies
+## Open questions
+```
+
+A module normally has one artifact kind. If a module combines kinds, list them all and explain
+the packaging in `module.md`.
+
+`tech-stack.md` (project-level or per module) must name the language and its exact version. Add
+the framework and version, runtime/platform, key libraries, build/package tooling, test tooling
+and infrastructure/deployment where they apply. Write "not applicable" instead of leaving a
+field empty.
+
+`status: agreed` is a human decision: the agent writes or proposes the shape, the human accepts
+it. A shape is settled when it is `agreed`, its `tech-stack.md` names the artifact kind,
+language and version, and it has no blocking open question.
+
+`spec/architecture/decomposition.md` is the project-level map. For multiple subprojects it lists
+the modules, their responsibilities and dependency direction, and links to each module folder.
+For a single subproject it describes the internal packages/layers. It does not repeat the stack
+details.
+
+### Project-shape refinement
+
+Before the first `/plan`, the project shape is settled in an interview. This is the
+pre-planning refinement stage, run by the FACILITATOR as part of the requirements loop. The
+agent asks, proposes concrete options with trade-offs and a recommendation, and the human
+chooses. The agent never chooses a stack silently.
+
+1. **Artifact kinds.** Ask what the project delivers: backend, library, web app, mobile app,
+   desktop app, CLI tool, and so on. If it is one subproject, settle it as a single project
+   shape. If it is more than one, propose one module per subproject, with a name and a one-line
+   responsibility.
+2. **Settle the shape.** For a single subproject: artifact kind, language and exact version,
+   framework/runtime, key libraries, build/package and test tooling, and
+   infrastructure/deployment where relevant. For each module: the same, plus purpose,
+   responsibilities, boundaries and dependencies on other modules.
+3. **One decision at a time.** Ask in dependency order and wait for the human's choice. If the
+   project already has code, the SYSTEM-ARCHITECT may infer a draft shape first; present it for
+   confirmation instead of asking from scratch.
+4. **Record the decisions.** Append each resolved decision — question, options,
+   recommendation, chosen answer, date/time and human user — to
+   `spec/agent/input-ledger.md` before writing the documents.
+5. **Write the documents.** For a single subproject, write
+   `spec/architecture/tech-stack.md` and remove `spec/modules/` if it exists. For multiple
+   subprojects, create `spec/modules/{module}/module.md` and `tech-stack.md` for each, update
+   `architecture/decomposition.md`, and remove `architecture/tech-stack.md`. Set
+   `status: agreed` only after the human accepts the shape.
+6. **Keep it current.** When the artifact kind, boundaries or stack changes later, set the
+   affected shape back to `draft`, update the documents, return affected tickets to DRAFT and
+   replan. If a project grows from one subproject to several (or shrinks), migrate between the
+   single `tech-stack.md` and the module folders, update `decomposition.md`, and return affected
+   tickets to DRAFT. Never change the stack under an in-progress ticket without reopening the
+   shape.
+
+`/plan` refuses to create tickets when the shape is not settled: for a single subproject,
+`architecture/tech-stack.md` is missing, not `agreed`, or lacks the artifact kind, language or
+version; for multiple subprojects, `spec/modules/` is missing, any module is not `agreed`, or a
+module's `tech-stack.md` lacks the language or version. It also refuses an ambiguous shape (a
+project-level `tech-stack.md` together with modules, or multiple subprojects without modules).
+It reports the missing decisions and points back to the refinement interview.
+
 UI work uses two bundled references under `architecture/`:
 
 - `gui-spec.md` is the UI design guide and the normative, versioned `gui-v2` specification:
@@ -197,6 +325,8 @@ Project-specific UI design lives outside the bundled references:
 - `spec/components/components.gui` — shared project-defined extended components.
 - `spec/theme.gui` — project theme and token overrides.
 - `spec/data/{screen-name}.json` — example data and scenarios.
+- `spec/architecture/prototype-builder.md` — the project's prototype-builder contract: command,
+  inputs, outputs and how to regenerate. The builder itself is project tooling, not part of IAP.
 - `prototypes/` — generated HTML review artifacts; never hand-edited.
 
 UI design is a stage between architecture and planning:
@@ -330,6 +460,23 @@ prototype: {prototype}
 ## Comments
 ```
 
+### Comments
+
+During work, `## Comments` is an append-only running log: dated notes from `/refine`,
+`/implement`, `/review` and human decisions. Never rewrite or remove them while the ticket is
+open.
+
+When `/accept` closes a ticket, it replaces the running log with one concise, dated
+post-merge summary. This is the only permitted rewrite of a ticket's comments. Keep only
+information that still has value after the merge — decisions and their rationale, caveats or
+known limitations, operational notes, verification evidence, and follow-up work. Drop process
+chatter, resolved rework, duplicates and anything superseded by the final code, requirements,
+architecture or release notes. A useful test: would this help someone reading the closed
+ticket or the code later? If not, do not keep it.
+
+If a durable fact belongs in the requirements, architecture or release notes rather than the
+ticket, put it there and leave at most a short reference in the summary.
+
 ### Status diagram
 
 ```
@@ -403,7 +550,7 @@ Format of the release notes:
 - **{title}**: {description}
 ```
 
-Release notes are not bootstrapped; they are created on-the-fly by `/accept` when missing.
+Release notes are not created by the installer; they are created on-the-fly by `/accept` when missing.
 
 ## Roles
 
@@ -418,6 +565,13 @@ A SUBAGENT role never blocks on input: it returns its questions/blockers in the 
 For SUBAGENT skills, the invoking (orchestrating) agent must not perform the role's work itself — it selects the role, passes the arguments, and relays the result.
 
 Each agent starts with a clean context (to prevent context pollution).
+
+Each role section lists the spec documents it reads (`Works with`) and the spec files it may
+create, edit or delete (`May modify`). Anything not listed under "May modify" is read-only for
+that role; the (H)/(A)/(X) edit rights still apply. No role edits the process definition or the
+bundled architecture references (`architecture/gui-spec.md`,
+`architecture/screen-workflow.md`). In addition, every writing role may maintain its own
+`spec/agent/lessons-learned-{role}.md`.
 
 ### Role loop (handover)
 
@@ -446,10 +600,46 @@ human decision.
 UI-DESIGNER is a design-stage role. It runs before planning, not inside the implement → review
 → accept loop; its output is the approved screen document that UI tickets implement.
 
+### Reflection, learning and self-optimization
+
+Each role gets better with use by reflecting on its work and keeping a small, curated record
+of what it learned.
+
+- **File per role.** Each role maintains `spec/agent/lessons-learned-{role}.md`, where `{role}`
+  is its skill name without the `iap-` prefix (e.g. `lessons-learned-implementor.md`,
+  `lessons-learned-system-architect.md`). Create it on first use if missing. The file is (A)
+  agent-owned and versioned with the project.
+- **Read first.** At the start of a run, read the role's lessons file and apply the lessons
+  that fit the current work. They inform how the role works; they never override this process,
+  the requirements, the architecture or the tickets.
+- **Reflect last.** Before the final report, reflect on the work: what worked, what failed or
+  caused rework, surprising repository or tool behavior, review feedback and shortcuts that
+  saved time. Then update the lessons file.
+- **Keep it useful.** Record reusable, actionable lessons, not a transcript or a task log.
+  Date each entry and give it enough context to be understood later (context, lesson, when to
+  apply it). Merge duplicates, correct wrong lessons and remove obsolete ones so the file stays
+  short enough to read at the start of every run.
+- **Scripts are local.** A role may keep small, read-only scripts in its skill definition or
+  record a useful one in its lessons file, with purpose, inputs and whether it writes. Scripts
+  must never bypass a precondition or invariant, and there is no shared external helper.
+- **Do not duplicate other artifacts.** Requirements, decisions and clarifications belong in
+  `spec/` and `input-ledger.md`; ticket state belongs in the tickets. Never record secrets,
+  credentials or personal data.
+- **Only your own file.** A role writes only its own lessons file, so concurrent roles never
+  overwrite each other. Include the update in the role's normal commit; if the role does not
+  commit, leave it in the working tree and mention it in the report.
+- **Read-only roles** (`/tickets`, `/guide`) do not write files; they return any lesson in
+  their report for the human to record.
+- **Process changes stay human-owned.** A lesson that suggests changing the process, a role
+  contract or a skill is reported to the human as a proposal. Agents never edit
+  `idx-agentic-process.md` or their skill definitions.
+
 Design guidelines for the agents:
 - keep verbosity low, use more concise responses with minimal explanation.
 - use plain English, not 'Agentish'. Fluff-free, no corporate lingo ("delve", "leverage", ...)
 - Work only from artifacts on disk (spec/, tickets, git) and explicit arguments — never from the orchestrator's conversation history.
+- Read your role's `lessons-learned-{role}.md` before working and update it before reporting.
+- Use the small read-only scripts in your skill where they help; adapt them in place or record a better one in your lessons file.
 - Return exactly one concise report: what was done, the evidence, and any questions/blockers.
 - If an invariant is violated, or a precondition is not met, stop and report it; never improvise around it.
 - Editing a ticket's Description, Tasks, Acceptance criteria or Comments is a non-metadata edit: set the ticket back to DRAFT.
@@ -460,7 +650,15 @@ Design guidelines for the agents:
 Type: PRIMARY
 Command: `/facilitate`.
 Invoked by: HUMAN.
-Precondition: `input.md` exists and is not empty.
+Precondition: `input.md` exists and is not empty, or the project shape is not settled (so the
+project-shape interview can run).
+
+Documents:
+- Works with: `spec/input.md`; `spec/requirements/**`; `spec/architecture/**`;
+  `spec/modules/**`; `spec/agent/input-ledger.md`.
+- May modify: `spec/requirements/**`; `spec/architecture/**` (including new architecture
+  documents); `spec/modules/**`; `spec/agent/input-ledger.md`; `spec/input.md` (clear only,
+  after accepting its content).
 
 Digests the human input (collected in `input.md`) and compares it to the existing requirements and architecture documents.
 The input may be fresh input, or may be a copy of a previously existing input-ledger, in which case the original authoring information (author, date and time) should be retained.
@@ -474,6 +672,10 @@ and the review prototype are updated by UI-DESIGNER through `/design`. FACILITAT
 `spec/screens/`, `spec/theme.gui` or `spec/components/components.gui`.
 Afterwards it clears the `input.md`, making it ready for the next round of input by the user.
 It commits the updated requirements/architecture and the appended ledger on the main branch as `facilitate: {summary}`.
+It also runs the pre-planning project-shape interview when the shape is not settled: a
+single-subproject project records it in `architecture/tech-stack.md`; a project with more than
+one subproject records one module per subproject under `spec/modules/`. It records the choices
+in the input-ledger and never marks a shape `agreed` without the human's acceptance.
 Interactive (default): it may ask the human for clarification and wait for the answer.
 Batch (no human available): it returns the open questions in its report and stops without clearing `input.md`, so the human can answer and re-invoke it.
 
@@ -482,8 +684,19 @@ Batch (no human available): it returns the open questions in its report and stop
 Type: SUBAGENT
 Command: `/design`.
 Invoked by: HUMAN.
-Precondition: requirements and architecture exist; `architecture/gui-spec.md` and
-`architecture/screen-workflow.md` are available. Projects without a UI skip this role.
+Precondition: the project shape is `agreed` and shows a UI; requirements and architecture
+exist; `architecture/gui-spec.md` and `architecture/screen-workflow.md` are available. Projects
+without a UI skip this role.
+
+Documents:
+- Works with: `spec/requirements/**`; `spec/architecture/**`; `spec/modules/**`;
+  `spec/agent/input-ledger.md`; `spec/screens/**`; `spec/flows/**`; `spec/theme.gui`;
+  `spec/components/components.gui`; `spec/data/**`; `prototypes/**`.
+- May modify: `spec/screens/**` (status `draft`/`review` only; only the human sets
+  `approved`); `spec/flows/**`; `spec/theme.gui`; `spec/components/components.gui`;
+  `spec/data/**`; `spec/agent/input-ledger.md`; `prototypes/**` (generated via the project
+  builder only, never by hand); `spec/architecture/prototype-builder.md` and the project's
+  prototype-builder code.
 
 Owns the UI design stage. It reads the requirements, architecture, input-ledger, existing
 screen documents, flows, project theme/components, example data and prototypes. It identifies
@@ -495,7 +708,9 @@ the screens and flows affected by new or changed requirements, then:
 - creates or updates `spec/flows/`, `spec/theme.gui`, `spec/components/components.gui` and
   `spec/data/` when the design requires it;
 - builds or regenerates the review prototype under `prototypes/` using the project’s
-  prototype builder;
+  prototype builder. If no builder exists yet, it creates a small one in the project's agreed
+  stack, documents its command and contract in `spec/architecture/prototype-builder.md`, and
+  commits it with the project. The builder is project tooling, not a predefined IAP component;
 - marks inferred content and records unresolved questions with options and a recommendation;
 - records resolved human decisions in `spec/agent/input-ledger.md` before acting on them.
 
@@ -506,20 +721,36 @@ screen documents between `draft` and `review`; only the human moves them to `app
 
 Batch (no human available): it may write draft screen documents and a prototype marked
 inferred, but returns all open questions and stops; the human answers and re-invokes `/design`.
-It commits screen documents, flows, theme/components and data on the main branch as
-`design: {summary}`. Generated prototypes may be committed or ignored by Git; the screen
-documents and data are committed.
+It commits screen documents, flows, theme/components, data and the project's prototype builder on
+the main branch as `design: {summary}`. Generated prototypes may be committed or ignored by
+Git; the screen documents and data are committed.
 
 ### PLANNER
 
 Type: SUBAGENT
 Command: `/plan`.
 Invoked by: HUMAN.
-Precondition: none, can be invoked anytime.
+Precondition: the project shape is settled — a single `architecture/tech-stack.md` with
+`status: agreed`, or every module `agreed` — and it names the artifact kind, language and
+version. Otherwise run the project-shape refinement first.
+
+Documents:
+- Works with: `spec/requirements/**`; `spec/architecture/**`; `spec/modules/**`;
+  `spec/screens/**`; `spec/tickets/**`; `spec/agent/ticket-index.md`;
+  `spec/agent/planning-log.md`; `spec/agent/input-ledger.md`.
+- May modify: `spec/tickets/**` (create and update tickets, including status changes for new,
+  updated and reclaimed tickets); `spec/agent/ticket-index.md`;
+  `spec/agent/planning-log.md`; `spec/agent/input-ledger.md`.
 
 Find out which changes have been made to the requirements and architecture documents since it was last invoked.
+If the project shape is missing, not `agreed`, ambiguous, or lacks its language/version, it
+does not plan: it reports the missing decisions and points back to the project-shape refinement
+interview.
 It then creates or updates tickets that define which changes are to be done in the project, and links them to the requirements (internally, in the `agent` folder).
 It gives the ticket a number (sequence number, if possible) and a name, a description, a short task breakdown (checkbox list) and acceptance criteria (bullet list).
+Each ticket links the project shape it changes: `architecture/tech-stack.md` for a
+single-subproject project, or the module(s) and their `tech-stack.md` for a multi-subproject
+project. If a ticket spans modules, list all of them.
 For UI tickets, it links the applicable `spec/screens/{screen-name}.md` documents,
 `architecture/gui-spec.md` sections and the generated prototype so the implementor does not
 have to infer the intended data, actions, states, tokens, components or patterns. It adds
@@ -547,7 +778,18 @@ Command: `/refine`.
 Invoked by: HUMAN.
 Precondition: none, can be invoked anytime.
 
+Documents:
+- Works with: `spec/tickets/**`; `spec/requirements/**`; `spec/architecture/**`;
+  `spec/modules/**`; `spec/screens/**`; `spec/agent/ticket-index.md`;
+  `spec/agent/input-ledger.md`.
+- May modify: `spec/tickets/**` (create and update tickets and their status in DRAFT/READY,
+  including `blocked-by`); `spec/agent/input-ledger.md`.
+
 Reviews the tickets in status DRAFT and compares them against the requirements and architecture documents.
+It also checks that every ticket references an `agreed` project shape — the single
+`architecture/tech-stack.md` or the relevant module's `module.md` and `tech-stack.md` — and that
+the ticket does not assume a different language, version or stack. If the shape is missing or not
+agreed, the ticket stays DRAFT and the analyst reports that project-shape refinement is needed.
 For UI tickets it also checks that:
 
 - `ui-screens` names existing screen documents, and every referenced screen document is
@@ -579,8 +821,20 @@ Invoked by: HUMAN.
 
 Precondition: at least one ticket READY, clean working tree, on main.
 
+Documents:
+- Works with: the claimed ticket in `spec/tickets/**`; `spec/requirements/**`;
+  `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/screens/**` and
+  `spec/data/**`; `prototypes/**` as a visual reference.
+- May modify: the claimed ticket in `spec/tickets/**` (status, task checkboxes, comments);
+  `prototypes/**` (regenerate only, never hand-edit); project code, tests, configuration and
+  documentation outside `spec/`.
+
 Repeat while a READY, unblocked ticket exists:
 - finds the best one (BUG > IMPROVEMENT > STORY) and claims it.
+- reads the project shape from the ticket: `architecture/tech-stack.md` for a single-subproject
+  project, or the relevant `spec/modules/{module}/module.md` and `tech-stack.md`. If the shape
+  is missing or not `agreed`, stop and report it. Follow the agreed artifacts, language,
+  language version and stack.
 - if a branch named `{id}-{type}-{name}` already exists, resume it when it holds this ticket's claim; otherwise stop and defer to `/reconcile`.
 - create a feature branch from up-to-date main, named `{id}-{type}-{name}`.
 - set the ticket STATUS: IN_PROGRESS and commit the claim on that branch.
@@ -612,8 +866,16 @@ Command: `/review`.
 Precondition: at least one ticket in status IN_REVIEW.
 Invoked by: the orchestrating agent, after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 
+Documents:
+- Works with: `spec/tickets/**` (IN_REVIEW tickets); `spec/requirements/**`;
+  `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/screens/**` and
+  `spec/data/**`; `prototypes/**`; the feature branch.
+- May modify: the reviewed ticket in `spec/tickets/**` (status DONE or READY, comments).
+
 Looks at tickets in status IN_REVIEW and checks:
 - all tasks are done and every acceptance criterion is fulfilled.
+- the change follows the ticket's agreed project shape and the language, language version and
+  stack in the single `architecture/tech-stack.md` or the module's `tech-stack.md`.
 - the change is complete (code, tests, configuration, documentation) and includes tests for all new or changed behaviour.
 - the build and tests are green; no test is skipped or flaky.
 - the branch contains only changes within the ticket's scope; unrelated changes are a separate ticket.
@@ -639,7 +901,14 @@ For an AUTOMATIC ticket the reviewer returns DONE so the orchestrating agent run
 Type: SUBAGENT
 Command: `/excavate`.
 Invoked by: HUMAN.
-Precondition: `spec/` is bootstrapped and the project contains source code.
+Precondition: IAP is installed, `spec/` exists and the project contains source code.
+
+Documents:
+- Works with: source code, tests, schemas/migrations, API specifications, configuration, UI
+  code and documentation; `spec/requirements/**`; `spec/agent/source-ledger.md`;
+  `spec/agent/reverse-engineering-report.md`.
+- May modify: `spec/requirements/features/**`; `spec/requirements/domain-models/**`;
+  `spec/agent/source-ledger.md`; `spec/agent/reverse-engineering-report.md`.
 
 Reconstructs the functional reality: features, functions and domain models. It reads source code,
 tests, database schemas/migrations, API specifications (e.g. OpenAPI), configuration, UI code and
@@ -657,13 +926,33 @@ SYSTEM-ARCHITECT; it does not create screen documents.
 Type: SUBAGENT
 Command: `/survey`.
 Invoked by: HUMAN.
-Precondition: `spec/` is bootstrapped and the project contains source code.
+Precondition: IAP is installed, `spec/` exists and the project contains source code.
 
-Reconstructs the non-functional reality: tech stack, decomposition, coding guidelines, quality
-aspects and — where a UI exists — the UI design artifacts. It reads build and dependency manifests
-(e.g. `pom.xml`, `build.gradle`, `package.json`), the module/folder structure, formatter and linter
-configuration, CI/CD pipelines and deployment definitions, UI/theming/style sources, and documents
-the conventions the code actually follows.
+Documents:
+- Works with: build and dependency manifests, module/folder structure, formatter/linter
+  configuration, CI/CD and deployment definitions, UI/theming/style sources and existing
+  documentation; `spec/architecture/**` (including the bundled references);
+  `spec/modules/**`; `spec/agent/source-ledger.md`;
+  `spec/agent/reverse-engineering-report.md`.
+- May modify: `spec/architecture/**` except the bundled `gui-spec.md` and
+  `screen-workflow.md`; `spec/modules/**` (inferred modules and stacks, `status: draft`);
+  `spec/theme.gui`; `spec/components/components.gui`; `spec/screens/**` (inferred stubs only);
+  `spec/data/**` (observed example data); `spec/agent/source-ledger.md`;
+  `spec/agent/reverse-engineering-report.md`.
+
+Reconstructs the non-functional reality: the project shape (artifact kinds and tech stacks),
+decomposition, coding guidelines, quality aspects and — where a UI exists — the UI design
+artifacts. It reads build and dependency manifests (e.g. `pom.xml`, `build.gradle`,
+`package.json`), the module/folder structure, formatter and linter configuration, CI/CD pipelines
+and deployment definitions, UI/theming/style sources, and documents the conventions the code
+actually follows.
+It determines whether the project has one subproject or several. For a single subproject it
+reconstructs the artifact kind and tech stack into `spec/architecture/tech-stack.md` with
+`status: draft`. For several subprojects it reconstructs each as a module under
+`spec/modules/{module}/`: `module.md` with artifact kind, purpose, responsibilities, boundaries,
+dependencies and `status: draft`, and `tech-stack.md` with the observed language, version,
+frameworks, runtime, libraries, build/test tooling and infrastructure. Only the human moves a
+shape to `agreed`.
 Writes/updates the files under `architecture/`, again marked as inferred and with evidence.
 For UI projects it also reconstructs the project-specific UI artifacts:
 
@@ -685,6 +974,11 @@ Command: `/guide`.
 Invoked by: HUMAN.
 Precondition: none.
 
+Documents:
+- Works with: all of `spec/**` (requirements, architecture, screens, flows,
+  theme/components, data, tickets and agent notes), `prototypes/**` and the git state.
+- May modify: none. It reports findings and lessons; it does not write files.
+
 Read-only: it changes nothing. It inspects the tickets, requirements, architecture, screen
 documents, flows, theme/components, data, prototypes, the git state and `spec/agent/`, and reports
 a single prioritized list of the next best actions, each with a reason and the concrete
@@ -693,16 +987,19 @@ tickets/branches it applies to.
 It orders actions to unblock the process:
 1. fix a broken repo state (interrupted rebase/merge, dirty tree, wrong branch).
 2. `/facilitate` when `input.md` has unfacilitated lines.
-3. `/design` when UI requirements or architecture changed, when affected screen documents are
+3. project-shape refinement (`/facilitate`) when the shape is not settled: a single
+   `architecture/tech-stack.md` missing or not `agreed`, or a multi-subproject project with
+   missing/non-agreed modules or incomplete stacks. Planning stays blocked until this is settled.
+4. `/design` when UI requirements or architecture changed, when affected screen documents are
    missing or not `approved`, when screen documents have blocking open questions, or when the
    prototype is stale. Skip for projects without a UI.
-4. `/plan` when requirements or architecture changed since the last plan, or when approved
+5. `/plan` when requirements or architecture changed since the last plan, or when approved
    screen documents have no UI tickets.
-5. `/refine` for tickets in DRAFT.
-6. `/review` for tickets in IN_REVIEW (re-run the reviewer).
-7. `/implement` when unblocked READY tickets exist.
-8. `/accept` for DONE tickets awaiting human acceptance.
-9. `/reconcile` when inconsistencies are detected.
+6. `/refine` for tickets in DRAFT.
+7. `/review` for tickets in IN_REVIEW (re-run the reviewer).
+8. `/implement` when unblocked READY tickets exist.
+9. `/accept` for DONE tickets awaiting human acceptance.
+10. `/reconcile` when inconsistencies are detected.
 
 It names any UI ticket that is blocked because its screen document is missing, not approved, or
 has an unresolved design question, and recommends `/design`.
@@ -716,6 +1013,13 @@ Command: `/reconcile`.
 Invoked by: HUMAN.
 Precondition: none.
 
+Documents:
+- Works with: all of `spec/**`, `prototypes/**` and the git state (branches, working tree,
+  release notes).
+- May modify: `spec/tickets/**` (status and metadata repairs only; never a HUMAN ticket);
+  `prototypes/**` (regenerate only); git state (branches, commits, stash). It may commit
+  existing uncommitted spec artifacts but does not change their content.
+
 Restores a consistent state across tickets, branches and main after an interrupted or failed run.
 It audits first, then applies only safe, idempotent, non-destructive repairs, and reports what it
 changed and what needs a human.
@@ -726,6 +1030,12 @@ Audit:
   tickets have `ui-screens` and every referenced screen document exists. READY, IN_PROGRESS,
   IN_REVIEW and DONE UI tickets require their screen documents to be `approved`; DRAFT UI
   tickets may reference screens that are back in `review`.
+- shape: for a single subproject, `architecture/tech-stack.md` exists with a valid artifact
+  kind, `status` and language/version; for multiple subprojects, every
+  `spec/modules/{module}/module.md` has a valid artifact kind and status, every module has a
+  `tech-stack.md` naming the language and version, and `agreed` shapes have no blocking open
+  question. Flag an ambiguous shape (project tech-stack plus modules) or a legacy
+  `architecture/tech-stack.md` that should be migrated into modules.
 - screens: screen ids are unique; front matter matches the definition; status is valid; flows
   reference existing screens; data fixtures and front-matter scenarios exist; data bindings
   resolve in `default`; prototypes build or are stale.
@@ -738,11 +1048,12 @@ Safe repairs (idempotent, never discard work):
 - reset an abandoned IN_PROGRESS or IN_REVIEW ticket to READY; keep its branch and report it.
 - delete branches already merged into main.
 - remove dangling `blocked-by` references; report cycles.
-- commit uncommitted design/planning artifacts (screen documents, flows, theme/components, data,
-  tickets, requirements) on main.
+- commit uncommitted design/planning artifacts (module documents, screen documents, flows,
+  theme/components, data, tickets, requirements) on main.
 - regenerate stale prototypes; never hand-edit generated HTML.
-- return a UI ticket to DRAFT when its screen document is missing, not approved or has a
-  blocking open question; keep its branch and report it.
+- return a ticket to DRAFT when the project shape it references is missing or not `agreed`, or
+  when a UI ticket's screen document is missing, not approved or has a blocking open question;
+  keep its branch and report it.
 - flag items it must not touch (HUMAN tickets, missing release-note entries, unapproved screen
   design changes, missing data fixtures or bindings).
 
@@ -761,13 +1072,17 @@ Additional commands have no named role, but are also expressed as a skill, with 
 Command: `/tickets`.
 Invoked by: HUMAN.
 
-Shows all open (non-CLOSED) tickets, one row each, oldest first. It is mechanical and
-precomputed: the read-only helper (`iap.sh open`, installed by `/bootstrap` at a
-tool-independent path) emits the table and the agent prints it verbatim. The agent does not
-open ticket files, parse front-matter, sort, pad, filter or reformat — and computes nothing
-else. Per-status counts come from `iap.sh counts` when requested.
+Documents:
+- Works with: `spec/tickets/**` (through the read-only listing script in the TICKETS skill).
+- May modify: none.
 
-The helper emits one row per open ticket, space-aligned in exactly this column order:
+Shows all open (non-CLOSED) tickets, one row each, oldest first. It is mechanical: the
+TICKETS skill contains a read-only script that emits the table, and the agent prints it
+verbatim. The agent does not open ticket files one by one, parse front-matter, sort, pad,
+filter or reformat the output — and computes nothing else. Per-status counts come from the
+same skill's count script when requested.
+
+The script emits one row per open ticket, space-aligned in exactly this column order:
 
 | Column  | Value                                                    |
 |---------|----------------------------------------------------------|
@@ -789,52 +1104,34 @@ HUMAN (for HUMAN tickets). In the implement/review/accept loop the orchestrator 
 automatically for each accepted AUTOMATIC ticket; it may accept every eligible DONE ticket in
 one run.
 
+Documents:
+- Works with: `spec/tickets/**` (DONE tickets); `spec/release-notes.md`; for UI tickets,
+  `spec/screens/**` (to verify the screen documents are approved); the build file.
+- May modify: `spec/tickets/**` (replace the comments with the post-merge summary and set
+  the ticket CLOSED); `spec/release-notes.md`.
+
 Accept the eligible DONE tickets, and for each:
 - for a UI ticket, verify the referenced screen documents are `approved`; do not merge a UI
   ticket whose screen document is missing or not approved.
 - switch to the feature branch.
+- rebase the feature branch onto up-to-date `main` and resolve conflicts. If the rebase cannot
+  be resolved, abort it, leave the ticket DONE and unmodified on its branch, and report; never
+  leave a half-rebased tree. `/reconcile` cleans up.
 - update the release notes (create on-the-fly if missing), and verify the version is correct, using the build file's `{major}.{minor}` version (e.g. from `pom.xml`).
+- summarize the ticket's `## Comments`: replace the running log with a concise, dated
+  post-merge summary and keep only information that still has value after the merge — see
+  "Comments". Drop process chatter, resolved rework, duplicates and superseded notes.
 - set the accepted ticket to CLOSED.
-- commit the release notes and ticket update on the feature branch.
+- commit the release notes and the ticket (summary and CLOSED status) on the feature branch.
 - squash the commits into one, named as `{ticket-number}-{ticket-type}: {ticket-title}`.
-- rebase the feature branch onto the main branch, resolve conflicts.
 - switch back to the main branch.
 - merge the feature branch (fast-forward only).
 - delete the feature branch afterward, and the remote of the feature branch as well, if it exists.
 
-If the rebase cannot be resolved automatically, abort the rebase, leave the ticket DONE on its branch,
-and report; never leave a half-rebased tree. `/reconcile` cleans up.
-
-### Bootstrap
-
-Command: `/bootstrap`.
-Invoked by: HUMAN.
-Precondition: a project root (empty, freshly initialized, or existing codebase).
-On an existing project it only adds missing files and refreshes the process artifacts.
-
-What it does:
-1. Installs the process commands and skills for the active agent tool:
-   FACILITATOR, UI-DESIGNER, PLANNER, ANALYST, IMPLEMENTOR, REVIEWER, ARCHAEOLOGIST,
-   SYSTEM-ARCHITECT, GUIDE and RECONCILER, plus the additional commands `/tickets` and
-   `/accept`, the read-only helper `iap.sh` at the tool-independent path `.iap/iap.sh`, and the
-   reference prototype builder when the bundle provides one.
-2. Creates the missing parts of the `spec/` skeleton from the skill-bundled template: an empty
-   `input.md`, the `requirements/`, `architecture/`, `screens/`, `flows/`, `components/`,
-   `data/`, `tickets/` and `agent/` folders, `theme.gui`, the bundled
-   `architecture/gui-spec.md` and `architecture/screen-workflow.md`, and the generated
-   `prototypes/` folder. Existing content is never overwritten; only absent files are created.
-   The two bundled references are the exception: `/bootstrap` refreshes them to the bundle
-   version.
-3. Creates a copy of the process in `spec/agent/idx-agentic-process.md`.
-4. Writes `spec/agent/process-version.md`, recording the IAP version used, so the copy can later
-   be updated or diffed.
-5. It neither creates tickets, screen documents nor requirements — those come from the human
-   and `/design`.
-
 ## Collaboration
 
 The project has to be a Git repository, with either `master` (default) or `main` as the _main branch_.
-The `/bootstrap` action will create the repository, if it does not exist yet.
+Create it with `git init` if needed.
 A remote is optional, `git push` and `git pull` are executed by the human only.
 
 ### Commits
@@ -861,6 +1158,8 @@ These must always hold. Any role that finds one violated must report it and stop
 - no two writing roles run concurrently.
 - the process document is never edited by an agent.
 - every human decision that changes requirements, architecture, screen documents or tickets is recorded in `input-ledger.md`.
+- no ticket is planned until the project shape is `agreed`: the single `tech-stack.md` or every module, with artifact kind, language and version.
+- implementation follows the ticket's agreed project shape; changing an artifact kind, boundary or stack reopens the shape and returns affected tickets to DRAFT.
 - a UI ticket is planned only from an `approved` screen document.
 - every UI ticket has `ui-screens`; every referenced screen document exists.
 - an approved screen document is not silently changed during implementation; design changes go through `/design` and re-approval, and affected tickets return to DRAFT.
@@ -914,55 +1213,55 @@ These must always hold. Any role that finds one violated must report it and stop
 
 ### Installation
 
-The distribution bundle is the `skills` and `commands` folders together with the process
-definition `idx-agentic-process.md` (and `VERSION`). `skills` holds the role logic plus its
-templates and scripts; `commands` holds the thin slash-command wrappers, one per skill.
+The distribution bundle is the `skills/` and `commands/` folders, the `templates/` used to
+create `spec/`, and the process definition `idx-agentic-process.md` with `VERSION`. `skills/`
+holds the role logic plus its templates and scripts; `commands/` holds the thin slash-command
+wrappers, one per skill.
 
-For a project-local installation, copy the `skills` and `commands` folders to the following
-folder in your project:
+Install IAP with the installer in the distribution repository (see `README.md`). It copies
+the skills and commands into the project's agent folder — `.opencode` (OpenCode) or `.claude`
+(Claude Code) — for a project-local installation, or into `~/.opencode` / `~/.claude` for a
+global installation.
 
-- `.opencode` (for OpenCode)
-- `.claude` (for Claude Code)
+The installer creates the missing `spec/` files from the bundled templates. Commit a
+project-local tool folder so collaborators and cloud agents have it. Generated `prototypes/`
+may be added to `.gitignore`; screen documents, flows, theme/components and data are versioned.
 
-For a global installation, copy the `skills` and `commands` folders to:
+### Starting a project
 
-- `~/.opencode` (for OpenCode)
-- `~/.claude` (for Claude Code)
+Install IAP in the project first (see `README.md`); the installer creates `spec/input.md` and
+the initial `spec/` folders.
 
-`/bootstrap` also installs the read-only helper at `.iap/iap.sh` (tool-independent, outside
-the tool folders). Commit `.iap/iap.sh` so collaborators and cloud agents have it. Generated
-`prototypes/` may be added to `.gitignore`; screen documents, flows, theme/components and data
-are versioned.
-
-### Bootstrapping projects
-
-A project is bootstrapped with the `/bootstrap` command.
-
-After bootstrap:
+Then:
 1. The human describes the project in `spec/input.md`.
 2. `/facilitate` turns that input into requirements and architecture documents.
-3. Repeat the requirements loop until the picture is stable.
-4. For UI projects, `/design` creates or updates screen documents and the review prototype; the
+3. `/facilitate` runs the project-shape interview: a single subproject is recorded in
+   `architecture/tech-stack.md`; multiple subprojects are written under `spec/modules/{module}/`.
+   The human accepts the shape until `status: agreed`.
+4. Repeat the requirements and project-shape refinement loop until the picture is stable.
+5. For UI projects, `/design` creates or updates screen documents and the review prototype; the
    human reviews and moves the screen documents to `approved`.
-5. `/plan` creates tickets; `/refine` promotes them to READY.
-6. `/implement` and `/review` drive the implementation loop.
-7. `/accept` closes the implementation and merges the code.
-8. Commit `spec/` together with the code.
+6. `/plan` creates tickets; `/refine` promotes them to READY.
+7. `/implement` and `/review` drive the implementation loop.
+8. `/accept` closes the implementation and merges the code.
+9. Commit `spec/` together with the code.
 
-Updating the process: re-run `/bootstrap` (or copy the bundle again). It refreshes the
-command/skill definitions, the read-only helper (`.iap/iap.sh`), the bundled
-`architecture/gui-spec.md` and `architecture/screen-workflow.md`, the process copy
-(`spec/agent/idx-agentic-process.md`) and the process marker. The content of `spec/requirements`,
-`spec/screens`, `spec/flows`, `spec/components`, `spec/theme.gui`, `spec/data`, `spec/tickets`
-and `spec/agent/input-ledger.md` is never touched. If the prototype builder changes, regenerate
-prototypes with `/design` or the project builder; do not hand-edit them.
-When a process change alters statuses, metadata fields or role contracts, re-running `/bootstrap`
-updates the definitions and the process copy; the human then runs `/reconcile` to migrate existing
-tickets, screen documents and ledgers, and appends a short note to `spec/agent/input-ledger.md`.
+Updating the process: pull the distribution and re-run its installer. It refreshes the
+command/skill definitions, the bundled `architecture/gui-spec.md` and
+`architecture/screen-workflow.md`, the process copy (`spec/agent/idx-agentic-process.md`) and
+the process marker. It creates `architecture/test-strategy.md` if it is missing. The content of
+`spec/requirements`, `spec/modules`, `spec/screens`, `spec/flows`, `spec/components`,
+`spec/theme.gui`, `spec/data`, `spec/tickets` and `spec/agent/input-ledger.md` is never touched.
+If the prototype builder changes, regenerate prototypes with `/design` or the project builder;
+do not hand-edit them.
+When a process change alters statuses, metadata fields or role contracts, re-running the
+installer updates the definitions and the process copy; the human then runs `/reconcile` to
+migrate existing tickets, screen documents and ledgers, and appends a short note to
+`spec/agent/input-ledger.md`.
 
 ### How to use this process in existing projects
 
-For an existing project the process is adopted in slices: bootstrap the process first, then
+For an existing project the process is adopted in slices: install IAP first, then
 reverse-engineer the current reality into the requirement and architecture documents over time.
 It can be used before reverse-engineering is complete — the missing parts simply stay unresolved.
 
@@ -972,16 +1271,22 @@ overwrite human content: they write *provisional* content marked as inferred, to
 evidence and a report in `spec/agent/`, and the human accepts or corrects it.
 
 Order of adoption:
-1. `/bootstrap` the process in the existing repository.
-2. `/survey` and `/excavate` to reconstruct architecture and requirements (repeat as code changes).
-3. The human reviews the inferred documents, corrects and accepts them (the requirements loop).
+1. Install IAP in the existing repository (see `README.md`).
+2. `/survey` and `/excavate` to reconstruct the project shape, architecture and requirements
+   (repeat as code changes).
+3. The human reviews the inferred documents, corrects them, and accepts the project shape
+   through the refinement interview: a single `architecture/tech-stack.md`, or each module and
+   its tech stack, until it is `agreed`.
 4. For UI projects, `/survey` reconstructs the observed theme/components and inferred screen
    documents; the human reviews and completes them with `/design`, then approves the screens.
 5. `/plan`, `/refine`, `/implement`, `/review` and `/accept` as usual.
 
+Planning waits until the project shape is `agreed`; inferred shapes start as `draft`.
+
 Provenance:
 - Requirement and architecture items may carry a marker such as `origin: human | inferred` and,
   optionally, a confidence.
+- Module documents and tech stacks may carry the same `origin: human | inferred` marker.
 - Screen documents, theme and components may carry the same `origin: human | inferred` marker.
 - The first entry in `spec/agent/input-ledger.md` records the reverse-engineering event: date,
   source revision/commit, and the commands that were run.

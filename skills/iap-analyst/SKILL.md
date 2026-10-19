@@ -18,9 +18,10 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
 
 ## Inputs to read first
 
-1. DRAFT tickets (and READY, to keep them consistent) — find candidates with
-   `bash .iap/iap.sh list DRAFT READY`, then read only those bodies.
-2. All `spec/requirements/**` and `spec/architecture/**` — the source of truth.
+1. DRAFT tickets (and READY, to keep them consistent) — run the ticket script below, then read
+   only those bodies.
+2. All `spec/requirements/**`, `spec/architecture/**` and, when present, `spec/modules/**` — the
+   source of truth.
 3. `spec/agent/ticket-index.md` and any notes under `spec/agent/`.
 
 ## Procedure
@@ -31,6 +32,9 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
    - Are the acceptance criteria observable and verifiable?
    - Is the scope a single, implementable unit? Split or merge as needed.
    - Does it violate or ignore any requirement or constraint?
+   - Does it reference an `agreed` project shape — the single `architecture/tech-stack.md` or
+     the relevant module's `module.md` and `tech-stack.md` — and does it stay within the agreed
+     artifact kind, language, version and stack?
    - Are its `blocked-by` references correct, existing and acyclic?
    - Is there a gap, ambiguity or impediment that needs a human decision before it can be
      READY?
@@ -40,8 +44,8 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
    note to the ticket's comments explaining the refinement.
 3. **Promote to READY** when a ticket is sufficiently defined and realizable: the scope is
    clear, tasks are concrete, acceptance criteria are verifiable, links to the
-   requirements/architecture are present, and nothing required is still unknown. Set
-   `status: READY`.
+   requirements/architecture and the project shape are present, and nothing required is still
+   unknown. Set `status: READY`.
 4. **Leave genuinely unclear tickets in DRAFT** and state in the comments exactly what is
    missing or which open question must be answered, and by whom. Where a human decision is
    needed — a missing or ambiguous requirement, a technology or implementation choice,
@@ -60,6 +64,8 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
 
 ## Rules and behaviour
 
+- **Do not promote a ticket whose project shape is missing or not `agreed`.** Keep it DRAFT and
+  report that project-shape refinement is needed.
 - **You do not plan work that was never requested**, and you do not invent requirements.
   If a ticket conflicts with the spec, correct the ticket — or, if the spec is wrong or
   incomplete, note that for the FACILITATOR instead of changing the requirements yourself.
@@ -75,3 +81,24 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
   implementor could finish it without asking further questions.
 - **Guard against scope creep.** Prefer several small, independently reviewable tickets
   over one large one.
+
+## Script: DRAFT and READY tickets
+
+Read-only. Prints `FILE STATUS TITLE` for tickets that need refinement.
+
+```bash
+for f in spec/tickets/*.md; do
+  [ -e "$f" ] || continue
+  status=$(sed -n 's/^status:[[:space:]]*//p' "$f" | head -1)
+  case "$status" in DRAFT|READY) ;; *) continue ;; esac
+  title=$(sed -n 's/^#[[:space:]]*//p' "$f" | head -1)
+  printf '%s\t%s\t%s\n' "$f" "$status" "$title"
+done | sort -t"$(printf '\t')" -k2,2 -k1,1
+```
+
+## Lessons learned
+
+Read `spec/agent/lessons-learned-analyst.md` before working and update it before reporting.
+Keep entries short, dated and reusable; apply what fits, and never let a lesson override the
+process, requirements, architecture or tickets. You may record a useful script in a lesson,
+with its purpose and whether it writes anything.

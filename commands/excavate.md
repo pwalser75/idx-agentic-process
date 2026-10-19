@@ -8,7 +8,7 @@ context. Do not do the role's work yourself — pass the arguments, then relay i
 and any questions verbatim to the human.
 
 1. Load the `iap-archaeologist` skill and follow it exactly.
-2. Precondition: `spec/` is bootstrapped and the project contains source code. If not,
+2. Precondition: IAP is installed (`spec/` exists) and the project contains source code. If not,
    report it and stop.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
 

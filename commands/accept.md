@@ -1,5 +1,5 @@
 ---
-description: ACCEPT — update release notes, squash, rebase and merge DONE tickets.
+description: ACCEPT — rebase, update release notes, summarize comments, close, squash and merge DONE tickets.
 ---
 Assume the **ACCEPT** role of the idx Agentic Process.
 

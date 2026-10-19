@@ -2,7 +2,7 @@
 name: idx-agentic-process
 description: >-
   Entry point for the idx Agentic Process (IAP), a human+agent development process driven
-  by a `spec/` folder and slash commands (/bootstrap, /facilitate, /plan, /refine,
+  by a `spec/` folder and slash commands (/facilitate, /design, /plan, /refine,
   /implement, /review, /accept, /tickets, /excavate, /survey, /guide, /reconcile). Use at
   the start of a session in a repository that contains a `spec/` folder, or when the user
   mentions IAP, the idx agentic process, `spec/` requirements/architecture/tickets, an
@@ -16,18 +16,20 @@ description: >-
 IAP builds software with a human and agents in an iterative loop, keeping every decision
 in a reviewable `spec/` folder. This skill is the entry point: it explains the model, the
 artifacts and their edit rights, the ticket lifecycle and the operating rules. Each role
-has its own skill (`iap-facilitator`, `iap-planner`, `iap-analyst`, `iap-implementor`,
-`iap-reviewer`, `iap-archaeologist`, `iap-system-architect`, `iap-guide`,
-`iap-reconciler`, `iap-bootstrap`, `iap-accept`, `iap-tickets`).
+has its own skill (`iap-facilitator`, `iap-designer`, `iap-planner`, `iap-analyst`,
+`iap-implementor`, `iap-reviewer`, `iap-archaeologist`, `iap-system-architect`, `iap-guide`,
+`iap-reconciler`, `iap-accept`, `iap-tickets`).
 
 The canonical, human-owned definition is `idx-agentic-process.md`; a copy is placed at
-`spec/agent/idx-agentic-process.md` in bootstrapped projects. If this skill and that file
-disagree, the file wins.
+`spec/agent/idx-agentic-process.md` in projects where IAP is installed. If this skill and
+that file disagree, the file wins.
 
 ## The process
 
 - **Requirements** — define and detail the requirements and the constraints for building
   them (human + agent).
+- **UI Design** — define screens, flows, theme/components and example data as reviewable
+  documents, with a generated prototype for review (human + agent).
 - **Planning** — turn requirements into actionable tasks expressed as tickets (agent).
 - **Implementation** — pick a ticket and build the project incrementally (agent).
 - **Review** — review implemented tickets on feature branches and either accept them or
@@ -42,23 +44,30 @@ The process enables the human-in-the-loop but does not enforce it.
    and clears `input.md`.
 2. **Review (optional)** — read the updated `requirements/` and `architecture/` documents;
    repeat step 1 until the picture is stable.
-3. **Plan** — run `/plan`, then inspect tickets with `/tickets`. It surfaces any gap or
+3. **Settle the project shape** — run `/facilitate` for the pre-planning interview: what the
+   project delivers and the language, version and stack. A single subproject uses
+   `architecture/tech-stack.md`; multiple subprojects use `spec/modules/{module}/`. The shape
+   must be `agreed`; `/plan` refuses otherwise.
+4. **Design UI (projects with a UI)** — run `/design` to create/update screen documents,
+   flows, theme/components and data, and to build the review prototype. Review it, answer
+   open questions, and repeat until the screens are `approved`. Skip for projects without a UI.
+5. **Plan** — run `/plan`, then inspect tickets with `/tickets`. It surfaces any gap or
    impediment that needs your decision — with the options and its advice — and records the
    decision in the input ledger before continuing.
-4. **Refine** — run `/refine` to promote sufficiently defined tickets to READY. It likewise
+6. **Refine** — run `/refine` to promote sufficiently defined tickets to READY. It likewise
    surfaces the decisions it needs from you before promoting a ticket.
-5. **Mark acceptance (optional)** — set `acceptance-type: HUMAN` on tickets you want to
+7. **Mark acceptance (optional)** — set `acceptance-type: HUMAN` on tickets you want to
    accept yourself; the rest stay on the default AUTOMATIC. This is a metadata edit and
    does not change the ticket's status.
-6. **Implement** — run `/implement` once. It drives the implement → review → accept loop:
+8. **Implement** — run `/implement` once. It drives the implement → review → accept loop:
    the agent works through READY, unblocked tickets one at a time; AUTOMATIC tickets are
    reviewed and accepted (merged) automatically, HUMAN tickets are implemented and left for
    you. The loop runs until nothing workable remains or it gets stuck, then reports what is
    left and why.
-7. **Accept manually** — inspect DONE tickets with `acceptance-type: HUMAN` and run
+9. **Accept manually** — inspect DONE tickets with `acceptance-type: HUMAN` and run
    `/accept` to merge them, or comment on a ticket to send it back to DRAFT.
-8. **Recover / re-orient** — after any interruption, or when unsure, run `/reconcile` to
-   restore a consistent state and `/guide` to see what to do next.
+10. **Recover / re-orient** — after any interruption, or when unsure, run `/reconcile` to
+    restore a consistent state and `/guide` to see what to do next.
 
 ## Artifacts and edit rights
 
@@ -73,13 +82,26 @@ project-root/
    │  ├─ domain-models/{model-name}.md  # (X) name, description, attributes
    │  └─ features/{feature-name}.md     # (X) feature + its functions/use cases
    ├─ architecture/                     # (X) non-functional design and constraints
-   │  ├─ tech-stack.md                  # (X) languages, frameworks, libraries
+   │  ├─ tech-stack.md                  # (X) single-subproject shape (created by shape refinement)
+   │  ├─ integration.md                 # (X) integration with other systems, APIs
    │  ├─ design-system.md               # (X) UI design system (default preset, entry point)
-   │  ├─ gui-spec.md                    # (X) normative gui-v1 screen format
-   │  ├─ decomposition.md               # (X) modules and packages
+   │  ├─ gui-spec.md                    # (X) normative gui-v2 screen format (bundled)
+   │  ├─ screen-workflow.md             # (X) screen authoring/review workflow (bundled)
+   │  ├─ prototype-builder.md           # (X) project prototype-builder contract and command
+   │  ├─ test-strategy.md               # (X) test levels and required coverage
+   │  ├─ decomposition.md               # (X) module map (multi) or package map (single)
    │  ├─ coding-guidelines.md           # (X) naming, structure, error handling, testing
    │  ├─ quality-aspects.md             # (X) non-functional requirements
    │  └─ ...                            # (X) additional guidelines
+   ├─ modules/                          # (X) only when the project has >1 subproject
+   │  └─ {module}/
+   │     ├─ module.md                   # (X) artifact kind, purpose, boundaries, dependencies, status
+   │     └─ tech-stack.md               # (X) language/version, frameworks, runtime, tooling
+   ├─ screens/{screen-name}.md          # (X) screen document (gui-v2) + data, actions, states
+   ├─ flows/{flow-name}.md              # (X) multi-screen journeys
+   ├─ components/components.gui         # (X) project-defined extended components
+   ├─ theme.gui                         # (X) project theme and token overrides
+   ├─ data/{screen-name}.json           # (X) example data and scenarios
    ├─ tickets/{id}-{type}-{name}.md     # (X) work units
    └─ agent/                            # (A) agent-owned workspace
       ├─ input-ledger.md                # (A) append-only seed: accepted input + clarifications
@@ -87,6 +109,7 @@ project-root/
       ├─ planning-log.md                # (A) last-seen revision/hash of spec/
       ├─ source-ledger.md               # (A) hash ledger of scanned sources
       ├─ reverse-engineering-report.md  # (A) open questions from /excavate & /survey
+      ├─ lessons-learned-{role}.md      # (A) reusable lessons for one role
       ├─ process-version.md             # (A) IAP version used
       └─ idx-agentic-process.md         # (A) copy of this process
 ```
@@ -114,10 +137,26 @@ Rules that follow:
 - **Domain models** are conceptual: name, description, and attributes with a name,
   description and a language-agnostic type (`string`, `integer`, `decimal`, `date`,
   `date-time`, `currency`, …).
-- **Architecture** describes *how* it is built: tech stack, decomposition into
-  modules/packages, coding guidelines, quality aspects (non-functional requirements) and,
-  for projects with a UI, the design system (`design-system.md`) and its normative
-  `gui-v1` format (`gui-spec.md`).
+- **Architecture** describes *how* it is built: the project shape (artifact kinds and tech
+  stacks), decomposition into modules/packages, coding guidelines, quality aspects
+  (non-functional requirements) and, for projects with a UI, the design system
+  (`design-system.md`) and its normative `gui-v2` format (`gui-spec.md`).
+
+## Project shape
+
+A project has one or more artifacts. A **single-subproject project does not use modules**:
+its artifact kind, language, exact version and tech stack live in
+`spec/architecture/tech-stack.md`, with `status: draft | agreed`. A **project with more than one
+subproject uses modules**: each is defined by `spec/modules/{module}/module.md` (artifact kind,
+purpose, responsibilities, boundaries, dependencies, `status: draft | agreed`) and
+`spec/modules/{module}/tech-stack.md` (language and exact version, frameworks, runtime,
+libraries, build/test tooling, infrastructure).
+
+Before planning, the FACILITATOR runs an interview: the agent asks, proposes options with
+trade-offs and a recommendation, and the human chooses. The shape must be `agreed` before
+`/plan` may create tickets. `spec/architecture/decomposition.md` is the project-level map: the
+module map for multiple subprojects, or the package/layer map for a single one; it does not
+repeat the stacks.
 
 ## Tickets
 
@@ -143,6 +182,10 @@ blocked-by: {blocked-by}
 ---
 ## Comments
 ```
+
+`## Comments` is an append-only running log while the ticket is open. When `/accept` closes
+the ticket, it replaces the log with a concise post-merge summary that keeps only information
+that still matters after the merge.
 
 ### Metadata
 
@@ -209,19 +252,19 @@ impediment, a violated invariant, or a decision that needs a human).
 
 | Role                  | Type     | Command       | Precondition                              |
 |-----------------------|----------|---------------|-------------------------------------------|
-| FACILITATOR           | PRIMARY  | `/facilitate` | `input.md` exists and is not empty        |
-| PLANNER               | SUBAGENT | `/plan`       | none                                      |
+| FACILITATOR           | PRIMARY  | `/facilitate` | input non-empty or shape unsettled        |
+| UI-DESIGNER           | SUBAGENT | `/design`     | shape agreed, UI project                  |
+| PLANNER               | SUBAGENT | `/plan`       | project shape agreed                      |
 | ANALYST               | SUBAGENT | `/refine`     | none                                      |
 | IMPLEMENTOR           | SUBAGENT | `/implement`  | ≥1 READY ticket, clean tree, on main      |
 | REVIEWER              | SUBAGENT | `/review`     | ≥1 IN_REVIEW ticket                       |
-| ARCHAEOLOGIST         | SUBAGENT | `/excavate`   | `spec/` bootstrapped, source present      |
-| SYSTEM-ARCHITECT      | SUBAGENT | `/survey`     | `spec/` bootstrapped, source present      |
+| ARCHAEOLOGIST         | SUBAGENT | `/excavate`   | IAP installed (`spec/` exists), source    |
+| SYSTEM-ARCHITECT      | SUBAGENT | `/survey`     | IAP installed (`spec/` exists), source    |
 | GUIDE                 | SUBAGENT | `/guide`      | none                                      |
 | RECONCILER            | SUBAGENT | `/reconcile`  | none                                      |
 
-Additional commands (also expressed as skills): `/bootstrap` (install + create the spec
-skeleton), `/tickets` (list open tickets), `/accept` (update release notes, squash, rebase
-and merge DONE tickets).
+Additional commands (also expressed as skills): `/tickets` (list open tickets), `/accept`
+(update release notes, squash, rebase and merge DONE tickets).
 
 ## Golden rules for any IAP agent
 
@@ -241,6 +284,9 @@ and merge DONE tickets).
    never improvise around it.
 8. **Keep verbosity low and write plain English** — no "agentish" filler or corporate
    lingo ("delve", "leverage", …).
+9. **Learn and script.** Read your `lessons-learned-{role}.md` before work and update it after.
+   Keep small, read-only scripts in your skill or record them in your lessons; there is no
+   shared external helper.
 
 ## Collaboration (git)
 
@@ -274,29 +320,32 @@ and merge DONE tickets).
 
 `/reconcile` validates and repairs these; `/guide` reports violations it cannot repair.
 
-## Bootstrapping and adoption
+## Installation and adoption
 
-- **New project:** `/bootstrap` → write `spec/input.md` → `/facilitate` → repeat until
-  stable → `/plan` → `/refine` → `/implement` (with `/review`) → `/accept` → commit
-  `spec/` with the code.
-- **Existing project:** `/bootstrap` → `/survey` + `/excavate` to reconstruct the
-  architecture and requirements as provisional documents → the human reviews and accepts
-  them → then the normal loop. Reverse-engineering agents never silently overwrite human
-  content.
-- **Updating the process:** re-run `/bootstrap`. It refreshes the command/skill
-  definitions, the process copy and the version marker; the content of `spec/requirements`,
-  `spec/architecture`, `spec/tickets` and `spec/agent/input-ledger.md` is never touched.
-  After a process change that alters statuses or metadata, the human runs `/reconcile` to
-  migrate existing tickets and ledgers.
+- **New project:** install IAP (see `README.md`) → write `spec/input.md` → `/facilitate` →
+  repeat until stable → settle the project shape (single `tech-stack.md`, or one module per
+  subproject) until it is `agreed` → `/plan` → `/refine` → `/implement` (with `/review`) →
+  `/accept` → commit `spec/` with the code.
+- **Existing project:** install IAP → `/survey` + `/excavate` to reconstruct the project shape,
+  architecture and requirements as provisional documents → the human reviews and accepts them,
+  including the shape and its stacks → then the normal loop. Reverse-engineering agents never
+  silently overwrite human content.
+- **Updating the process:** pull the distribution and re-run its installer. It refreshes the
+  command/skill definitions, the process copy and the version marker; the content of
+  `spec/requirements`, `spec/modules`, `spec/architecture`, `spec/tickets` and
+  `spec/agent/input-ledger.md` is never touched. After a process change that alters statuses or
+  metadata, the human runs `/reconcile` to migrate existing tickets and ledgers.
 
 ## Installation
 
-The distribution bundle is the `skills/` and `commands/` folders plus the process definition
-`idx-agentic-process.md`. The skills hold the role logic with their templates and scripts;
-`commands/` holds the thin slash-command wrappers. Copy both into your project's agent folder
-— `.opencode` (OpenCode) or `.claude` (Claude Code) — for a project-local install, or into
-`~/.opencode` / `~/.claude` for a global install. `/bootstrap` then creates the `spec/`
-skeleton. See `README.md` for details.
+The distribution bundle is the `skills/` and `commands/` folders, the `templates/` used to
+create `spec/`, and the process definition `idx-agentic-process.md`. The skills hold the role
+logic with their templates and scripts; `commands/` holds the thin slash-command wrappers.
+
+Install IAP with the installer in the distribution repository. It copies the skills and
+commands into your project's agent folder — `.opencode` (OpenCode) or `.claude` (Claude Code)
+— for a project-local install, or into `~/.opencode` / `~/.claude` for a global install, and
+creates the initial `spec/` skeleton. See `README.md` for the exact commands.
 
 ## Where to look next
 

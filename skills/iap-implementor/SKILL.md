@@ -19,9 +19,10 @@ strictly within each ticket's scope.
 
 ## Inputs to read first
 
-1. Candidate tickets — `bash .iap/iap.sh next` (highest-priority READY, unblocked ticket)
-   or `bash .iap/iap.sh list READY`; read the chosen ticket in full (including comments),
-   plus the requirements/architecture it links to.
+1. Candidate tickets — run the READY candidate script below; read the chosen ticket in full
+   (including comments), plus the requirements/architecture it links to and its project shape:
+   the single `architecture/tech-stack.md`, or the relevant `spec/modules/{module}/module.md`
+   and `tech-stack.md`.
 2. `spec/architecture/coding-guidelines.md`, `quality-aspects.md` and — for any UI work —
    `design-system.md` and `gui-spec.md`, plus the existing source, tests and configuration,
    to match conventions.
@@ -44,9 +45,14 @@ the next ticket. That loop runs until no READY, unblocked ticket remains or it g
    up-to-date `main` with exactly that name.
 3. **Claim it.** On the feature branch, set `status: IN_PROGRESS` and commit the claim.
    Never implement on `main`; never start before the ticket is claimed.
-4. **Plan the work** against the ticket's tasks and acceptance criteria. If the ticket
-   turns out to be unimplementable as written, do not improvise: comment what is unclear,
-   set it back to READY (or DRAFT for re-refinement), and stop.
+4. **Plan the work** against the ticket's tasks and acceptance criteria. Read the project shape
+   from the ticket: the single `architecture/tech-stack.md`, or the relevant module's
+   `module.md` and `tech-stack.md`. If the shape is missing or not `agreed`, do not implement:
+   comment the gap, leave the ticket READY, and stop. Follow the agreed artifact kind,
+   language, language version and stack; if the ticket needs a different stack, stop and report
+   rather than changing it. If the ticket turns out to be unimplementable as written, do not
+   improvise: comment what is unclear, set it back to READY (or DRAFT for re-refinement), and
+   stop.
 5. **Implement.** Create and update the code, tests, configuration and documentation
    needed, following the architecture, decomposition and coding guidelines, and — for UI
    work — `design-system.md` (tokens, components, patterns, content, accessibility) and
@@ -74,6 +80,9 @@ the next ticket. That loop runs until no READY, unblocked ticket remains or it g
 - **One ticket, one scope.** Implement only what the claimed ticket asks. Unrelated fixes
   or extra features become new tickets — do not sneak them in.
 - **No ticket, no work.** Never implement before the ticket is IN_PROGRESS.
+- **Respect the project shape.** Never change the agreed artifact kind, language, language
+  version or stack to make a ticket fit. Report it instead; the shape is reopened through the
+  project-shape refinement and affected tickets return to DRAFT.
 - **Tests and docs are part of done**, when the project has them. Match existing
   conventions; if you need a library or tool the project does not use, get agreement first.
 - **Never edit `input.md` or the requirements/architecture** to make a ticket fit. If they
@@ -90,3 +99,29 @@ the next ticket. That loop runs until no READY, unblocked ticket remains or it g
 - [ ] Code, tests, configuration and documentation are updated and consistent.
 - [ ] Build/tests/linters pass locally; tests cover the new or changed behaviour.
 - [ ] Ticket status is IN_REVIEW with a handover comment; branch pushed.
+
+## Script: READY candidates
+
+Read-only. Prints `FILE TYPE TITLE BLOCKED-BY CREATED` for READY tickets. Apply the process
+priority **BUG > IMPROVEMENT > STORY**, then created time and id; a ticket is unblocked when
+every `blocked-by` id is CLOSED.
+
+```bash
+for f in spec/tickets/*.md; do
+  [ -e "$f" ] || continue
+  status=$(sed -n 's/^status:[[:space:]]*//p' "$f" | head -1)
+  [ "$status" = "READY" ] || continue
+  type=$(sed -n 's/^type:[[:space:]]*//p' "$f" | head -1)
+  created=$(sed -n 's/^created:[[:space:]]*//p' "$f" | head -1)
+  blocked=$(sed -n 's/^blocked-by:[[:space:]]*//p' "$f" | head -1)
+  title=$(sed -n 's/^#[[:space:]]*//p' "$f" | head -1)
+  printf '%s\t%s\t%s\t%s\t%s\n' "$f" "$type" "$title" "$blocked" "$created"
+done | sort -t"$(printf '\t')" -k5,5 -k1,1
+```
+
+## Lessons learned
+
+Read `spec/agent/lessons-learned-implementor.md` before working and update it before reporting.
+Keep entries short, dated and reusable; apply what fits, and never let a lesson override the
+process, requirements, architecture or tickets. You may record a useful script in a lesson,
+with its purpose and whether it writes anything.

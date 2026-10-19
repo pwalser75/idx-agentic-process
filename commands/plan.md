@@ -1,5 +1,5 @@
 ---
-description: PLANNER — create/update tickets from requirement and architecture changes.
+description: PLANNER — create/update tickets from requirement and architecture changes, once the project shape is agreed.
 ---
 Assume the **PLANNER** role of the idx Agentic Process.
 
@@ -8,7 +8,10 @@ context. Do not do the role's work yourself — pass the arguments, then relay i
 and any questions verbatim to the human.
 
 1. Load the `iap-planner` skill and follow it exactly.
-2. Precondition: none. It may be run at any time.
+2. Precondition: the project shape is `agreed` — a single `architecture/tech-stack.md`, or
+   every module in `spec/modules/` — and it names the artifact kind, language and version. If
+   not, report the missing shape decisions and point back to the project-shape refinement
+   interview; do not plan.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
 
 The planner surfaces any gap or impediment that needs a human decision, with the options and

@@ -1,0 +1,17 @@
+---
+description: UI-DESIGNER — create/update screen documents, flows, theme/components, data and the review prototype.
+---
+Assume the **UI-DESIGNER** role of the idx Agentic Process.
+
+This is a SUBAGENT role: run it in an isolated subtask so its work does not pollute this
+context. Do not do the role's work yourself — pass the arguments, then relay its report
+and any questions verbatim to the human.
+
+1. Load the `iap-designer` skill and follow it exactly.
+2. Precondition: the project shape is `agreed` and shows a UI, requirements and architecture
+   exist, and `architecture/gui-spec.md` and `architecture/screen-workflow.md` are available.
+   If not, report it and stop.
+3. Additional guidance from the human (may be empty): $ARGUMENTS
+
+Only the human approves screen documents. Keep verbosity low and use plain English — concise,
+fluff-free, no corporate lingo.

@@ -27,4 +27,5 @@ ticket addresses.}
 
 ## Comments
 
-<!-- Append-only running log: dated /refine, /implement and /review notes. -->
+<!-- Append-only running log of dated /refine, /implement, /review and human notes.
+     /accept replaces it with a concise post-merge summary when the ticket is closed. -->

@@ -17,7 +17,7 @@ it left behind, and write that as provisional requirements. You never claim more
 than the evidence supports.
 
 **Command:** `/excavate` · **Type:** SUBAGENT · **Invoked by:** HUMAN
-**Precondition:** `spec/` is bootstrapped and the project contains source code.
+**Precondition:** IAP is installed (`spec/` exists) and the project contains source code.
 
 ## Sources to scan
 
@@ -70,3 +70,22 @@ Exclude generated code, vendored dependencies and build output.
 - **Never touch `spec/tickets/`, `input.md` or `spec/agent/input-ledger.md`.**
 - **Never invent behaviour** to fill a gap. If the code does not make it clear, it is an
   open question.
+
+## Script: source inventory
+
+Read-only. Lists source files for the first inventory pass, excluding generated/vendor output.
+
+```bash
+find . -maxdepth 6 \
+  \( -name .git -o -name node_modules -o -name target -o -name build -o -name dist \) -prune -o \
+  -type f \( -name '*.java' -o -name '*.kt' -o -name '*.ts' -o -name '*.tsx' \
+     -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.rs' -o -name '*.cs' \
+     -o -name '*.php' -o -name '*.rb' -o -name '*.sql' \) -print | sed -n '1,200p'
+```
+
+## Lessons learned
+
+Read `spec/agent/lessons-learned-archaeologist.md` before working and update it before
+reporting. Keep entries short, dated and reusable; apply what fits, and never let a lesson
+override the process, requirements, architecture or tickets. You may record a useful script in
+a lesson, with its purpose and whether it writes anything.
