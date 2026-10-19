@@ -1,104 +1,139 @@
-# GUI Specification — `gui-v1`
+# GUI Guide and Specification — `gui-v2`
 
-- **Format revision:** 1.2
-- **Directive version:** `gui-v1`
+- **Format revision:** 2.0
+- **Directive version:** `gui-v2`
 - **Status:** Stable, conformance-oriented
+- **Audience:** humans, planning agents, implementation agents, renderer implementers
+- **Companion:** [`screen-workflow.md`](screen-workflow.md) for screen documents, review and
+  prototypes
 
-This document is the normative authoring and rendering contract for the UI design
-system described in [`design-system.md`](design-system.md). The design system owns
-principles, token choices, component usage and patterns; this specification owns the
-syntax, defaults, layout, validation and platform mapping.
+**Part I** explains what to build and why. **Part II** is the implementer reference:
+validation, AST, testing, versioning and a cheat sheet.
 
-It is a compact, deterministic, theme-driven format for describing application screens.
-It is designed for one agent to emit and another to parse, validate, lay out, and render
-on desktop, mobile, and web — including Java Swing, Android, iOS, and HTML/CSS.
-
-The format is intentionally finite. Every visual default is specified here. Renderers
-MUST NOT invent padding, fonts, colors, shadows, spacing, or alignment. The baseline
-theme in §4 is the format default; projects may override it through the theme block or
-their design system, but they do not change the format's resolution rules.
+The format is finite. Renderers MUST NOT invent padding, fonts, colors, spacing, borders or
+alignment. Every default is specified here.
 
 > **Read this first**
-> - Screens are trees. Every node is a component; layout containers are components too.
-> - Layout is one of `rows`, `columns`, or `grid`, plus a small set of fixed-purpose containers.
-> - Sizes are preferred-first. Explicit size wins; otherwise a node fills or hugs its content.
-> - Spacing is expressed only as `none`, `xs`, `s`, `m`, `l`, or `xl`.
-> - Color modes are `light` and `dark`; semantic tones are `info`, `success`, `alert`, `warning`, `error`.
-> - The result must be deterministic: same document + theme + measurement mode + renderer version = same AST, layout boxes, accessibility tree, and paint order.
-> - The first line of a document is `gui-v1`.
-
-The keywords **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are used as in RFC 2119.
-
-## Contents
-
-1. [Conformance and determinism](#1-conformance-and-determinism)
-2. [Core model](#2-core-model)
-3. [Syntax](#3-syntax)
-4. [Theme and defaults](#4-theme-and-defaults)
-5. [Layout](#5-layout)
-6. [Components](#6-components)
-7. [Platform mapping](#7-platform-mapping)
-8. [Accessibility](#8-accessibility)
-9. [Validation and error codes](#9-validation-and-error-codes)
-10. [AST, normalization, and testing](#10-ast-normalization-and-testing)
-11. [Quick reference](#11-quick-reference)
+> - The first line is `gui-v2`; indentation is two spaces per level.
+> - Containers are `row`, `column`, `grid` and `stack`.
+> - Primitives are the only nodes with built-in visual styling.
+> - Extended and project components expand to primitives and containers.
+> - Spacing is `none`, `xs`, `s`, `m`, `l` or `xl`, derived from one master unit.
+> - Color modes are `light` and `dark`; each has three neutral shades.
+> - Same document + theme + measurement mode + renderer version = same AST, layout boxes,
+>   accessibility tree and paint order.
 
 ---
 
-## 1. Conformance and determinism
+## Quick start
 
-### 1.1 Conformance levels
+```text
+gui-v2
 
-| Level | What it covers |
+screen dashboard "Dashboard" layout=column gap=m pad=l
+  page-header "Dashboard" description="Monday, 19 October"
+    button "Export" variant=secondary icon=download action=export
+    button "New report" variant=primary icon=plus action=new-report
+  card "Recent activity"
+    list
+      list-item "Report ready" description="Q3 summary" icon=download
+      list-item "New comment" description="Orbit mentioned you" icon=mail badge="3"
+```
+
+The rules that cover most work:
+
+1. **Screen:** `screen <id> "<title>" [kind=...] [layout=row|column|grid]`.
+2. **Containers:** `row` (horizontal), `column` (vertical), `grid`, `stack` (overlay).
+3. **Primitives:** `text`, `icon`, `image`, `divider`, `spacer`, `button`, `textfield`,
+   `textarea`, `select`, `checkbox`, `radio`, `switch`, `slider`, `progress`, `avatar`,
+   `badge`, `tag`, `spinner`, `skeleton`, `kbd`.
+4. **Extended components:** `field`, `card`, `page-header`, `list`, `table`, `tabs`,
+   `banner`, `toast`, `menu`, `breadcrumbs`, `pagination`, `action-bar`, `empty-state`,
+   `metric`, `radio-group`, `tree`, `tooltip`, `popover`.
+5. **Project components:** declare `component <name>` before screens with `param`/`slot`
+   lines and one body root.
+6. **Spacing:** only `none`, `xs`, `s`, `m`, `l`, `xl`. No numeric padding or gaps.
+7. **Color:** tokens only (`bg`, `surface`, `fg`, `muted`, `brand`, `info`, `error`,
+   `badge-blue`, …). No raw hex in component styling.
+8. **Text:** positional and quoted: `text "Welcome back"`. Attributes are `key=value`.
+9. **Actions:** `action=<id>` names behavior; `screen-workflow.md` defines it.
+10. **States:** use documented `disabled`, `invalid`, `selected`, `open`, `expanded`; do not
+    fake states with one-off colors.
+
+### Reading paths
+
+| You are… | Read |
 | --- | --- |
-| **P** — Parser | Reads the syntax, validates structure, emits a normalized AST with stable paths. |
-| **L** — Layout | Resolves theme tokens and sizes, applies the layout algorithm, emits boxes in 1/64 px. |
-| **C** — Components | Implements the core component catalog with the defaults in this specification. |
-| **X** — Extended | Implements the extended components: table, menu, document, carousel, date-range, pagination, skeleton, etc. |
-| **A** — Accessibility | Emits the accessibility tree and platform semantics described in §8. |
-| **R** — Renderer | Paints the boxes and handles the specified interaction states on a target platform. |
+| **Human defining a screen** | Quick start, §3, §6, §7, then `screen-workflow.md`. |
+| **Planning agent** | Quick start, §3, §6, §7, then `screen-workflow.md`. |
+| **Implementation agent** | §2–§10 and §11–§13. |
+| **Renderer implementer** | §2–§10 and §11–§13. |
+| **Prototype agent** | `screen-workflow.md`, §3 and §6. |
 
-A renderer MAY claim a subset (for example, L + C + A on Android). It MUST declare which components are unsupported rather than silently substituting an unrelated widget.
+---
 
-**Core catalog (C):** `rows`, `columns`, `grid`, `list`, `list-item`, `label`, `icon`, `tag`, `badge`, `button`, `textfield`, `textarea`, `date`, `password`, `dropdown`, `checkbox`, `radio-group`/`radio`, `switch`, `slider`, `progress`, `field`, `banner`, `tabs`/`tab`, `action-bar`, `divider`, `spacer`, `image`, `avatar`, `document`/`document-header`/`document-footer`.
+## Contents
 
-**Extended catalog (X):** `table` (including sorting and column resizing), `menu`/`menu-item`, `carousel`, `time`, `date-range`, `pagination`, `breadcrumbs`, `kbd`, `spinner`, `skeleton`, `screen-ref`, `tooltip`, `popover`, `toast`, `tree`/`tree-item`, and the `drawer`/`sheet` screen kinds.
+**Part I — Guide**
 
-An implementation MUST declare exactly which extended components and optional features it supports (for example table sorting, column resizing, or tree multi-select). A missing extended component or feature is a validation error at render time, not a silent fallback.
+1. [Purpose and principles](#1-purpose-and-principles)
+2. [Core model](#2-core-model)
+3. [Syntax](#3-syntax)
+4. [Tokens and themes](#4-tokens-and-themes)
+5. [Layout](#5-layout)
+6. [Components](#6-components)
+7. [Patterns](#7-patterns)
+8. [Content](#8-content)
+9. [Accessibility](#9-accessibility)
+10. [Platforms](#10-platforms)
 
-### 1.2 Determinism contract
+**Part II — Reference**
 
-A conforming implementation MUST process a document through these stages:
+11. [Validation and error codes](#11-validation-and-error-codes)
+12. [AST, normalization and testing](#12-ast-normalization-and-testing)
+13. [Versioning and conformance](#13-versioning-and-conformance)
+14. [Cheat sheet](#14-cheat-sheet)
 
-1. **Parse** into a raw tree.
-2. **Validate** structure and value ranges.
-3. **Normalize**: apply defaults, expand booleans, resolve aliases, assign stable paths.
-4. **Resolve theme**: select light/dark tokens, apply overrides, resolve tokens to values.
-5. **Expand references**: replace `screen-ref` nodes with the referenced screen content; reject cycles.
-6. **Measure**: compute text/image/control intrinsic sizes.
-7. **Lay out**: compute boxes in **1/64 logical-pixel units**.
-8. **Build accessibility tree**.
-9. **Paint** in tree order.
+---
 
-Given the same input, theme, measurement mode, viewport/safe-area inputs, and implementation version, stages 1–8 MUST be byte-for-byte identical when serialized canonically.
+# Part I — Guide
 
-Determinism rules:
+## 1. Purpose and principles
 
-- Layout math uses **fixed-point integers in 1/64 px**. Floats MAY be used internally, but every intermediate size and final box MUST be quantized to 1/64 px. Round half away from zero.
-- Final boxes are reported as 1/64-unit integers. A renderer that paints in whole pixels rounds at paint time only.
-- Scrollbars are **overlay** and never change the content box.
-- Safe-area insets are explicit inputs; they are not measured from a device inside the layout engine.
-- No implicit padding, margins, focus offsets, or platform control insets are allowed.
-- No animation affects layout.
-- Text measurement is deterministic for a given measurement mode. Production mode may use platform font metrics; conformance tests use **reference measurement** (§10.4).
-- Percentages require a definite parent size on that axis. If the parent is indefinite, the percentage resolves to `auto` and a warning is emitted.
+### 1.1 Purpose
 
-### 1.3 Versioning and extensions
+Give humans, planning agents and implementation agents one shared vocabulary for UI
+decisions. The same intent should produce the same components, tokens and behavior on web,
+Java Swing, Android and iOS. The target is data-heavy business applications, not marketing
+sites.
 
-- The first non-comment line is `gui-v1`.
-- Attributes starting with `x-` are extensions. Conforming renderers MUST preserve but ignore them.
-- Unknown types, attributes, enum values, or theme keys are errors.
-- A renderer MUST reject a document it cannot fully interpret rather than guess.
+### 1.2 Principles
+
+1. **Clarity before density.** Never trade affordance, legibility or accessibility for
+   compactness.
+2. **Compose before inventing.** Prefer the catalog and patterns over one-off widgets.
+3. **Accessible by default.** Contrast, focus, keyboard and touch targets are part of the
+   component.
+4. **Token-driven and deterministic.** Color, type, spacing, shape, motion and elevation
+   come from tokens.
+5. **Responsive by structure.** Reflow and relocate before hiding.
+6. **Progressive and honest feedback.** Show loading, empty and error states explicitly.
+7. **Motion with purpose.** Explain state changes; never animate layout in a way that
+   changes the result.
+8. **One primary action.** Each view has a clear next step.
+
+### 1.3 Visual signature
+
+Modern, flat, minimal and pristine. Generous but disciplined spacing, a restrained neutral
+palette, one brand accent, soft surfaces, modest radii and light elevation. Typography
+carries hierarchy; borders and shadows add structure only where needed.
+
+### 1.4 Non-goals
+
+- Not a brand book or marketing style guide.
+- Not a component implementation or a replacement for accessible platform conventions.
+- RTL mirroring, data visualization and motion beyond §4 are project extensions.
+- The HTML prototype is a review tool, not a production renderer.
 
 ---
 
@@ -106,68 +141,71 @@ Determinism rules:
 
 ### 2.1 Screens
 
-A screen is the root of a document. It is a container with:
+A screen has an `id`, quoted `title`, `kind`, color `mode`, root `layout` and layout/styling
+attributes.
 
-- an `id` and a quoted `title`,
-- a root layout: `rows`, `columns`, or `grid`,
-- a `kind`,
-- a color mode,
-- theme-driven styling.
-
-| `kind` | Presentation defaults |
+| `kind` | Defaults |
 | --- | --- |
-| `screen` | Fills the host viewport; `bg=bg`, `pad=xl`, `gap=m`, `safe=true`. |
-| `dialog` | Preferred width 480; content height; `bg=raised`, `pad=xl`, `gap=l`, radius `xl`, `shadow=lg`, centered in a `scrim`; `safe=false`. |
-| `drawer` | Preferred width 360; fills height; placement `right`; `bg=surface`, `pad=l`, `gap=m`, `shadow=lg`; `safe=true`. |
-| `sheet` | Fills width; content height up to 85% viewport; placement `bottom`; `bg=raised`, `pad=l`, `gap=m`, radius top `xl`, `shadow=lg`; `safe=false`. |
-| `frame` | Content size; `bg=surface`, `border=true`, radius `lg`, `pad=l`, `gap=m`; `safe=false`. |
-| `region` | Content size; transparent; `pad=none`, `gap=m`; `safe=false`. |
+| `screen` | Fills viewport; `bg=bg`, `layout=column`, `gap=m`, `pad=l`, `safe=true`. |
+| `dialog` | Width 480; content height; `bg=surface`, `pad=l`, `gap=m`, `radius=lg`, `shadow=lg`, centered in `scrim`; `safe=false`. |
+| `sheet` | Full width, up to 85% height, bottom; `bg=surface`, `pad=l`, `gap=m`, top `radius=lg`, `shadow=lg`; `safe=false`. |
+| `drawer` | Width 360, full height, right; `bg=surface`, `pad=l`, `gap=m`, `shadow=lg`; `safe=true`. |
+| `frame` | Content size; `bg=surface`, `border=true`, `radius=lg`, `pad=l`, `gap=m`. |
+| `region` | Content size; transparent; `pad=none`, `gap=m`. |
 
-The quoted title is metadata: accessible screen/dialog name, and window title where the host provides one. It is not rendered automatically.
+The title is metadata: accessible name and window title where supported. It is not painted.
 
-The screen header also accepts: `kind`, `safe`, `placement`, `mode`, `width`, `height`, `min-*`, `max-*`, `pad`, `pad-x`, `pad-y`, `bg`, `border`, `border-color`, `radius`, `shadow`, `scroll`, plus the layout attributes of its layout type: `gap` for `rows`/`columns`; `gap`, `cols`, `rows`, `col-gap`, `row-gap`, and `flow` for `grid`; `justify` and `align-items` for `rows`/`columns`; `wrap` for `columns`.
+Screen attributes: `kind`, `layout`, `mode`, `safe`, `placement`, `width`, `height`,
+`min-*`, `max-*`, `pad`, `pad-x`, `pad-y`, `gap`, `align`, `justify`, `bg`, `border`,
+`border-color`, `radius`, `shadow`, `scroll`, `visible-at`, `hide-at`, `cols`, `rows`,
+`col-gap`, `row-gap`, `flow`.
 
-`placement=left|right` is valid for `drawer`; `placement=top|bottom` is valid for `sheet`. `kind` defaults to `screen`; `safe` defaults to `true` for `screen`/`drawer`, otherwise `false`.
+Defaults: `layout=column`, `mode=light`; `safe=true` for `screen`/`drawer`. `placement` is
+`left|right` for `drawer`, `top|bottom` for `sheet`.
 
-### 2.2 The component tree
+### 2.2 Node classes
 
-Every node is a component. Containers are components and can be nested anywhere a component is allowed.
+**Containers:** `row`, `column`, `grid`, `stack`.
 
-**Free layout containers**
+**Primitives:** `text`, `icon`, `image`, `divider`, `spacer`, `button`, `textfield`,
+`textarea`, `select`, `checkbox`, `radio`, `switch`, `slider`, `progress`, `avatar`,
+`badge`, `tag`, `spinner`, `skeleton`, `kbd`.
 
-`rows`, `columns`, `grid`, `list`
+**Built-in extended:** `field`, `card`, `page-header`, `list`/`list-item`, `table`/
+`table-head`/`table-row`/`table-cell`, `tabs`/`tab`, `banner`, `toast`, `menu`/`menu-item`,
+`breadcrumbs`, `pagination`, `action-bar`, `empty-state`, `metric`, `radio-group`, `tree`/
+`tree-item`, `tooltip`, `popover`.
 
-**Fixed-purpose containers**
+**Project components:** any component registered with a top-level `component` declaration.
 
-`tabs` + `tab`, `action-bar`, `carousel`, `field`, `banner`, `menu`, `radio-group`, `table` + `table-head` + `table-row` + `table-cell`, `breadcrumbs`, `document` + `document-footer`, `screen-ref`, `popover`, `toast`, `tree` + `tree-item`; `tree-item` may also be a leaf when it has no children.
+Primitives are leaves. Extended/project components are leaves or containers as specified.
+Containers with no children are valid.
 
-**Leaf components**
+### 2.3 IDs, paths and actions
 
-`label`, `textfield`, `textarea`, `icon`, `tag`, `badge`, `button`, `date`, `time`, `date-range`, `password`, `dropdown`, `checkbox`, `radio`, `switch`, `slider`, `progress`, `divider`, `spacer`, `image`, `avatar`, `spinner`, `skeleton`, `pagination`, `kbd`, `list-item`, `menu-item`, `document-header`, `tooltip`
+- `id` is optional and unique after expansion.
+- Every node has a stable structural path: `root`, `root/0`, `root/0/2`, counting document
+  order.
+- Actions use the node’s `action` name; payloads include path and `id` when present.
+- Renderers must not derive behavior from component type alone.
+- Auto-generated paths are for tests and event routing only.
 
-Leaf components MUST NOT have children. A container with no children is valid (useful as a spacer or empty region).
+### 2.4 Modes and units
 
-### 2.3 IDs, paths, and actions
+A mode is `light` or `dark`; the screen’s mode is inherited and can be overridden per
+container. A mode changes tokens, not layout. If a node changes mode without `bg`, it keeps
+the painted background and uses the new mode’s foreground.
 
-- `id` is optional and unique within a screen after `screen-ref` expansion.
-- Every node has a **stable structural path**, independent of `id`: `root`, `root/0`, `root/0/2`, etc., counting children in document order.
-- Actions emitted by a node use its `action` name; payloads include the node path and, when present, the node `id`.
-- Renderers MUST NOT derive behavior from a component type alone.
-- Auto-generated paths are for testing and event routing only; they are not persisted.
+All dimensions are logical pixels (CSS px, dp, iOS points, Swing logical pixels).
+Percentages refer to the parent content box. The document is LTR; RTL is a project
+extension. Text is measured by the renderer; tests use §12.4. Images use preferred size and
+`aspect` unless `aspect=free`.
 
-### 2.4 Color modes
+### 2.5 Determinism
 
-Every node has a mode: `light` or `dark`. The screen's mode is the default. A container sets the mode for its subtree; any descendant can override it.
-
-A mode selects color tokens; it does not change layout. If a node overrides the mode but has no background, it inherits the parent's painted background while using the overridden mode's foreground colors. Set `bg` explicitly when the background should change.
-
-### 2.5 Units, direction, and measurement
-
-- All dimensions are **logical pixels**: CSS px, Android dp, iOS points, Swing logical pixels.
-- Percentages refer to the parent's **content box** on the same axis.
-- The document is LTR. `left`/`right` are physical. RTL mirroring is not part of `gui-v1`.
-- Text is measured by the renderer. Tests use the reference measurement in §10.4.
-- Images are measured from their preferred size and `aspect`; the intrinsic asset size is used only when `aspect=free`.
+Parse, validate, normalize, resolve tokens, expand components, measure, lay out, build the
+accessibility tree and paint. Layout uses fixed-point 1/64 px. The same inputs produce
+identical stages 1–8. Full rules are in §12.
 
 ---
 
@@ -176,277 +214,272 @@ A mode selects color tokens; it does not change layout. If a node overrides the 
 ### 3.1 Document structure
 
 ```text
-gui-v1
+gui-v2
 
 theme
   key=value
 
-screen <id> "<title>" <layout> [attribute ...]
+component <name> ["<description>"]
+  param <name> [=<default>]
+  slot [<name>]
+  <body root>
+
+screen <id> "<title>" [attribute ...]
   <node>
     <node>
 ```
 
-- UTF-8, LF line endings.
-- One optional `theme` block, then one or more screens.
-- Indentation is exactly two spaces per nesting level. Tabs are forbidden.
-- Blank lines are ignored.
-- A line whose first non-space character is `#` is a comment.
-- Strings use JSON escaping (`\"`, `\\`, `\n`, `\t`, `\uXXXX`).
-- Positional text is always quoted and comes before attributes.
-- Booleans may be written bare: `checked` means `checked=true`.
+- UTF-8, LF. Two spaces per level; tabs forbidden.
+- One optional theme, then component definitions, then screens. Definitions must precede
+  screens.
+- Blank lines ignored; `#` starts a whole-line comment.
+- Strings use JSON escaping. In component bodies `${name}` is a parameter placeholder;
+  `\${` writes a literal `${`.
+- Positional text is quoted and comes before attributes. Bare booleans are allowed.
 
 ### 3.2 Grammar
 
 ```ebnf
-document    = "gui-v1" NL [ theme ] { screen } ;
-theme       = "theme" NL { INDENT2 key "=" value NL } ;
-screen      = "screen" SP id SP string SP layout { SP attr } NL { node } ;
-node        = INDENT type [ SP string ] { SP attr } NL { node } ;
-layout      = "rows" | "columns" | "grid" ;
-type        = layout | container | component ;
-attr        = key [ "=" value ] ;
-key         = ( letter | digit | "-" | "." )+ ;
-value       = string | bare ;
+document   = "gui-v2" NL [ theme ] { component } { screen } ;
+theme      = "theme" NL { INDENT2 key "=" value NL } ;
+component  = "component" SP name [ SP string ] NL { param | slot } { node } ;
+param      = INDENT2 "param" SP name [ "=" value ] NL ;
+slot       = INDENT2 "slot" [ SP name ] NL ;
+screen     = "screen" SP id SP string { SP attr } NL { node } ;
+node       = INDENT type [ SP string ] { SP attr } NL { node } ;
+type       = name ;
+name       = ( letter | digit | "-" | "." )+ ;
+attr       = key [ "=" value ] ;
+key        = ( letter | digit | "-" | "." )+ ;
+value      = string | bare ;
 ```
 
-`INDENT` is context-sensitive: a node's children are the following lines with exactly two more leading spaces.
+A component body has exactly one root node; `param`/`slot` declarations come first.
 
 ### 3.3 Values
 
 | Type | Examples | Notes |
 | --- | --- | --- |
-| Dimension | `16`, `50%` | Logical pixels or percent of the parent content box. |
-| Spacing | `none`, `xs`, `s`, `m`, `l`, `xl` | The only valid padding/gap values. |
-| Color | `surface`, `info-soft`, `#2563EB`, `#2563EB66` | Theme token or hex. |
+| Spacing | `none`, `xs`, `s`, `m`, `l`, `xl` | Only valid padding/gap/inset values. |
+| Dimension | `16`, `50%` | Logical px or percent of parent content box. |
+| Color | `surface`, `info-soft`, `#2563EB`, `#2563EB66` | Token or hex. |
 | Boolean | `true`, `false`, `checked` | Bare form allowed. |
-| Enum | `left`, `fill`, `bottom-start` | Lowercase, exact. |
-| Track list | `auto 1fr 1fr`, `240 1fr` | Space-separated; quoted when it contains spaces. |
-| String | `"Re: Q3 planning"` | Required when the value contains spaces or reserved characters. |
+| Enum | `left`, `stretch`, `bottom-start` | Lowercase, exact. |
+| Track list | `auto 1fr 1fr`, `240 1fr` | Quote when it contains spaces. |
+| String | `"Re: Q3 planning"` | Required for spaces/reserved characters. |
+| Placeholder | `${label}`, `${tone}` | Component parameter; `\${` is literal. |
 
-Unless a component table states otherwise: booleans default to `false`, optional strings are absent, and numeric attributes listed without a default are required. Semantic `tone` defaults to `fg` for text/icons, `neutral` for tags, and `primary` for badges and accents.
+Booleans default to false; optional strings are absent; numerics without a default are
+required. `tone` defaults to `fg` for text/icons, `neutral` for tags/badges, `brand` for
+accents.
 
-### 3.4 Screen header
+### 3.4 Screen header and positional text
 
 ```text
-screen login "Sign in" rows kind=dialog width=480 pad=xl gap=l mode=light
+screen login "Sign in" kind=dialog width=400 pad=xl gap=l
 ```
 
-Positional: `screen`, id, quoted title, layout. All else are attributes. The screen header also accepts the layout attributes of its layout type.
+Positional values are `screen`, `id`, quoted `title`. Everything else is an attribute.
 
-### 3.5 Positional text
-
-| Type | Text means |
+| Type | Positional text |
 | --- | --- |
-| `label`, `tag`, `badge`, `button`, `checkbox`, `switch`, `radio`, `menu-item`, `tab`, `list-item`, `icon`, `kbd`, `document-header`, `tooltip`, `tree-item` | Visible label, icon name, or title. |
+| `text`, `button`, `checkbox`, `radio`, `switch`, `badge`, `tag`, `kbd` | Visible label. |
+| `icon` | Icon name. |
 | `field` | Visible label. |
-| `table-cell` | Optional cell text (prefer child components). |
-| Containers | No positional text, except `tab`, `field`, `document-header`, `list-item`, and `tree-item`. |
+| `card`, `page-header`, `list-item`, `tab`, `tree-item`, `menu-item`, `banner`, `toast`, `tooltip`, `empty-state` | Title or label. |
+| `table-cell` | Optional cell text; prefer children. |
+| Project component | Supplies `param text` if declared; otherwise invalid. |
+| Other containers/components | None. |
 
-A required text missing is a validation error.
+Missing required text is `E012`.
 
-### 3.6 Documents and embedded screens
+### 3.5 Canonical form
 
-A `document` has exactly one content node between its optional header and footer:
+Two-space indent, LF, lowercase keys/enums, bare booleans only for boolean attributes,
+attributes ordered positional text → `id` → alphabetical keys, one blank line between
+theme/component/screens and between screens.
 
-```text
-document
-  document-header "Workspace settings" description="Manage..." icon=settings
-  rows
-    ...
-  document-footer
-    button "Cancel" variant=ghost
-    button "Save" variant=primary default
-```
+### 3.6 Examples
 
-The content node may be a container, a component, or `screen-ref`.
+**Sign-in**
 
 ```text
-screen-ref screen=project-summary
+gui-v2
+
+screen sign-in "Sign in" kind=dialog width=400 pad=xl gap=l
+  text "Welcome back" size=lg weight=semibold level=1
+  text "Sign in to continue." size=sm tone=muted
+  field "Email"
+    textfield input=email placeholder="you@example.com" required
+  field "Password"
+    textfield input=password required
+  button "Sign in" variant=primary action=sign-in
+  text "Forgot password?" size=sm tone=brand action=forgot-password
 ```
 
-`screen-ref` embeds the referenced screen's root layout and children. The referenced screen's title, `kind`, and host sizing are ignored; its `mode` and theme apply. References MUST NOT form a cycle. IDs MUST remain unique after expansion.
+**Project component and list-detail**
 
-### 3.7 Canonical form
+```text
+gui-v2
 
-For tests and diffing, normalize to:
+component status-line
+  param label
+  param tone=muted
+  row gap=s align=center
+    icon "check-circle" size=sm tone=${tone}
+    text "${label}" size=sm tone=${tone}
 
-- two-space indentation, LF,
-- lowercase keys and enum values,
-- bare booleans only for boolean attributes,
-- attributes in a stable order: positional text, then `id`, then alphabetical keys,
-- one blank line between theme and screens, and between screens.
+screen tickets "Tickets" layout=grid cols="280 1fr" gap=m pad=l
+  list navigation=true
+    list-item "Atlas" icon=palette selected action=open-atlas
+    list-item "Orbit" icon=smartphone action=open-orbit
+  card "Atlas"
+    status-line label="All systems operational" tone=success
+    field "Name"
+      textfield value="Northstar"
+```
+
+### 3.7 Screen documents and shared libraries
+
+A **screen document** is a Markdown file with one primary fenced `gui-v2` block plus prose.
+The block format is unchanged; the surrounding document is defined in
+[`screen-workflow.md`](screen-workflow.md).
+
+- One primary block with one primary `screen`; dialogs, drawers, sheets and variants get
+  their own document.
+- The block must validate after composition with shared theme/components.
+- Shared theme file: only a `theme` block. Shared component file: only `component`
+  declarations and comments.
+- Composition order: `gui-v2`, shared theme, shared components, inline components, screen.
+  The composer emits `gui-v2` once and strips it from the screen block.
+- Front matter/prose do not affect rendering. Data bindings are a workflow/prototype
+  convention and do not change the block.
 
 ---
 
-## 4. Theme and defaults
+## 4. Tokens and themes
 
-### 4.1 Theme block and token resolution
+### 4.1 Theme block and resolution
 
 ```text
 theme
-  font.family="Inter, system-ui, sans-serif"
-  space.unit=4
-  light.primary="#7C3AED"
-  dark.primary="#C4B5FD"
+  font-family="Inter, system-ui, sans-serif"
+  font-size=16
+  space=8
+  light.bg="#FFFFFF"
+  light.surface="#F6F7F9"
+  light.fg="#111827"
+  light.brand="#2563EB"
+  dark.bg="#0B0F14"
+  dark.surface="#151A21"
+  dark.fg="#F3F4F6"
+  dark.brand="#60A5FA"
 ```
 
-- Unspecified tokens keep the defaults in §4.2–§4.6.
-- Color tokens are written `light.<token>` or `dark.<token>` in the theme block; screens refer to them without the prefix.
-- Unknown theme keys are errors.
-- Resolution order for a node:
-  1. explicit attribute,
-  2. the node's resolved mode (inherited unless overridden),
-  3. component defaults in §4.7,
-  4. global defaults in this section.
+Unspecified tokens keep defaults. Colors are `light.<token>`/`dark.<token>`; nodes use them
+without prefix. Unknown keys are `E003`. Any base token can be overridden.
+
+Resolution: explicit attribute → resolved mode → component default → global default.
+
+A **mode** is `light`/`dark`. A **theme** is a named set of overrides, normally colors. The
+standard theme is the baseline; project themes override semantic tokens unless a documented
+reason changes core scales. Themes are selected at application level; a document `theme`
+block is an override. Theme names are stable and versioned.
+
+**Density:** comfortable is the baseline. Compact is a project theme override for dense
+desktop screens; do not mix densities in one view. Touch platforms keep 44×44 targets.
 
 ### 4.2 Typography
 
-| Token | Default |
-| --- | --- |
-| `font.family` | `system-ui, sans-serif` |
-| `font.mono` | `ui-monospace, SFMono-Regular, Menlo, monospace` |
-| `font.size` | `16` |
-| `font.size-small` | `13` (0.8125 × base) |
-| `font.size-large` | `20` (1.25 × base) |
-| `font.line-small` | `18` |
-| `font.line-normal` | `24` |
-| `font.line-large` | `28` |
-| `font.weight-regular` | `400` |
-| `font.weight-medium` | `500` |
-| `font.weight-semibold` | `600` |
-| `font.weight-bold` | `700` |
+| Token | Default | Notes |
+| --- | --- | --- |
+| `font-family` | `Inter, system-ui, sans-serif` | UI text. |
+| `font-mono` | `ui-monospace, SFMono-Regular, Menlo, monospace` | Code, keys. |
+| `font-size` | `16` | Base. |
+| `font-size-sm` | `13` | `0.8125 × font-size`. |
+| `font-size-lg` | `20` | `1.25 × font-size`. |
+| `line-sm` | `18` | Small line height. |
+| `line-md` | `24` | Normal line height. |
+| `line-lg` | `28` | Large line height. |
+| `weight-regular` | `400` | Body. |
+| `weight-medium` | `500` | Labels, buttons. |
+| `weight-semibold` | `600` | Headings. |
+| `weight-bold` | `700` | Emphasis, metrics. |
 
-If `font.size` changes and `font.size-small`/`font.size-large` are not overridden, re-derive them with the ratios above.
-
-`system-ui` maps to the platform UI font: `UIManager.getFont("Label.font")` or the platform default on Swing, `sans-serif`/Roboto on Android, `UIFont.systemFont` on iOS, and `system-ui` on web.
+If `font-size` changes, re-derive small/large unless overridden.
 
 ### 4.3 Spacing
 
-| Token | Value | Factor of `space.unit` |
-| --- | --- | --- |
-| `space.unit` | `4` | — |
-| `none` | `0` | 0 |
-| `xs` | `4` | 1 |
-| `s` | `8` | 2 |
-| `m` | `12` | 3 |
-| `l` | `16` | 4 |
-| `xl` | `24` | 6 |
+| Token | Formula | At `space=8` | Use |
+| --- | --- | --- | --- |
+| `none` | `0` | `0` | None. |
+| `xs` | `0.5 × space` | `4` | Tight label/value, icon gaps. |
+| `s` | `1 × space` | `8` | Inline gaps, control padding. |
+| `m` | `2 × space` | `16` | Stack gaps, card padding. |
+| `l` | `3 × space` | `24` | Section gaps, screen padding. |
+| `xl` | `4 × space` | `32` | Page gutters, large sections. |
 
-Spacing tokens are the only valid values for `pad`, `pad-x`, `pad-y`, `gap`, `col-gap`, `row-gap`, and `inset`. Numeric spacing is invalid. Width, height, icon sizes, control heights, and image sizes remain numeric.
+`space` defaults to `8`; `space=10` yields `5/10/20/30/40`.
 
-### 4.4 Radii, controls, motion, icons, elevation and breakpoints
+- Only these tokens for `pad`, `gap`, `col-gap`, `row-gap`, `inset`, `item-gap`; numeric
+  spacing is `E010`.
+- No `margin`. Siblings use `gap`; inside a box use `pad`; flexible space uses `spacer`.
+- Width, height, control heights, border widths, icon sizes and radii are numeric.
+- Group with spacing before adding borders/dividers; do not mix gaps in one repeated group.
 
-| Token | Default | Use |
-| --- | --- | --- |
-| `radius.sm` | `6` | Checkboxes, keycaps. |
-| `radius.md` | `10` | Inputs, buttons, menus. |
-| `radius.lg` | `14` | Cards, menus, frames. |
-| `radius.xl` | `20` | Dialogs, sheets. |
-| `radius.pill` | `999` | Tags, badges, switches. |
-| `control.height` | `40` | Normal control. |
-| `control.height-small` | `32` | Small control. |
-| `control.height-large` | `48` | Large control. |
-| `control.pad-x` | `m` (12) | Input horizontal inset. |
-| `control.pad-y` | `s` (8) | Input vertical inset. |
-| `button.pad-x` | `l` (16) | Button horizontal inset. |
-| `list-item.min-height` | `56` | List item minimum. |
-| `menu.item-height` | `40` | Menu item. |
-| `table.row-height` | `48` | Table row. |
-| `table.row-height-dense` | `40` | Dense table row. |
-| `radio.size` | `20` | Radio diameter. |
-| `pagination.size` | `32` | Pagination button. |
-| `spinner.size` | `20` | Spinner diameter. |
-| `focus.width` | `2` | Focus ring width. |
-| `focus.offset` | `2` | Focus ring offset. |
-| `touch.min` | `44` | Minimum hit area. |
-| `disabled.opacity` | `0.5` | Disabled opacity. |
-| `motion.fast` | `120ms` | Small state changes. |
-| `motion.normal` | `200ms` | Menus, dialogs, transitions. |
-| `motion.slow` | `320ms` | Larger transitions. |
-| `motion.easing` | `cubic-bezier(0.2, 0, 0, 1)` | Standard easing curve. |
-| `icon.size-sm` | `16` | Small icon. |
-| `icon.size` | `20` | Default icon. |
-| `icon.size-lg` | `24` | Large icon. |
-| `tooltip.max-width` | `240` | Tooltip text width cap. |
-| `tooltip.delay` | `300ms` | Hover delay before showing. |
-| `popover.min-width` | `180` | Popover minimum width. |
-| `toast.max-width` | `420` | Toast maximum width. |
-| `toast.duration` | `4000ms` | Default auto-dismiss duration. |
-| `tree.row-height` | `40` | Tree item row height. |
-| `tree.indent` | `l` (16) | Indent per tree level. |
-| `layer.base` | `0` | In-flow content. |
-| `layer.sticky` | `10` | Sticky headers. |
-| `layer.overlay` | `20` | Menus and popovers. |
-| `layer.dialog` | `30` | Dialogs and sheets. |
-| `layer.toast` | `40` | Transient notifications. |
-| `layer.tooltip` | `50` | Tooltips. |
-| `breakpoint.sm` | `640` | Mobile/tablet boundary. |
-| `breakpoint.md` | `900` | Tablet/desktop boundary. |
-| `breakpoint.lg` | `1200` | Desktop boundary. |
-| `breakpoint.xl` | `1440` | Large desktop boundary. |
+### 4.4 Color
 
-Breakpoint ranges: `sm` = below 640, `md` = 640–899, `lg` = 900–1199, `xl` = 1200+. `visible-at` shows a node only in the listed ranges; `hide-at` hides it there. Hidden nodes are not laid out. Both take space-separated lists (`visible-at="sm md"`).
-
-Shadows:
-
-| Token | Value |
-| --- | --- |
-| `shadow.sm` | `0 1px 2px rgba(16,24,40,0.08)` |
-| `shadow.md` | `0 4px 8px -2px rgba(16,24,40,0.10), 0 2px 4px -2px rgba(16,24,40,0.06)` |
-| `shadow.lg` | `0 12px 24px -4px rgba(16,24,40,0.14), 0 4px 8px -2px rgba(16,24,40,0.08)` |
-
-Shadows paint outside the box and never affect layout. Themes MAY override shadow tokens per mode.
-
-Layering: overlays stack above content using `layer.*`; a child overlay paints above its parent. Menus and popovers use `layer.overlay`, dialogs/sheets `layer.dialog`, toasts `layer.toast`, tooltips `layer.tooltip`.
-
-### 4.5 Base colors
+Three base neutrals per mode:
 
 | Token | Light | Dark | Use |
 | --- | --- | --- | --- |
-| `bg` | `#FFFFFF` | `#0C111D` | Screen background. |
-| `surface` | `#F7F8FA` | `#131A26` | Panels, sidebars, secondary surfaces. |
-| `raised` | `#FFFFFF` | `#1A2230` | Cards, inputs, menus. |
-| `fg` | `#101828` | `#F5F6F7` | Primary foreground. |
-| `muted` | `#667085` | `#94969C` | Secondary text. |
-| `border` | `#E4E7EC` | `#2A3342` | Borders and dividers. |
-| `primary` | `#2563EB` | `#60A5FA` | Primary accent. |
-| `on-primary` | `#FFFFFF` | `#0B1220` | Text/icons on primary. |
-| `primary-soft` | `#EFF4FF` | `#102A43` | Soft primary background. |
-| `focus-ring` | `#2563EB66` | `#60A5FA66` | Focus ring. |
-| `neutral-soft` | `#F2F4F7` | `#1F2937` | Secondary button, neutral tag. |
-| `neutral-on` | `#344054` | `#D0D5DD` | Text on neutral-soft. |
-| `scrim` | `#1018287A` | `#000000A6` | Modal backdrop. |
+| `bg` | `#FFFFFF` | `#0B0F14` | Canvas. |
+| `surface` | `#F6F7F9` | `#151A21` | Cards, inputs, panels. |
+| `fg` | `#111827` | `#F3F4F6` | Primary text/icons. |
 
-### 4.6 Semantic colors and badge palette
+Derived neutrals:
 
-Semantic tones: `info` (blue), `success` (green), `alert` (yellow), `warning` (orange), `error` (red).
-
-Each tone has `<tone>`, `<tone>-soft`, `<tone>-on` (readable on background/soft), and `<tone>-contrast` (readable on solid).
-
-| Token | Light | Dark |
+| Token | Recipe | Use |
 | --- | --- | --- |
-| `info` | `#2563EB` | `#60A5FA` |
-| `info-soft` | `#EFF8FF` | `#102A43` |
-| `info-on` | `#175CD3` | `#84CAFF` |
-| `info-contrast` | `#FFFFFF` | `#0B1220` |
-| `success` | `#15803D` | `#32D583` |
-| `success-soft` | `#ECFDF3` | `#0C2E22` |
-| `success-on` | `#067647` | `#6CE9A6` |
-| `success-contrast` | `#FFFFFF` | `#0B1220` |
-| `alert` | `#CA8A04` | `#FDB022` |
-| `alert-soft` | `#FEFCE8` | `#2E2408` |
-| `alert-on` | `#854D0E` | `#FEC84B` |
-| `alert-contrast` | `#422006` | `#0B1220` |
-| `warning` | `#C2410C` | `#F79009` |
-| `warning-soft` | `#FFF4ED` | `#2E1A0B` |
-| `warning-on` | `#B93815` | `#FDB022` |
-| `warning-contrast` | `#FFFFFF` | `#0B1220` |
-| `error` | `#DC2626` | `#F97066` |
-| `error-soft` | `#FEF3F2` | `#3A1414` |
-| `error-on` | `#B42318` | `#FDA29B` |
-| `error-contrast` | `#FFFFFF` | `#0B1220` |
+| `muted` | `fg` 64% | Secondary text; never essential. |
+| `border` | `fg` 12% | 1 px borders/dividers. |
+| `hover` | `fg` 6% light / 8% dark | Pointer hover. |
+| `pressed` | `fg` 10% light / 12% dark | Pressed. |
+| `scrim` | `#000000` 60% | Modal backdrop. |
+| `focus` | `brand` | Focus ring. |
 
-Badge palette:
+Brand:
+
+| Token | Light | Dark | Use |
+| --- | --- | --- | --- |
+| `brand` | `#2563EB` | `#60A5FA` | Primary actions, links, selection. |
+| `brand-on` | `#FFFFFF` | `#0B1220` | Text/icons on brand. |
+| `brand-soft` | brand 12% over surface | Same | Selected rows, soft brand. |
+
+Semantic tones: `info` (blue), `success` (green), `warning` (orange), `alert` (yellow),
+`error` (red). Each has base, `-soft`, `-on`, `-contrast`.
+
+**Light**
+
+| Base | Soft | On | Contrast |
+| --- | --- | --- | --- |
+| `info` `#2563EB` | `#EFF8FF` | `#175CD3` | `#FFFFFF` |
+| `success` `#15803D` | `#ECFDF3` | `#067647` | `#FFFFFF` |
+| `warning` `#C2410C` | `#FFF4ED` | `#B93815` | `#FFFFFF` |
+| `alert` `#CA8A04` | `#FEFCE8` | `#854D0E` | `#422006` |
+| `error` `#DC2626` | `#FEF3F2` | `#B42318` | `#FFFFFF` |
+
+**Dark**
+
+| Base | Soft | On | Contrast |
+| --- | --- | --- | --- |
+| `info` `#60A5FA` | `#102A43` | `#84CAFF` | `#0B1220` |
+| `success` `#32D583` | `#0C2E22` | `#6CE9A6` | `#0B1220` |
+| `warning` `#F79009` | `#2E1A0B` | `#FDB022` | `#0B1220` |
+| `alert` `#FDB022` | `#2E2408` | `#FEC84B` | `#0B1220` |
+| `error` `#F97066` | `#3A1414` | `#FDA29B` | `#0B1220` |
+
+Badge fills:
 
 | Token | Light | Dark |
 | --- | --- | --- |
@@ -458,349 +491,179 @@ Badge palette:
 | `badge-cyan` | `#0E7090` | `#67E3F9` |
 | `badge-lime` | `#4D7C0F` | `#B3F26B` |
 | `badge-gray` | `#475467` | `#98A2B3` |
-| `badge-contrast` | `#FFFFFF` | `#0B1220` |
+| `badge-on` | `#FFFFFF` | `#0B1220` |
 
-Tone resolution:
+`tone` accepts `bg`, `surface`, `fg`, `muted`, `brand`, `neutral`, the five semantic tones
+and `badge-*`. Resolution:
 
-| Target | Neutral | Primary | Semantic | Palette |
+| `tone` | Text/icons | Soft fill | Solid fill | On solid |
 | --- | --- | --- | --- | --- |
-| Text/icon | `fg` | `primary` | `<tone>-on` | `badge-<name>` |
-| Fill/accent | `border` | `primary` | `<tone>` | `badge-<name>` |
-| Tag background | `neutral-soft` | `primary-soft` | `<tone>-soft` | `badge-<name>` at 12% |
-| Tag text | `neutral-on` | `primary` | `<tone>-on` | `badge-<name>` |
-| Tag border | `border` | `primary` 30% | `<tone>` 30% | `badge-<name>` 30% |
-| Solid badge background | `badge-gray` | `primary` | `<tone>` | `badge-<name>` |
-| Solid badge text | `badge-contrast` | `on-primary` | `<tone>-contrast` | `badge-contrast` |
+| `bg` | `bg` | `bg` | `bg` | `fg` |
+| `surface` | `surface` | `surface` | `surface` | `fg` |
+| `fg` | `fg` | `surface` | `fg` | `bg` |
+| `muted` | `muted` | `surface` | `muted` | `bg` |
+| `brand` | `brand` | `brand-soft` | `brand` | `brand-on` |
+| `neutral` | `fg` | `surface` | `badge-gray` | `badge-on` |
+| semantic | `<tone>-on` | `<tone>-soft` | `<tone>` | `<tone>-contrast` |
+| `badge-*` | `badge-*` | `badge-*` 12% | `badge-*` | `badge-on` |
 
-"At 12%/30%" means alpha blending over the current background. This is deterministic and implementable with `AlphaComposite`/`UIColor`/`android.graphics`/CSS `color-mix`.
+Color rules:
 
-### 4.7 Component default styling
+- Never rely on color alone; pair with text, icon or shape.
+- Use `-on` on soft backgrounds and `-contrast` on solid tones; `badge-on` on badges.
+- Alpha blends are limited to these recipes.
+- A mode change without `bg` inherits the painted background.
+- Project brand colors replace `brand`, not individual component colors.
+- Hex is allowed for one-off data; component styling uses tokens.
 
-| Component | Defaults |
-| --- | --- |
-| `label` | Transparent; normal/regular; `fg`; no padding. |
-| `textfield`, `date`, `time`, `date-range`, `password`, `dropdown` | `raised`; 1px `border`; radius `md`; inset `s`/`m`; height 40. |
-| `textarea` | Same; height `rows × 24 + 16`. |
-| `icon` | Transparent; 20×20; `fg`. |
-| `tag` | Tone-soft; tone text; 1px tone border at 30%; `pill`; inset `xs`/`s`; small/medium; height 26 (small) or 32 (normal). |
-| `badge` | Solid tone; tone contrast; `pill`; inset `xs`/`s`; small/semibold; 16px line box; height 24; min width 24. |
-| `button` | Radius `md`; normal/medium; see variants below. |
-| `list` | Transparent; gap `none`; padding `none`; 1px dividers; vertical scroll. |
-| `list-item` | Transparent; inset `m`/`l`; min height 56; leading 24; gap `m`; title normal/medium; description small/`muted`. |
-| `checkbox` | 20×20; radius `sm`; 1px border; gap `s`; checked `primary`; label normal. |
-| `radio` | 20×20 circle; 1px border; selected dot `primary`; gap `s`. |
-| `switch` | 44×24 track; `pill`; off `neutral-soft`; on `tone`; 20px thumb; `shadow.sm`; gap `s`. |
-| `slider` | 4px track; 20px thumb; `primary` fill; height 24. |
-| `progress` | 8px track; `neutral-soft` track; tone fill; `pill`. |
-| `tabs` | Transparent; bar + active content; variants below. |
-| `tab` | Transparent; gap `m`; padding `none`. |
-| `action-bar` | `surface`; pad-y `m`, pad-x `l`; gap `s`; 1px inner separator. |
-| `carousel` | Transparent; gap `m`; slides fill viewport; indicators/arrows overlay. |
-| `divider` | `border`; thickness 1. |
-| `spacer` | Transparent; `grow=1`. |
-| `image` | Transparent; `fit=cover`; radius `none`; neutral placeholder on load failure. |
-| `avatar` | Size 40; circle; `primary-soft` initials; 10px status dot with 2px ring. |
-| `field` | Transparent; gap `xs`; label small/medium; hint small `muted`; error small `error-on`. |
-| `banner` | Tone-soft; 1px tone border at 30%; radius `lg`; pad `l`; gap `s`; title normal/semibold. |
-| `menu` | `raised`; 1px border; radius `lg`; `shadow.md`; pad `xs`; min width 180. |
-| `menu-item` | Height 40; pad `s`/`m`; gap `s`; radius `sm`; hover `neutral-soft`; selected `primary-soft`; danger `error-on`. |
-| `table` | 1px border; radius `lg`; header `surface`; row 48/40; cell pad `s`/`m`; dividers; selected `primary-soft`. |
-| `table-head` | `surface`; small/medium `muted`. |
-| `breadcrumbs` | Small; gap `xs`; links `primary`; current `muted`. |
-| `pagination` | 32px buttons; radius `sm`; gap `xs`; active `primary-soft`/`primary`. |
-| `spinner` | `primary` arc; `size` 20; reduced motion → static. |
-| `skeleton` | `neutral-soft`; radius `sm`; reduced motion → static. |
-| `kbd` | Mono small; `surface`; 1px border; radius `sm`; height 22. |
-| `document` | Header/content/footer stack; gap `m`; content scrolls by default. |
-| `document-header` | 40px icon box + title/description; title large/bold; description small/`muted`. |
-| `document-footer` | Right-aligned buttons; gap `s`; 1px top separator by default. |
-| `tooltip` | `fg` background; `bg` text; radius `sm`; pad `xs`/`s`; small; `shadow.md`; max width 240. |
-| `popover` | `raised`; 1px border; radius `lg`; `shadow.md`; pad `m`; gap `s`; min width 180. |
-| `toast` | Tone-soft; 1px tone border at 30%; radius `lg`; `shadow.lg`; pad `m`; gap `s`; max width 420. |
-| `tree` | Transparent; gap `none`; pad `none`. |
-| `tree-item` | Transparent; pad `s`/`m`; min height 40; radius `sm`; hover `neutral-soft`; selected `primary-soft`; indent `l` per level. |
-| `screen-ref` | No styling; renders referenced content. |
+### 4.5 Radii, controls, elevation and motion
 
-Button variants:
+| Token | Default | Use |
+| --- | --- | --- |
+| `radius-sm` | `space-xs` (`4`) | Keycaps, checkboxes, dense inputs. |
+| `radius-md` | `space-s` (`8`) | Buttons, inputs, menus. |
+| `radius-lg` | `space-m` (`16`) | Cards, dialogs, sheets, frames. |
+| `radius-pill` | `999` | Tags, badges, switches. |
+| `control-height-sm` | `32` | Small control. |
+| `control-height` | `40` | Normal control. |
+| `control-height-lg` | `48` | Large control. |
+| `border-width` | `1` | Default border. |
+| `focus-width` | `2` | Focus ring width. |
+| `focus-offset` | `2` | Focus ring offset. |
+| `touch-min` | `44` | Minimum touch target. |
+| `disabled-opacity` | `0.5` | Disabled subtree. |
+| `icon-size-sm` | `16` | Small icon. |
+| `icon-size` | `20` | Default icon. |
+| `icon-size-lg` | `24` | Large icon. |
+| `motion-fast` | `120ms` | Hover, press, focus. |
+| `motion-normal` | `200ms` | Menus, popovers, dialogs. |
+| `motion-slow` | `320ms` | Sheets, larger transitions. |
+| `motion-easing` | `cubic-bezier(0.2, 0, 0, 1)` | Standard easing. |
+| `shadow-sm` | `0 1px 2px rgba(16,24,40,0.08)` | Raised cards. |
+| `shadow-md` | `0 4px 8px -2px rgba(16,24,40,0.10), 0 2px 4px -2px rgba(16,24,40,0.06)` | Menus, popovers, tooltips. |
+| `shadow-lg` | `0 12px 24px -4px rgba(16,24,40,0.14), 0 4px 8px -2px rgba(16,24,40,0.08)` | Dialogs, sheets, toasts. |
+| `breakpoint-sm` | `640` | Mobile/tablet boundary. |
+| `breakpoint-md` | `900` | Tablet/desktop boundary. |
+| `breakpoint-lg` | `1200` | Desktop boundary. |
+| `breakpoint-xl` | `1440` | Large desktop boundary. |
 
-| Variant | Background | Text | Border |
-| --- | --- | --- | --- |
-| `primary` | `primary` | `on-primary` | none |
-| `secondary` | `neutral-soft` | `fg` | 1px `border` |
-| `outline` | transparent | `fg` | 1px `border` |
-| `ghost` | transparent | `primary` | none |
-| `danger` | `error` | `error-contrast` | none |
+Shadows paint outside the box; scrollbars are overlays and never reduce the content box.
 
-Tab variants:
+### 4.6 State precedence
 
-| Variant | Bar | Active tab | Inactive tab |
-| --- | --- | --- | --- |
-| `underline` | 48px; 1px outer border | 2px `primary` indicator; `primary` text | `muted` text |
-| `pills` | 40px; `xs` gap | `primary-soft`; `primary`; `pill` | transparent; `muted` |
-| `segmented` | 40px; `neutral-soft`; `md` radius; `xs` pad | `raised`; `fg`; `sm` shadow | `muted` |
+`disabled` → `pressed` → `focused` → `hover` → `selected`/`checked` → default. `invalid` is
+a semantic overlay combined with focus/hover.
 
-Input icons: 20×20, `s` gap, `muted` by default. A leading icon adds 28px to the left inset; a trailing icon adds 28px to the right inset. Date/password/dropdown action icons occupy the final trailing slot.
-
-### 4.8 State precedence
-
-Visual state precedence, highest first:
-
-1. `disabled`
-2. `pressed`
-3. `focused`
-4. `hover`
-5. `selected` / `checked`
-6. default
-
-`invalid`/`error` is a semantic overlay that combines with focus/hover (for example, error border + focus ring). Rules:
-
-- **Disabled:** `disabled.opacity`, no pointer/focus.
-- **Hover:** foreground overlay 6% light / 8% dark. Pointer devices only.
-- **Pressed:** foreground overlay 10% light / 12% dark.
-- **Focus:** `focus.width` ring in `focus-ring` with `focus.offset`. Keyboard focus only unless the platform has no keyboard.
-- **Selected:** `primary-soft` background, `primary` text/indicator.
-- **Reduced motion:** replace shimmer/rotation with a static state.
+- Disabled: `disabled-opacity`; no pointer/focus.
+- Hover: `hover` overlay; pointer only.
+- Pressed: `pressed` overlay.
+- Focus: 2 px `focus` ring with 2 px offset; keyboard focus only unless no keyboard.
+- Selected: `brand-soft` background, `brand` text/indicator.
+- Reduced motion: static state instead of shimmer/rotation.
 
 ---
 
 ## 5. Layout
 
-### 5.1 Box model
+### 5.1 Box model and size
 
-Each node has:
+Each node has an outer box, content box (outer minus padding) and children placed with
+`gap`. No implicit margins.
 
-- an **outer box** (`x`, `y`, `width`, `height`),
-- a **content box** = outer minus `pad-x`/`pad-y`,
-- children placed inside the content box with `gap` between tracks.
+1. Explicit `width`/`height` (clamped by min/max).
+2. `h=fill`/`v=fill` when size is `auto`.
+3. Preferred size from content or component defaults.
 
-No node has implicit margins.
+Explicit size wins over fill. Percentage sizes require a definite parent; otherwise `auto`
+and `W001`.
 
-### 5.2 Size precedence
+### 5.2 Intrinsic sizes
 
-For each axis, resolve in this order:
-
-1. **Explicit size**: `width`/`height` if not `auto`, clamped by `min-*`/`max-*`.
-2. **Fill**: `h=fill`/`v=fill` when the size on that axis is `auto`; the node takes the cell size.
-3. **Preferred size**: intrinsic content size or the component default in §5.3.
-
-If an explicit size is set, `fill` is ignored on that axis; the node is placed at the start of the cell. Do not combine explicit sizes with `fill` if you expect stretching.
-
-Percentage sizes require a definite parent content size on that axis. If indefinite, they resolve to `auto` and emit `W001`.
-
-### 5.3 Intrinsic sizes
-
-| Node | Preferred size |
+| Node | Preferred |
 | --- | --- |
-| `label` | Measured text width × line height. Wrapped: longest-word minimum; height from lines. |
-| `textfield`, `date`, `time`, `password`, `dropdown` | 200×40 |
-| `date-range` | 280×40 |
-| `textarea` | 240 × (`rows` × 24 + 16) |
-| `icon` | `size`×`size` (default 20) |
-| `tag` | Content + padding; 26 (small) or 32 (normal). |
-| `badge` | Content + padding; 24 high, minimum width 24. |
-| `button` | Content + padding; min width 80; 32/40/48 high. |
-| `list` | Content; scrolls when constrained. |
-| `list-item` | 240×56 minimum. |
-| `checkbox` | 20 + `s` + label. |
-| `radio` | 20 + `s` + label. |
-| `switch` | 44×24 + `s` + label. |
-| `slider` | 200×24 |
-| `progress` | 200×8 (plus value text when `show-value`). |
-| `spinner` | `size`×`size`. |
-| `skeleton` | Line: fill width × 12; circle: `size`×`size`; rect: 120×80. |
+| `text` | Measured text × line height; wrapped uses longest word. |
+| `icon` | 16/20/24 square. |
+| `image` | 120×80 unless width/height/aspect decides. |
+| `button` | Content + padding; min width 80; height 32/40/48. |
+| `textfield`, `select` | 200×40. |
+| `textarea` | 240 × (`rows × 24 + 2 × pad-y`). |
+| `checkbox`, `radio` | `20 + s + label`. |
+| `switch` | `44 × 24 + s + label`. |
+| `slider` | 200×24. |
+| `progress` | 200×8 plus value text. |
+| `avatar` | `size` square (default 40). |
+| `badge` | Content + padding; 24 high, min 24 wide. |
+| `tag` | Content + padding; 26 high. |
+| `spinner` | `size` square. |
+| `skeleton` | Line fill×12; circle `size`; rect 120×80. |
 | `kbd` | Content + padding; 22 high. |
-| `tabs` | Bar 48/40 + active tab content + gap. |
-| `tab` | Content + padding/gaps. |
-| `action-bar` | Max button height + pad-y + safe inset. |
-| `carousel` | Max slide preferred height; fills width. |
-| `field` | Label + controls + hint/error + gaps. |
-| `banner` | Icon + content + padding. |
-| `menu` | Max item width + padding; min 180. |
-| `menu-item` | Content + padding; 40 high. |
-| `radio-group` | Children + gaps. |
-| `table` | Tracks + row heights + borders. |
-| `table-row` | Cell content; 48 (40 dense). |
-| `table-cell` | Content + cell padding. |
-| `breadcrumbs` | Labels + separators + gaps. |
-| `pagination` | Buttons; 32 high. |
-| `document` | Header + content + footer + gaps. |
-| `document-header` | 40 icon + title/description. |
-| `document-footer` | Button row + separator. |
-| `screen-ref` | Referenced screen preferred size. |
-| `rows`, `columns` | Content + padding + gaps. |
-| `grid` | Tracks + gaps + padding. |
-| `divider` | Thickness on cross axis; fills along orientation. |
-| `spacer` | 0×0. |
-| `image` | 120×80 unless `width`/`height`/`aspect` determines it. |
-| `avatar` | `size`×`size` (default 40). |
-| `tooltip` | Content + padding; max width 240. |
-| `popover` | Content + padding; min width 180. |
-| `toast` | Content + padding; max width 420. |
-| `tree` | Children + gaps. |
-| `tree-item` | Content + padding; 40 high; indent `l` per level. |
+| Containers | Content + padding + gaps. |
+| Extended/project | Intrinsic size of expansion. |
 
-Text measurement is defined in §5.9.
+### 5.3 Row and column
 
-### 5.4 Rows and columns
+`row` is horizontal; `column` is vertical.
 
-For a `rows` or `columns` container:
+1. Compute content box and base main sizes.
+2. `total = sum(base) + gap × (n − 1)`.
+3. If free > 0, distribute by `grow`, else by `justify`.
+4. If free < 0, shrink auto children to minimum; explicit sizes stay. Overflow clips or
+   scrolls.
+5. Place tracks from the content-box start.
+6. Cross axis: apply `h`/`v`; main axis: apply `v` for rows and `h` for columns when a track
+   grew.
 
-1. Compute the content box.
-2. Main axis is vertical for `rows`, horizontal for `columns`.
-3. For each child, compute the base main size: explicit main size, else preferred main size, clamped by min/max.
-4. `total = sum(base) + gap × (n − 1)` (or the wrap algorithm in §5.5).
-5. `free = content_main − total`.
-6. If `free > 0`:
-   - If any child has `grow > 0`, distribute `free` by weight.
-   - Else distribute by `justify` (`start`, `center`, `end`, `between`, `around`, `evenly`).
-7. If `free < 0`: shrink auto children proportionally down to their minimum content size; explicit sizes do not shrink below their explicit value. If still overflowing, clip or scroll.
-8. Place tracks from the content-box start.
-9. Cross axis: each child gets the content cross size; apply `h`/`v` using precedence in §5.5.
-10. Main-axis placement: if a track grew beyond the child's preferred size, apply `v` (rows) or `h` (columns).
-
-**Example:** `grow=1` on the last row absorbs all extra vertical space. `grow=1` on the first column absorbs all extra horizontal space.
-
-### 5.5 Distribution, alignment, and wrapping
+### 5.4 Alignment and wrapping
 
 | Attribute | Applies to | Default | Description |
 | --- | --- | --- | --- |
-| `justify` | rows, columns | `start` | Main-axis leftover distribution: `start`, `center`, `end`, `between`, `around`, `evenly`. Ignored if `grow` consumes the free space. |
-| `align-items` | rows, columns | `auto` | Default cross-axis alignment: `auto`, `start`, `center`, `end`, `stretch`. |
-| `wrap` | columns | `false` | Flow children onto new lines. |
-| `col-gap` | rows, columns | `gap` | Horizontal gap override. |
-| `row-gap` | rows, columns | `gap` | Vertical gap override. |
+| `gap` | row, column, grid | `m` | Space between children/tracks. |
+| `justify` | row, column | `start` | `start`, `center`, `end`, `between`, `around`, `evenly`. |
+| `align` | row, column | `stretch` | `start`, `center`, `end`, `stretch`. |
+| `wrap` | row | `false` | Flow onto new lines. |
+| `col-gap` | row, column | `gap` | Horizontal override. |
+| `row-gap` | row, column | `gap` | Vertical override. |
 
-Alignment precedence per axis:
+Per-child `h` (`left/center/right/fill`) and `v` (`top/center/bottom/fill`) override
+`align`. `between`: first at start, last at end. `around`: equal space both sides; single
+child centered. `evenly`: equal space between and around. With `wrap=true`, children keep
+preferred/explicit width, `grow` is ignored, and `justify` applies per line.
 
-1. child `h`/`v` if explicitly set,
-2. parent `align-items` if not `auto`,
-3. component-class default (§5.5.1).
+### 5.5 Grid and stack
 
-`start` maps to `left`/`top`, `end` to `right`/`bottom`, `stretch` to `fill`.
+Grid attributes: `cols` (`1fr`), `rows` (`auto`), `gap` (`m`), `col-gap`, `row-gap`,
+`flow` (`row`). Tracks: `auto`, `<n>fr`, `<n>` px, `<n>%`. Size auto tracks from preferred
+sizes, distribute remaining space across `fr`, place explicit items, auto-place the rest,
+align, clip/scroll.
 
-`justify` details: `between` puts the first child at the start and the last at the end (a single child at the start); `around` gives each child equal space on both sides (a single child is centered); `evenly` gives equal space between and around all children.
+`stack` places all children in the same content box; they overlap and align with `h`/`v`
+(default `fill`). Use for status dots, badges over images and indicators. Preferred size is
+the largest child.
 
-#### 5.5.1 Component-class defaults
+### 5.6 Overflow, text and rounding
 
-| Class | Components | `rows` | `columns` | `grid` |
+- `scroll=none` clips; `y`/`x`/`both` scroll. `list`/`tree` scroll vertically when
+  constrained.
+- Scrollbars are overlays. Safe-area insets are outside the content box when `safe=true`;
+  tests use zero.
+- Single-line text truncates with `…`; `wrap=true` wraps at spaces; `max-lines=n` truncates
+  the last line.
+- `align=left|center|right`; single-line is vertically centered, multi-line top-aligned.
+- List item titles/descriptions are single-line with ellipsis.
+- All layout math quantizes to 1/64 px; paint-time snapping never feeds back into layout.
+
+### 5.7 Responsive
+
+| Range | Columns | Gutter | Margin | Behavior |
 | --- | --- | --- | --- | --- |
-| Stretch | rows, columns, grid, list, tabs, tab, action-bar, carousel, list-item, field, banner, table, table-head, table-row, table-cell, radio-group, document, document-header, document-footer, screen-ref, tree, tree-item, label, textfield, textarea, date, password, dropdown, time, date-range, slider, progress, skeleton | `h=fill`, `v=top` | `h=left`, `v=fill` | `h=fill`, `v=fill` |
-| Content | icon, tag, badge, button, checkbox, radio, image, avatar, switch, menu, menu-item, breadcrumbs, pagination, spinner, kbd, tooltip, popover, toast | `h=left`, `v=top` | `h=left`, `v=center` | `h=left`, `v=center` |
+| `sm` (<640) | 4 | `l` | `l` | One column, drawer nav, stacked actions, cards over wide tables. |
+| `md` (640–899) | 8 | `l` | `l` | Two-column forms or list-detail when space allows. |
+| `lg` (900–1199) | 12 | `l` | `xl` | Persistent nav, multi-column grids. |
+| `xl` (1200+) | 12 | `l` | `xl` | Constrained reading width, full layouts. |
 
-If an explicit size is set on an axis, that axis starts aligned (left/top) unless `h`/`v` says otherwise.
-
-#### 5.5.2 Wrapping
-
-With `columns wrap=true`:
-
-- Children keep their preferred/explicit main size; `grow` is ignored.
-- Start a new line when the next child's base width exceeds the remaining width.
-- `justify` applies to each line.
-- `align-items` applies within each line.
-- `gap` applies horizontally and vertically; `col-gap`/`row-gap` override.
-- A single child wider than the content box overflows or scrolls.
-
-### 5.6 Grid
-
-| Attribute | Default | Description |
-| --- | --- | --- |
-| `cols` | `1fr` | Column tracks. |
-| `rows` | `auto` | Row tracks. |
-| `gap` | `m` | Both axes. |
-| `col-gap` | `gap` | Horizontal override. |
-| `row-gap` | `gap` | Vertical override. |
-| `flow` | `row` | `row` or `column` auto-flow. |
-
-Track tokens: `auto` (max preferred), `<n>fr` (flexible weight), `<n>` (px), `<n>%` (content box).
-
-Algorithm:
-
-1. Resolve fixed and percentage tracks.
-2. Size `auto` tracks from preferred sizes of items in that track.
-3. Distribute a spanning item's preferred size equally across spanned auto tracks after single-track contributions.
-4. Distribute remaining space across `fr` tracks.
-5. Place explicit `col`/`row` items first.
-6. Auto-place remaining items in `flow` order, skipping occupied cells.
-7. Size each item to its cell and apply alignment.
-8. Overflow clips or scrolls.
-
-If `cols`/`rows` are omitted: one flexible column, auto rows.
-
-### 5.7 Overflow, scrolling, and safe areas
-
-- `scroll=none` (default): overflow is clipped.
-- `scroll=y|x|both`: overflow scrolls.
-- `list` always scrolls vertically when constrained.
-- `tree` always scrolls vertically when constrained.
-- Scrollbars are **overlays**; they never reduce the content box.
-- Safe-area insets are added **outside** the content box when `safe=true`; `pad` is applied inside. Insets are inputs to the layout engine (tests use zero).
-
-### 5.8 Fixed-purpose container layouts
-
-| Container | Defaults |
-| --- | --- |
-| `field` | `gap=xs`, `pad=none`; label small/medium; hint/error small. |
-| `banner` | `tone=info`, `variant=soft`, `dismissible=false`, `gap=s`, `pad=l`. |
-| `menu` | `open=true`, `placement=bottom-start`, `gap=none`, `pad=xs`. |
-| `radio-group` | `orientation=vertical`, `gap=s`, `pad=none`. |
-| `tabs` | `variant=underline`, `placement=top`, active = first enabled tab, `equal=true`, `scrollable=false`, `gap=none`, `pad=none`. |
-| `action-bar` | `placement=bottom`, `equal=true`, `align=right`, `separator=true`, `safe=true`, `gap=s`, `pad-y=m`, `pad-x=l`. |
-| `carousel` | `active=0`, `gap=m`, `pad=none`, `show-indicators=true`, `show-arrows=false`, `loop=false`, `snap=true`. |
-| `table` | `cols=1fr`, `selectable=false`, `sortable=false`, `resizable=false`, `striped=false`, `dense=false`, `gap=none`, `pad=none`. |
-| `popover` | `open=true`, `placement=bottom-start`, `dismissible=true`, `modal=false`, `gap=s`, `pad=m`. |
-| `toast` | `tone=info`, `placement=bottom`, `duration=4000`, `dismissible=true`, `gap=s`, `pad=m`. |
-| `tree` | `selection=single`, `gap=none`, `pad=none`, `indent=l`. |
-| `document` | `scroll=y`, `gap=m`, `pad=none`. |
-| `document-footer` | `separator=true`, `gap=s`, `pad=none`. |
-| `breadcrumbs` | `separator="/"`, `gap=xs`, `pad=none`. |
-| `list` | `divider=true`, `navigation=false`, `gap=none`, `pad=none`. |
-
-**`field`** — vertical stack: label, control children, hint/error. Gap `xs`. `error` replaces `hint`, marks the first control invalid. `for` associates the label; otherwise the first input-like child is used. `required` adds a marker and required semantics.
-
-**`banner`** — horizontal: leading icon, content column, optional dismiss button. Content column stacks `title` and children with gap `s`. `tone` selects colors; `variant=soft|solid` (default `soft`: tone-soft background, tone-on text, tone 30% border; `solid`: tone background, tone-contrast text, no border); `dismissible` adds a close button. The default icon is `info` for info/neutral, `check-circle` for success, `alert-triangle` for alert/warning, and `x-circle` for error. Error/warning use `role=alert`, others `role=status`.
-
-**`menu`** — overlay list; `open=true` by default; `gap=none`; children are `menu-item` and `divider`. `anchor` + `placement` position it. Items 40 high. Keyboard: Up/Down, Enter, Escape.
-
-**`tooltip`** — overlay text anchored to a target. `for` (target id) or `anchor` names the target; `placement=top|right|bottom|left`; `open=false`; `delay=300ms`. The goal is a description, never a control: tooltips are not focusable and never contain interactive children. A node's `tooltip` attribute creates an implicit tooltip with the same presentation; use the component only when explicit placement or shared content is needed. If the preferred placement does not fit, flip to the opposite side and clamp within the viewport. Escape dismisses. Touch hosts SHOULD expose the same text through an accessible description or a long-press affordance. Pointer hover or keyboard focus on the target shows it; leaving or blurring hides it.
-
-**`popover`** — anchored overlay container. `anchor` names the target; `placement=bottom-start|bottom-end|top-start|top-end|left|right`; `open=true`; `dismissible=true`; `modal=false`. Children are arbitrary content. `modal=true` traps focus and renders a scrim; otherwise Escape and outside click dismiss without a scrim. Popovers use radius `lg`, `shadow.md`, pad `m`, gap `s`, min width 180. If the preferred placement does not fit, flip to the opposite side and clamp within the viewport. Keyboard focus enters the popover when opened; Escape returns focus to the anchor.
-
-**`toast`** — transient notification container. `tone=info|success|alert|warning|error|neutral`, optional `title`, `placement=bottom|top`, `duration=4000` (ms; `0` = persistent), `dismissible=true`. Children are content and at most one action button. Toasts stack, pause the timer on hover or focus, and dismiss on action or close. They never take focus automatically. Error and warning use `role=alert`; other tones use `role=status`.
-
-**`tree`** — hierarchical list. `selection=single|multiple|none`; children are `tree-item` and nested `tree-item`s. Rows are 40 high; each level indents by `indent`. Non-leaf items show a chevron (down expanded, right collapsed). Keyboard: Up/Down move, Right expands or enters, Left collapses or exits, Home/End jump, Enter/Space select; `selection=multiple` uses Ctrl/Cmd+Space. The tree exposes `role=tree`, items `role=treeitem`, with `aria-expanded`, `aria-selected` and `aria-level`.
-
-**`radio-group`** — `vertical` (default) or `horizontal`; children are `radio`. Group `value` selects the matching radio. Arrows move, Space selects.
-
-**`table`** — children: optional `table-head`, then `table-row`s; rows contain `table-cell`s. `cols` defines tracks. `selectable` prepends a 40px checkbox column and a select-all header. `sortable` makes header cells activate sorting; `sort="<column>:asc|desc"` selects the sorted column (zero-based index or `table-cell` id) and direction. `resizable` enables pointer column resizing; the result is presentation state and never changes the declared `cols` in the document. Rows 48 (40 dense). `striped`, `caption`, `empty`.
-
-**`breadcrumbs`** — horizontal labels with separators; last is current. Navigation landmark.
-
-**`tabs` / `tab`** — bar (48 underline, 40 pills/segmented) + active tab content. Children are `tab`. `equal` shares width; `scrollable` uses preferred widths. Only the active tab is measured/painted. `placement=top|bottom`.
-
-**`action-bar`** — horizontal buttons; `equal` shares width; `align` when not equal; `separator`; `safe`; gap `s`; pad-y `m`, pad-x `l`. Children MUST be buttons. Normal flow; place last with growing content for a bottom bar.
-
-**`carousel`** — slides are children, sized to the viewport; child size/alignment/grow ignored. `active`, `gap`, `show-indicators`, `show-arrows`, `loop`, `snap`. Preferred height = max slide preferred height unless `height` is set.
-
-**`document`** — vertical: optional `document-header`, exactly one content node, optional `document-footer`. Content grows and scrolls when `scroll=y` (default); header/footer fixed. Header: icon (40), title, description, `level`. Footer: buttons right-aligned, gap `s`, 1px top separator by default; exactly one button may be `default=true`. The default receives primary emphasis unless a variant is set.
-
-**`screen-ref`** — expands to the referenced screen's root layout. The referenced screen's title/kind/host sizing is ignored. No cycles; IDs unique after expansion.
-
-### 5.9 Text layout
-
-- Single-line `label` (default): the line is laid out at its preferred width. If it does not fit, truncate at a grapheme boundary and append `…`.
-- `wrap=true`: greedy wrap at spaces. If a word exceeds the width, break at grapheme boundaries.
-- `max-lines=n`: wrap, then truncate the last line with `…`.
-- Text alignment: `align=left|center|right`; vertical alignment within the line box is centered for single-line labels and top for multi-line.
-- Ellipsis width is measured as `…` in the same style.
-- List item title/description are single-line with ellipsis.
-- Reference measurement: §10.4.
-
-### 5.10 Rounding
-
-- All measured sizes and layout arithmetic are quantized to **1/64 px**.
-- Final boxes are reported as integer 1/64 units.
-- Paint-time pixel snapping is renderer-specific and MUST NOT feed back into layout.
-- Tests compare exact 1/64 integers when using reference measurement.
+Reflow/relocate before hiding. Use `visible-at`/`hide-at` only for secondary content. No
+nested scroll areas. Tables scroll horizontally only when necessary; prefer column priority
+or cards. Numbers right-aligned, text left-aligned.
 
 ---
 
@@ -808,366 +671,482 @@ If `cols`/`rows` are omitted: one flexible column, auto rows.
 
 ### 6.1 Common attributes
 
-All nodes accept:
-
 | Attribute | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `id` | identifier | — | Unique after reference expansion. |
-| `mode` | `light`/`dark` | inherited | Subtree color mode. |
-| `width`, `height` | `auto` / number / percentage | `auto` | Explicit size. |
-| `min-width`, `max-width`, `min-height`, `max-height` | number / percentage | `0` / none | Clamps. |
+| `id` | identifier | — | Unique after expansion. |
+| `mode` | `light`/`dark` | inherited | Subtree mode. |
+| `width`, `height` | `auto`/number/percent | `auto` | Explicit size. |
+| `min-*`, `max-*` | number/percent | `0`/none | Clamps. |
 | `grow` | number ≥ 0 | `0` | Main-axis weight. |
-| `h` | `left`/`center`/`right`/`fill` | class default | Horizontal placement. |
-| `v` | `top`/`center`/`bottom`/`fill` | class default | Vertical placement. |
+| `h` | `left/center/right/fill` | class default | Horizontal placement. |
+| `v` | `top/center/bottom/fill` | class default | Vertical placement. |
 | `pad`, `pad-x`, `pad-y` | spacing token | `none` | Inner padding. |
 | `bg` | color | component default | Background. |
-| `border` | bool / number | `false` | 1 when true. |
+| `border` | bool/number | `false` | 1 when true. |
 | `border-color` | color | `border` | |
-| `radius` | number / `sm`/`md`/`lg`/`xl`/`pill`/`none` | component default | |
+| `radius` | number/`sm`/`md`/`lg`/`pill`/`none` | component default | |
 | `shadow` | `none`/`sm`/`md`/`lg` | `none` | |
 | `opacity` | 0–1 | `1` | Subtree opacity. |
 | `visible` | bool | `true` | Not laid out when false. |
-| `visible-at`, `hide-at` | breakpoint list | all / none | Responsive visibility. |
+| `visible-at`, `hide-at` | breakpoint list | all/none | Responsive visibility. |
 | `action` | identifier | — | Emitted on activation. |
 | `tooltip` | string | — | Hover/focus help. |
-| `tooltip-placement` | `top`/`right`/`bottom`/`left` | `top` | |
-| `scroll` | `none`/`y`/`x`/`both` | `none` | Containers only. |
-| `col`, `row`, `col-span`, `row-span` | integer | auto / 1 | Grid children only. |
+| `tooltip-placement` | `top/right/bottom/left` | `top` | |
+| `scroll` | `none/y/x/both` | `none` | Containers. |
+| `col`, `row`, `col-span`, `row-span` | integer | auto/1 | Grid children. |
 
-`x-` attributes are preserved but ignored. The `tooltip` attribute creates an implicit
-`tooltip` component anchored to the node; `tooltip-placement` selects its placement.
+No `margin`. `slot` is only for direct children of a project component instance. `x-`
+attributes are preserved and ignored.
 
-### 6.2 Text
+### 6.2 Primitives
 
-**`label`** — text, `size=small / normal|large` (normal), `weight=regular|medium|semibold|bold` (regular), `tone` (fg), `wrap=false`, `max-lines`, `align=left|center|right` (left), `for`, `level=1…6`. `level` adds heading semantics; if `size`/`weight` are omitted, levels 1–2 → large/bold, 3–4 → normal/semibold, 5–6 → small/semibold. A `label` with `action` is exposed and rendered as a link.
+Primitives are the only nodes with built-in visual styling. They are leaves.
 
-**`kbd`** — key text, `size=small / normal` (small), `tone=neutral`. Keycap styling; 22 high.
+| Primitive | Content and key attributes | Typography | Colors | Insets/border | Size |
+| --- | --- | --- | --- | --- | --- |
+| `text` | Text; `size=sm/md/lg` (`md`), `weight`, `tone` (`fg`), `align`, `wrap=false`, `max-lines`, `level=1…6`, `action` | `font-size-*`, line, weight | `tone`; action is `brand` link | None | Content |
+| `icon` | Name; `size=sm/md/lg` (`md`), `tone`, `label`, `action` | — | `tone` | None | 16/20/24 |
+| `image` | `src`, `alt`; `fit=cover/contain`, `aspect=free/1:1/4:3/3:2/16:9/21:9`, `radius` | — | `surface` placeholder + `muted` icon | `radius` only | 120×80 or aspect |
+| `divider` | `orientation`, `thickness=1`, `color=border`, `inset` | — | `color` | Inset spacing | 1 px |
+| `spacer` | `grow=1`, optional width/height | — | Transparent | None | 0×0 |
+| `button` | Text or `icon`; `variant=primary/secondary/ghost/danger`, `size=sm/md/lg`, `tone`, `icon`, `icon-right`, `disabled`, `action`, `label` | sm: sm/medium; md/lg: md/medium | Variant table | Height 32/40/48; pad-x `s/m/l`; radius `md` | Min 80 |
+| `textfield` | `value`, `placeholder`, `input=text/email/password/number/search/url/tel/date/time`, `label`, `icon`, `icon-right`, `required`, `invalid`, `disabled`, `readonly`, `max-length` | md/regular | `bg`, `fg`, placeholder `muted`, border `border`, invalid `error` | 40 high; pad-x `m`; radius `md`; 1 px | 200×40 |
+| `textarea` | `value`, `placeholder`, `rows=3`, `label`, `icon`, `icon-right`, `required`, `invalid`, `disabled`, `max-length` | md/regular | Same as textfield | `rows×24+2×pad-y`; pad-x `m`, pad-y `s`; radius `md` | 240 wide |
+| `select` | `value`, `options` (pipe-separated `Label=value`), `placeholder`, `label`, `icon-right=chevron-down`, `required`, `invalid`, `disabled` | md/regular | Same as textfield | Same as textfield | 200×40 |
+| `checkbox` | Label; `checked`, `disabled`, `tone=brand` | md/regular | `tone` checked; `border` unchecked | 20 box; radius `sm`; 1 px; gap `s` | Content |
+| `radio` | Label; `value`, `checked`, `disabled`, `tone=brand` | md/regular | `tone` dot; `border` | 20 circle; 1 px; gap `s` | Content |
+| `switch` | Label; `checked`, `disabled`, `tone=brand` | md/regular | `tone` on; `surface`/`border` off | 44×24 track; pill; 20 thumb; gap `s` | Content |
+| `slider` | `value`, `min=0`, `max=100`, `step=1/any`, `label`, `show-value`, `disabled`, `tone=brand` | sm/regular | `tone` fill; `surface` track | 4 px track; 20 thumb; 24 high | 200×24 |
+| `progress` | `value=0…100`, `tone=brand`, `indeterminate`, `show-value`, `label` | sm/regular | `tone` fill; `surface` track | 8 px track; pill | 200×8 |
+| `avatar` | `src`, `initials`, `alt`, `size=40`, `shape=circle/rounded`, `status=online/away/busy/offline`, `tone=brand` | md/medium | `tone-soft`; `tone` initials | Circle/`md`; 10 px status dot with 2 px ring | 40×40 |
+| `badge` | Text; `tone=neutral` | sm/semibold | Solid tone; contrast text | 24 high; pad-x `s`; pill | Min 24 |
+| `tag` | Text; `tone=neutral`, `icon` | sm/medium | Soft tone; tone-on text; tone 30% border | 26 high; pad-x `s`; pill; 1 px | Content |
+| `spinner` | `size=20`, `tone=brand`, `label="Loading"` | — | `tone` arc | None | 20×20 |
+| `skeleton` | `shape=line/circle/rect`, `lines`, `animated`, `label` | — | `surface` | `radius-sm` | Line 12; circle size; rect 120×80 |
+| `kbd` | Text; `size=sm/md` | sm/regular mono | `surface`; `fg`; `border` | 22 high; pad-x `xs`; radius `sm`; 1 px | Content |
 
-### 6.3 Inputs
+Primitive rules:
 
-| Type | Text | Key attributes | Preferred |
+- `text level=1…6` adds heading semantics; default sizes/weights: 1–2 lg/bold, 3–4
+  md/semibold, 5–6 sm/semibold. `action` makes it a link.
+- Button default `primary`/`md`; icon-only requires `label`; `tone` overrides primary/ghost
+  accent; `danger` always `error`.
+- Inputs: invalid uses `error` border/`aria-invalid`; required exposes semantics; icons are
+  20 px `muted` with `s` gap; leading/trailing icon adds `s+20+s` inset. Password includes
+  reveal; date/time include picker action.
+- Select options are `Label=value` pipe-separated; no `|` or `=` inside labels/values.
+- Checkbox/radio/switch use `tone`; labels are in the hit area; touch targets expand to 44.
+- Badge: neutral→`badge-gray`/`badge-on`; semantic→`tone`/`tone-contrast`; palette→
+  `badge-*`/`badge-on`; brand→`brand`/`brand-on`.
+- Tag: neutral→`surface`/`fg`/`border`; brand→`brand-soft`/`brand`/30% border; semantic→
+  `tone-soft`/`tone-on`/30% border; palette→badge 12%/badge text/30% border.
+- Images require `alt`; failure shows `surface` + `muted` image icon. Avatars fall back to
+  initials then `alt`; status dots use success/alert/error/muted. Skeletons are hidden from
+  assistive technology unless labelled.
+
+Button variants:
+
+| Variant | Background | Text | Border |
 | --- | --- | --- | --- |
-| `textfield` | — | `value`, `placeholder`, `input=text / number / email / tel / url / search` (default `text`), `label`, `icon`, `icon-right`, `icon-tone`, `required`, `disabled`, `readonly`, `invalid`, `max-length` | 200×40 |
-| `textarea` | — | `value`, `placeholder`, `label`, `rows=3`, `icon`, `icon-right`, `icon-tone`, `max-length`, `disabled`, `invalid` | 240×auto |
-| `date` | — | `value` (`YYYY-MM-DD`), `min`, `max`, `label`, `placeholder=YYYY-MM-DD`, `icon`, `icon-right`, `required`, `disabled`, `invalid` | 200×40 |
-| `time` | — | `value` (`HH:MM`), `min`, `max`, `step=1`, `label`, `placeholder=HH:MM`, `required`, `disabled`, `invalid` | 160×40 |
-| `date-range` | — | `start`, `end`, `min`, `max`, `label`, `required`, `disabled`, `invalid`, `icon=calendar` | 280×40 |
-| `password` | — | `value`, `revealed=false`, `label`, `placeholder`, `icon`, `icon-right`, `required`, `disabled`, `invalid` | 200×40 |
-| `dropdown` | — | `value`, `options` (`Label=value / ...`), `label`, `placeholder`, `icon`, `icon-right`, `required`, `disabled`, `invalid` | 200×40 |
-| `checkbox` | Visible label | `checked=false`, `disabled`, `tone` | content |
-| `radio` | Visible label | `value`, `checked=false`, `tone`, `disabled`, `label` | content |
-| `radio-group` | — | `value`, `orientation=vertical / horizontal`, `label`, `disabled`, `action` | content |
-| `switch` | Visible label | `checked=false`, `disabled`, `tone`, `label` | content |
-| `slider` | — | `value=min`, `min=0`, `max=100`, `step=1 / any`, `tone`, `label`, `show-value`, `disabled` | 200×24 |
-| `field` | Label | `for`, `hint`, `error`, `required`; children are controls | content |
+| `primary` | `brand` | `brand-on` | none |
+| `secondary` | `surface` | `fg` | 1 px `border` |
+| `ghost` | transparent | `brand` | none |
+| `danger` | `error` | `error-contrast` | none |
 
-Rules:
+### 6.3 Built-in extended components
 
-- Inputs use the textfield box; `date`/`time`/`date-range` have trailing picker actions; `password` has reveal; `dropdown` has a chevron.
-- `invalid` uses the error tone and sets `aria-invalid`.
-- `checkbox`/`radio`/`switch` labels are part of the hit area.
-- `radio-group` children MUST be `radio`; at most one `checked` radio; group `value` wins.
-- `field` error replaces hint and marks the first control invalid.
-- `dropdown` options are `Label=value` separated by `|`; labels/values cannot contain `|` or `=` in `gui-v1`.
+Extended components are macros over primitives/containers. Structure and styling are
+normative; native implementations must match boxes, roles, states and paint order. Common
+attributes may override the outer box; internal structure is fixed. If a screen needs a
+different internal structure, compose primitives directly.
 
-### 6.4 Actions
+| Component | Use when | Key attributes | Structure and styling |
+| --- | --- | --- | --- |
+| `field` | Label + control + hint/error | `for`, `hint`, `error`, `required` | column gap `xs`: label (sm/medium), one control, hint (sm/`muted`) or error (sm/`error`). Error replaces hint and marks invalid. No bg/border/pad. |
+| `card` | Group related content | `description`, `raised` | column: optional title/description, children. `surface`, 1 px border, `radius-lg`, pad `l`, gap `m`; `raised` uses `shadow-sm` instead of border. |
+| `page-header` | Page title + actions | `description` | row `between`/`center` gap `m`: title/description column + action row gap `s`. |
+| `list` / `list-item` | Homogeneous collection | list `navigation`, `divider`, `empty`; item `description`, `icon`, `icon-tone`, `avatar`, `badge`, `badge-tone`, `selected`, `disabled`, `action` | list: column, scroll `y`, dividers. Item: row min 56, pad-x `m`, pad-y `s`, gap `m`; leading icon/avatar, title/description, trailing badge/icon. Selected `brand-soft`; hover overlay; single-line ellipsis. |
+| `table` / `table-head` / `table-row` / `table-cell` | Comparison | `cols`, `caption`, `empty`, `selectable`, `sortable`, `sort`, `dense`, `striped`; row `selected`, `disabled`; cell `align` | column: header + rows. 1 px border, `radius-lg`, scroll `x`; header `surface`, sm/medium `muted`; rows 48 (40 dense), pad-x `m`, pad-y `s`, bottom border; numbers right; selected `brand-soft`. |
+| `tabs` / `tab` | Peer views | `active`, `variant=underline/pills`, `equal`, `scrollable`; tab `id`, `icon`, `badge`, `disabled` | column gap `m`: tab bar (48 underline/40 pills) + active panel. Active `brand`/indicator or `brand-soft`; inactive `muted`; only active painted. |
+| `banner` | Persistent page status | `tone`, `title`, `icon`, `variant=soft/solid`, `dismissible` | row: icon + content column + optional close. Soft: `tone-soft`, 1 px tone border, `radius-lg`, pad `l`, gap `s`; solid: tone/`tone-contrast`, no border. |
+| `toast` | Transient status | `tone`, `title`, `placement`, `duration=4000`, `dismissible` | Same as banner, `shadow-lg`, max 420. Stacks, pauses on hover/focus, never steals focus. |
+| `menu` / `menu-item` | Contextual actions | menu `open`, `anchor`, `placement`; item `icon`, `shortcut`, `tone`, `selected`, `disabled` | menu: `surface`, border, `radius-lg`, `shadow-md`, pad `xs`, min 180. Item: row 40, pad-x `m`, pad-y `s`, gap `s`, `radius-sm`; selected `brand-soft`; danger `error-on`. |
+| `breadcrumbs` | Location | `separator="/"` | row gap `xs`: sm `brand` links + sm `muted` separators; last current `muted`; navigation landmark. |
+| `pagination` | Large collection | `page`, `pages`, `siblings`, `disabled`, `label` | row gap `xs`: 32 px buttons, `radius-sm`; active `brand-soft`/`brand`; prev/next. |
+| `action-bar` | View actions | `placement`, `equal`, `align`, `separator`, `safe` | row `surface`, top border, pad-x `l`, pad-y `m`, gap `s`; `equal` shares width; children buttons. |
+| `empty-state` | No content | `description`, `icon` | column centered gap `m`, pad `xl`: icon lg `muted`, title md/semibold, description sm/`muted`, action. |
+| `metric` | Single KPI | `label`, `value`, `change`, `tone` | `card` + column gap `xs`: label sm/`muted`, value lg/`bold`, change sm/tone. |
+| `radio-group` | One of a small set | `label`, `value`, `orientation`, `disabled` | column/row gap `s`: optional label + `radio` children; group `value` selects. |
+| `tree` / `tree-item` | Hierarchy | tree `selection`, `label`; item `expanded`, `selected`, `disabled`, `icon`, `badge` | tree: column, scroll `y`. Item: row 40, pad-x `m`, pad-y `s`, gap `s`, indent `l`; chevron/icon/label/badge; selected `brand-soft`. |
+| `tooltip` | Short description | `for`/`anchor`, `placement`, `open`, `delay=300` | text box: `fg` bg, `bg` text, `radius-sm`, pad-x `s`, pad-y `xs`, `shadow-md`, max 240; not focusable. |
+| `popover` | Contextual content | `anchor`, `placement`, `open`, `dismissible`, `modal` | column: `surface`, border, `radius-lg`, `shadow-md`, pad `m`, gap `s`, min 180; modal adds scrim/focus trap. |
 
-**`button`** — text optional with icon+label; `variant=primary|secondary|outline|ghost|danger` (primary); `size=small / normal|large` (32/40/48); `tone` overrides primary/ghost accent; `icon`, `icon-right`, `align=left|center|right` (center); `disabled`; `default` (document footer only); `label` for icon-only buttons.
+Key rules:
 
-**`menu` / `menu-item`**
+- `field` has exactly one control child. `list-item` uses `icon` or `avatar`, not both.
+- `table selectable` prepends a 40 px checkbox column; `sortable` headers expose `aria-sort`;
+  sorting is runtime state.
+- `tabs` active defaults to the first enabled tab; only active is measured/painted.
+- Banner/toast icons: info/neutral `info`, success `check-circle`, warning/alert
+  `alert-triangle`, error `x-circle`.
+- Menu keys: Up/Down, Enter, Escape. Tree keys: Up/Down, Right/Left, Home/End,
+  Enter/Space; multiple uses Ctrl/Cmd+Space.
+- `dialog`, `sheet` and `drawer` are screen kinds, not components.
 
-| `menu` | Default | | `menu-item` | Default |
-| --- | --- | --- | --- | --- |
-| `open` | `true` | | text | required |
-| `anchor` | — | | `icon` | — |
-| `placement` | `bottom-start` | | `shortcut` | — |
-| `action` | — | | `tone` | `fg` (use `error` for danger) |
-| | | | `selected` | `false` |
-| | | | `disabled` | `false` |
+### 6.4 Project components
 
-Children of `menu`: `menu-item` or `divider`. Menus are raised panels with radius `lg`, `shadow.md`, pad `xs`, min width 180. Keyboard: Up/Down, Enter, Escape.
-
-**`pagination`** — `page=1`, `pages` (required), `siblings=1`, `show-first-last=true`, `show-prev-next=true`, `disabled`, `label="Pagination"`. 32px buttons, active `primary-soft`/`primary`.
-
-**`breadcrumbs`** — `separator="/"`; children are labels with `action`; last is current. Navigation landmark.
-
-### 6.5 Display
-
-| Type | Text | Key attributes |
-| --- | --- | --- |
-| `icon` | Icon name | `size=20`, `tone=fg`, `label`; with `action`, exposed as a link/button |
-| `tag` | Visible text | `tone=neutral`, `size=small / normal`, `icon` |
-| `badge` | Visible text | `tone=primary` |
-| `image` | — | `src`, `alt`, `fit=cover / contain`, `aspect=free / 1:1 / 4:3 / 3:2 / 16:9 / 21:9`, `radius` |
-| `avatar` | — | `src`, `initials`, `alt`, `size=40`, `shape=circle / rounded`, `status=online / away / busy / offline`, `tone=primary` |
-| `progress` | — | `value=0…100`, `tone=primary`, `label`, `show-value`, `indeterminate` |
-| `spinner` | — | `size=20`, `tone=primary`, `label="Loading"` |
-| `skeleton` | — | `shape=line / circle / rect`, `lines=1`, `animated=true`, `label` |
-| `divider` | — | `orientation=horizontal / vertical`, `thickness=1`, `color=border`, `inset=none` |
-| `spacer` | — | `grow=1`, optional `width`/`height` |
-| `tooltip` | Visible text | `for`/`anchor`, `placement=top / right / bottom / left`, `open=false`, `delay=300ms` |
-
-Rules:
-
-- A `label` or `icon` with `action` is exposed as a link/button and is keyboard-activatable.
-- `image` `alt` is required; use `""` for decorative. If load fails, render a `neutral-soft` box with an `image` icon.
-- `avatar` falls back to initials, then to letters derived from `alt`; status is exposed in the accessible description.
-- `tag` tone resolution: neutral/primary/semantic/palette as §4.6.
-- `badge` is solid; `tag` is soft.
-- `skeleton` is hidden from assistive technology unless `label`.
-- `progress`/`slider` `show-value` renders the value at the right.
-
-### 6.6 Containers
-
-**`rows`, `columns`, `grid`** — see §5. `rows`/`columns` accept `gap`, `pad*`, `scroll`, `justify`, `align-items`, `wrap` (columns), `col-gap`, `row-gap`. `grid` accepts `cols`, `rows`, `gap`, `col-gap`, `row-gap`, `flow`.
-
-**`list`** — vertical scroll; `divider=true`, `navigation=false`, `empty`, `gap=none`, `pad=none`. Children may be any component. `navigation=true` exposes a navigation landmark; `list-item selected` marks current.
-
-**`list-item`** — title text, `description`, `icon` OR `badge` (mutually exclusive), `icon-tone`, `badge-tone`, `selected`, `disabled`, `action`. 56 min height; title/description single-line ellipsis.
-
-**`banner`** — `tone=info|success|alert|warning|error|neutral`, `title`, `icon`, `variant=soft|solid` (default `soft`), `dismissible`. Leading icon + content + close. Children are content/actions.
-
-**`popover`** — see §5.8. `anchor`, `placement=bottom-start|bottom-end|top-start|top-end|left|right`, `open=true`, `dismissible=true`, `modal=false`, `action`. Children are arbitrary content.
-
-**`toast`** — see §5.8. `tone`, `title`, `placement=bottom|top`, `duration=4000`, `dismissible=true`, `action`. Children are content and at most one action button.
-
-**`tree` / `tree-item`** — see §5.8. `tree` attrs: `selection=single|multiple|none`, `label`. `tree-item` attrs: text title, `expanded=false`, `selected=false`, `disabled`, `icon`, `badge`, `badge-tone`, `action`. Children are nested `tree-item`s; an item without children is a leaf.
-
-**`tabs` / `tab`** — see §5.8. `tab` attrs: `id` (required), `icon`, `badge`, `badge-tone`, `disabled`, `layout=rows|columns|grid` (rows), `gap=m`, `pad=none`, `cols`/`rows` for grid.
-
-**`action-bar`** — see §5.8. `placement=bottom|top`, `equal=true`, `align=left|right|between`, `separator=true`, `safe=true`, `gap=s`, `pad-y=m`, `pad-x=l`, `bg=surface`.
-
-**`carousel`** — see §5.8. `active=0`, `gap=m`, `show-indicators=true`, `show-arrows=false`, `loop=false`, `snap=true`, `action`.
-
-**`table`** — see §5.8. `cols=1fr`, `caption`, `empty`, `selectable=false`, `sortable=false`, `sort`, `resizable=false`, `striped=false`, `dense=false`, `action`. `table-row` `selected`, `disabled`, `action`; `table-cell` `align=left|center|right`. When `sortable`, header cells are keyboard-activatable and expose `aria-sort` (`ascending`, `descending`, or `none`); sorting is a runtime interaction and does not reorder the document.
-
-**`document`** — see §5.8. `scroll=y`. `document-header` text title, `description`, `icon`, `icon-tone=primary`, `level=2`. `document-footer` `separator=true`; children are buttons; at most one `default=true`.
-
-**`screen-ref`** — `screen` required.
-
-### 6.7 Patterns
-
-**Form section**
+A project can define additional extended components in the document. A definition is a
+named macro with parameters, optional slots and exactly one body root.
 
 ```text
-field "Email" for=email hint="We never share it."
-  textfield id=email input=email icon=mail
+component stat-card "Stat card"
+  param label
+  param value
+  param change
+  param tone=brand
+  column gap=xs
+    text "${label}" size=sm tone=muted
+    text "${value}" size=lg weight=bold
+    text "${change}" size=sm tone=${tone}
 ```
 
-**Dialog document**
+Declaration:
+
+- `component <name> ["<description>"]` starts a definition.
+- `param <name>[=<default>]`; without a default it is required.
+- `slot [<name>]`; `slot` alone is the default slot.
+- Body is exactly one root node after declarations.
+- Definitions are document-global, after the theme and before the first screen; order
+  among definitions does not matter.
+- Names are lowercase kebab-case and must not collide with a container, primitive,
+  built-in extended component or another definition.
+- Parameter/slot names are lowercase kebab-case and unique.
+- Body may contain any container, primitive, built-in or project component; not `screen`,
+  `theme` or `component`.
+
+Parameters:
+
+- Instance attributes matching a parameter supply it.
+- `${name}` may appear in positional text and attribute values (`id`, `for`, `anchor`,
+  `src`, `alt`, `label`, `tone`, spacing). It is not recognized in types or attribute
+  names.
+- Quote placeholders that may contain spaces.
+- Substitution is single-pass on parsed text/values; parameter values are opaque and not
+  parsed again.
+- If `param text` is declared, instance positional text supplies it; otherwise positional
+  text is `E041`.
+- Missing parameter `E034`; unresolved placeholder `E037`; extra attribute `E007`.
+- Parameters shadow common attributes of the same name; remaining instance attributes apply
+  to the expanded root.
+
+Slots:
+
+- `slot` is default; `slot <name>` is named. At most one default; names unique.
+- Direct instance children with `slot=<name>` go there; unmarked children go to the default
+  slot.
+- A slot placeholder appears at most once; empty slots render nothing.
+- Children without a default slot, or an undeclared slot, is `E036`.
+- `slot` is only valid on direct children of an instance.
+- Slot content may contain any nodes, including project components.
+
+Expansion:
+
+1. Resolve definition and check required parameters.
+2. Substitute placeholders.
+3. Replace slots in document order.
+4. Apply common instance attributes to the expanded root; they override the body root.
+5. Expand nested components recursively.
+6. Reject cycles (`E035`); assign paths and reject duplicate IDs (`E023`).
+
+The instance `id` becomes the root id. Do not declare `id` on the body root when instances
+set `id` (`E023`). Parameterize internal IDs when a component can be reused:
 
 ```text
-screen settings "Settings" rows kind=dialog width=600 pad=xl gap=none
-  document
-    document-header "Workspace settings" description="Manage..." icon=settings
-    rows gap=l
-      field "Name" for=name
-        textfield id=name value="Northstar"
-    document-footer
-      button "Cancel" variant=ghost action=close
-      button "Save" variant=primary default action=save
+component labeled-field
+  param name
+  param label
+  field "${label}" for="${name}-input"
+    textfield id="${name}-input"
+
+screen profile "Profile"
+  labeled-field name=email label="Email"
 ```
 
-**SPA split navigation**
+Project components create no new accessibility roles; they expose the expansion’s roles and
+states. They expand before platform mapping.
+
+Example with slots:
 
 ```text
-grid cols="280 1fr" gap=m
-  list navigation=true
-    list-item "Atlas" icon=palette selected action=open-atlas
-    list-item "Orbit" icon=smartphone action=open-orbit
-  document
-    document-header "Atlas" description="Design system" icon=palette
-    rows gap=l
-      carousel
-        ...
-    document-footer
-      button "Open" variant=primary default
+component panel
+  param title
+  slot header
+  slot body
+  column bg=surface border radius=lg pad=l gap=m
+    text "${title}" size=md weight=semibold
+    slot header
+    slot body
+
+screen settings "Settings" kind=dialog width=600
+  panel title="Workspace"
+    text "Actions" slot=header
+    column slot=body
+      field "Name"
+        textfield id=name
 ```
 
-No new layout primitive is needed: `grid` + `list` + `document` + `carousel` cover the classic split view. On mobile, hide the list with `hide-at=sm` and use a `drawer` screen or a menu.
+### 6.5 Icons and imagery
 
-**Dashboard** — `grid` with metric cards (`rows` + `tag`/`badge` + `progress`), `list` for activity, `action-bar` for actions.
+One vector icon set, consistent style, 24 px grid, kebab-case names, sizes 16/20/24. Icons
+inherit text color; icon-only controls need an accessible name. Common names:
+`chevron-*`, `arrow-*`, `home`, `menu`, `close`, `search`, `filter`, `plus`, `minus`, `check`,
+`edit`, `trash`, `download`, `upload`, `more-horizontal`, `info`, `check-circle`,
+`alert-triangle`, `x-circle`, `mail`, `settings`, `palette`, `smartphone`, `calendar`,
+`image`, `user`, `eye`, `eye-off`, `sort-asc`, `sort-desc`, `expand`, `collapse`.
 
-**Empty/loading/error** — `empty-state` is composed from `icon` + `label` + `button`; loading uses `spinner`/`skeleton`; errors use `banner tone=error`.
+Images require `alt`; use `""` for decorative. Prefer `fit=cover` with a declared aspect;
+use `contain` for diagrams/logos. On failure show the neutral placeholder. Prefer real
+content or simple geometric illustrations over stock imagery.
 
 ---
 
-## 7. Platform mapping
+## 7. Patterns
 
-Use the theme tokens for all painting. Do not rely on platform default padding, fonts, or control chrome. Custom drawing is allowed and often required.
+| Pattern | Use | Key rules |
+| --- | --- | --- |
+| App shell | Persistent navigation + content | Stable labels; active state uses `brand`; desktop sidebar/rail, mobile drawer/menu. |
+| List-detail | Navigation list + detail | `grid cols="280 1fr"`; on `sm`, list hides and detail opens as a screen with back; no nested scroll. |
+| Forms | Data entry | Single column; `field` per input; one primary action; validate on blur/submit; keep input on error; focus first invalid. |
+| Search/filter/sort | Large collections | Search above; filters in row/panel; sort in headers; active filters as removable tags; show count and recoverable empty state. |
+| Tables | Comparison | Header/caption/empty state; numbers right; row actions trailing; explicit selection/sort; cards or column priority on small screens. |
+| Dashboard | Metrics + activity | Metric cards, activity list, action bar; every metric has label/value/comparison; do not mix unrelated chart types. |
+| Auth | Sign-in/up/recovery | Narrow form; one primary action; recovery/create links; errors do not reveal account existence; support password managers/paste. |
+| Settings | Preferences | Group by task; fields/sections; sticky/footer save; distinguish immediate switches from save-required forms; warn on unsaved changes. |
+| Onboarding | First value | Short sequence/checklist, not marketing carousel; progress; skip; do not block the product. |
+| Empty/loading/error | Every view | Empty: why + next action; loading: skeleton/spinner; error: banner + recovery; keep partial content. |
+| Destructive confirmation | Irreversible actions | State object/consequence; danger; safe cancel; dialog for decisions, toast for completion. |
+| Notifications | Feedback | Toast for non-blocking; banner for persistent; dialog for decisions; inline field errors; no duplicate messages. |
+| Responsive | All screens | Reflow/relocate before hiding; keep essential actions; 44×44 touch; no nested scroll. |
 
-| Component | Web | Java Swing | Android | iOS |
-| --- | --- | --- | --- | --- |
-| `label` | `span`/`h1`–`h6` | `JLabel`/custom | `TextView` | `UILabel` |
-| `heading` (`label level`) | semantic heading | `JLabel` + AccessibleRole | `TextView` + heading | `UILabel` + trait |
-| `textfield` | `input` | `JTextField` | `EditText` | `UITextField` |
-| `textarea` | `textarea` | `JTextArea` | `EditText` (multiline) | `UITextView` |
-| `date`/`time`/`date-range` | `input[type=date/time]` or custom | custom picker | `DatePicker`/`TimePicker` | `UIDatePicker` |
-| `password` | `input[type=password]` | `JPasswordField` | `EditText` password | `UITextField` secure |
-| `dropdown` | `select` or custom | `JComboBox` | `Spinner`/menu | `UIButton` + menu |
-| `checkbox` | `input[type=checkbox]` | `JCheckBox` | `CheckBox` | custom/`UIButton` |
-| `radio`/`radio-group` | `input[type=radio]` | `JRadioButton` + `ButtonGroup` | `RadioButton` | custom |
-| `switch` | `input[type=checkbox]` + style | `JToggleButton` custom | `Switch` | `UISwitch` |
-| `slider` | `input[type=range]` | `JSlider` | `Slider` | `UISlider` |
-| `progress` | `progress`/custom | `JProgressBar` | `ProgressBar` | `UIProgressView` |
-| `button` | `button` | `JButton`/custom | `Button` | `UIButton` |
-| `tag`/`badge` | `span` styled | custom `JLabel` | `TextView` background | `UILabel` background |
-| `icon` | inline SVG | `Icon`/custom | `ImageView` | `UIImageView` |
-| `image` | `img` | `JLabel` icon/custom | `ImageView` | `UIImageView` |
-| `avatar` | `span`/`img` | custom | `ImageView` | `UIImageView` |
-| `list`/`list-item` | `ul`/`li` | `JList`/custom | `RecyclerView` | `UITableView` |
-| `tabs`/`tab` | custom + ARIA | `JTabbedPane`/custom | `TabLayout` | custom/`UITabBar` |
-| `action-bar` | `div` | `JPanel` | `BottomAppBar` | `UIToolbar` |
-| `carousel` | scroll-snap | custom | `ViewPager2` | `UIScrollView`/`UIPageViewController` |
-| `table` | `table`/custom | `JTable`/custom | `RecyclerView` | `UITableView` |
-| `menu` | `div[role=menu]` | `JPopupMenu` | `PopupMenu` | `UIMenu` |
-| `tooltip` | `[role=tooltip]` | `JToolTip`/custom | `TooltipCompat`/custom | custom |
-| `popover` | popover API/`div` | `JPopupMenu`/`JWindow` | `PopupWindow` | `UIPopoverPresentationController` |
-| `toast` | custom | `JWindow`/custom | `Snackbar` | custom |
-| `tree`/`tree-item` | `[role=tree]`/`treeitem` | `JTree`/custom | custom/`RecyclerView` | `UICollectionView`/custom |
-| `document` | `div` | `JPanel` | custom `View` | `UIView` |
-| `field`/`banner` | `div` | `JPanel` | custom `View` | `UIView` |
-| `pagination`/`breadcrumbs` | `nav` | custom | custom | custom |
-| `spinner` | CSS/SVG | custom paint | `ProgressBar` | `UIActivityIndicatorView` |
-| `skeleton` | `div` | custom paint | custom `View` | custom `UIView` |
-| `kbd` | `kbd` | `JLabel` styled | `TextView` styled | `UILabel` styled |
-| `screen-ref` | inline expansion | inline expansion | inline expansion | inline expansion |
-| `divider` | `hr`/border | `JSeparator`/paint | `Divider` | `UIView` |
-| `spacer` | flex spacer | `Box`/`JPanel` | `Space` | `UIView` |
-
-Platform requirements:
-
-- **Web:** semantic elements/ARIA; CSS variables for tokens; `:focus-visible`; `prefers-reduced-motion`; overlay scrollbars.
-- **Swing:** custom `JPanel` painting for tags/badges/cards; `UIManager`/tokens; `AccessibleContext`; key bindings; overlay scrollbars; logical pixels.
-- **Android:** `contentDescription`/roles; minimum 44dp touch targets; window insets for safe areas; `RecyclerView`/`ViewPager2`; theme attributes.
-- **iOS:** `accessibilityLabel`/traits; safe-area guides; `UITableView`/`UICollectionView`; dynamic type only via explicit `size` attrs, not implicit scaling; `UIAccessibility` reduced motion.
-
-Where a native widget cannot express the specified appearance, use custom drawing. Do not substitute a visually different native default.
-
-**Text measurement per platform:**
-
-- **Web:** measure with Canvas 2D using the resolved font and `measureText`; use DOM measurement only when the canvas is unavailable. Tests stub measurement with reference mode.
-- **Swing:** use `FontMetrics` with fractional metrics disabled (`KEY_FRACTIONALMETRICS_OFF`) and integer advances. Do not use platform control borders or insets.
-- **Android:** use `Paint.measureText`/`StaticLayout` with the resolved size in px; convert dp to px before layout.
-- **iOS:** use TextKit/NSString sizing with the resolved font in points.
-- **All:** production metrics may differ per platform; they MUST be stable for a given platform, font, and locale. Conformance tests use reference measurement (§10.4).
+One primary action per view. Use `action-bar` for view-level actions, not duplicates. Never
+put essential information only in a tooltip, popover or hover state.
 
 ---
 
-## 8. Accessibility
+## 8. Content
 
-Every interactive component MUST have an accessible name from its text, `label`, or `label for=...`.
+- **Voice:** clear, calm, direct, human. Plain verbs, short sentences, specific next steps.
+  No blame, jargon, humor in errors or exclamation marks.
+- **Terminology:** one term per concept across navigation, labels, help and errors.
+- **Capitalization:** sentence case for labels, headings, buttons, menu items and tabs. No
+  terminal punctuation in short labels. Full sentences for help/empty/error text. Use `…`
+  for truncation and “More…” actions, not `...`.
+- **Labels/help:** every input has a visible label; placeholders are examples, not labels.
+  Help explains format/constraints before errors. Mark required, not optional. Start actions
+  with a verb.
+- **Errors:** what went wrong + why (if useful) + what to do next. “Enter a date in the
+  future.” not “Invalid input.” Keep the message at the field; use a summary for multiple
+  errors. No stack traces or internal codes.
+- **Dates/numbers:** `YYYY-MM-DD` and `HH:MM` in values; display in locale. Locale grouping
+  and decimal separators. Right-align numeric columns. Currency uses ISO code or locale
+  symbol consistently.
+- **Internationalization:** no concatenated sentences or text baked into images; allow
+  30–40% expansion. `gui-v2` is LTR-only; RTL is a documented project extension.
 
-| Component | Role / semantics | Required states |
+---
+
+## 9. Accessibility
+
+Target **WCAG 2.2 AA**; accessibility is a release gate.
+
+### 9.1 Contrast and focus
+
+- Normal text 4.5:1; large text and UI graphics 3:1.
+- Focus indicators 3:1 against adjacent colors and visible in both modes.
+- Meaningful borders (inputs, selection) meet 3:1.
+- Recompute contrast when tokens/themes change; baseline tokens are chosen to pass.
+
+### 9.2 Keyboard
+
+Every interactive element is reachable in tree order with a visible focus ring. Keyboard
+focus only unless the platform has no keyboard. Overlays trap focus while modal and return
+focus to the opener. No positive tabindex.
+
+Keys: buttons/links Enter/Space; tabs arrows/Home/End; menus Up/Down/Enter/Escape; radios
+arrows/Space; dialogs Escape + trap; popovers Escape/outside click; tooltips Escape; trees
+Up/Down/Left/Right/Home/End/Enter/Space; sortable headers Enter/Space.
+
+### 9.3 Semantics
+
+| Component | Role | States |
 | --- | --- | --- |
-| `label level` | heading at level | heading level |
-| input controls | textbox/combobox/checkbox/radio/switch/slider | name, value, required, invalid, disabled |
-| `button` | button | name, disabled, default |
-| `tabs` | tablist/tab/tabpanel | selected, controls |
-| `menu` | menu/menuitem | expanded, disabled, selected |
+| `text level` | heading | level |
+| inputs | textbox/combobox/checkbox/radio/switch/slider | name, value, required, invalid, disabled |
+| `button` | button | name, disabled |
+| `tag`, `badge` | status/text | text; never color alone |
+| `tabs`/`tab` | tablist/tab/tabpanel | selected, controls |
+| `menu`/`menu-item` | menu/menuitem | expanded, disabled, selected |
 | `table` | table/row/columnheader/cell | caption, selection, sort |
 | `radio-group` | radiogroup/radio | name, checked, disabled |
 | `dialog`/`drawer`/`sheet` | dialog | name, modal, focus trap |
-| `banner` | status/alert | live region |
-| `carousel` | region/carousel | slide position, controls |
-| `pagination`/`breadcrumbs` | navigation | current page/current item |
+| `banner`/`toast` | status/alert | live region |
+| `pagination`/`breadcrumbs` | navigation | current page/item |
 | `spinner` | status | label |
 | `skeleton` | hidden unless labelled | — |
-| `tooltip` | tooltip, referenced by `aria-describedby` | text |
+| `tooltip` | tooltip via `aria-describedby` | text |
 | `popover` | dialog when modal, else region | name, expanded, focus |
-| `toast` | status/alert | live region |
 | `tree`/`tree-item` | tree/treeitem | expanded, selected, level |
+| `list`/`list-item` | list/listitem | selected, disabled |
+| `card`/`field`/`page-header` | group/region | label when titled |
 
-Rules:
+Expose required, invalid, disabled, expanded, selected and sort states. Dynamic messages use
+`role=status` or `role=alert`. Decorative images/icons/skeletons are hidden. Extended and
+project components expose the expansion’s roles/states; they are not roles themselves.
 
-- Focus order is tree order. Every interactive node has a visible focus ring.
-- Keyboard: buttons/links Enter/Space; tabs arrows/Home/End; menus Up/Down/Enter/Escape; radios arrows/Space; carousel Left/Right; dialogs Escape + focus trap; popovers Escape/outside click; tooltips Escape; trees Up/Down/Left/Right/Home/End/Enter/Space; sortable table headers Enter/Space.
-- Touch targets SHOULD be at least 44×44; small visual controls get an invisible hit area.
-- Contrast: 4.5:1 normal text, 3:1 large text/icons. The default theme is chosen for this.
-- Color is never the only signal: invalid, selected, required also expose semantics.
-- `tooltip` supplements, never replaces, the accessible name.
-- `skeleton` is decorative unless `label` is set.
-- `screen-ref` IDs must be unique after expansion; test the composed tree.
+### 9.4 Motion, touch and zoom
+
+Honor reduced motion; replace shimmer/rotation/large movement with static states. Touch
+targets at least 44×44; small controls get an invisible hit area. Support 200% zoom and
+320 CSS px reflow. Do not disable selection/paste. Do not rely on hover for essential
+information.
+
+### 9.5 Testing
+
+Automated: contrast, names, roles, focus order, tokens. Manual: keyboard-only,
+screen-reader per platform, reduced motion, 200% zoom. Component tests cover default, hover,
+focus, pressed, selected, disabled and error. Accessibility regressions block release;
+exceptions need an owner.
 
 ---
 
-## 9. Validation and error codes
+## 10. Platforms
 
-Validation reports errors in document order (line, column, path), then by code. Error object:
+Use tokens for all painting. Do not rely on platform default padding, fonts or chrome.
+Custom drawing is allowed. Project components expand before mapping; they do not imply a
+native widget.
+
+| Component | Web | Swing | Android | iOS |
+| --- | --- | --- | --- | --- |
+| `text` | `span`/heading | `JLabel`/custom | `TextView` | `UILabel` |
+| `icon`/`image` | inline SVG/`img` | `Icon`/custom | `ImageView` | `UIImageView` |
+| `button` | `button` | `JButton`/custom | `Button` | `UIButton` |
+| `textfield`/`textarea` | `input`/`textarea` | `JTextField`/`JTextArea` | `EditText` | `UITextField`/`UITextView` |
+| `select` | `select`/custom | `JComboBox` | `Spinner`/menu | `UIButton` + menu |
+| `checkbox`/`radio`/`switch` | inputs/styled | `JCheckBox`/`JRadioButton`/`JToggleButton` | `CheckBox`/`RadioButton`/`Switch` | custom/`UISwitch` |
+| `slider`/`progress` | range/progress | `JSlider`/`JProgressBar` | `Slider`/`ProgressBar` | `UISlider`/`UIProgressView` |
+| `avatar`/`badge`/`tag` | styled spans | custom `JLabel` | `TextView`/`ImageView` | `UILabel`/`UIImageView` |
+| `list`/`table` | `ul`/`table`/custom | `JList`/`JTable` | `RecyclerView` | `UITableView` |
+| `tabs`/`menu`/`tree` | ARIA + custom | `JTabbedPane`/`JPopupMenu`/`JTree` | `TabLayout`/`PopupMenu`/custom | custom/`UIMenu`/`UICollectionView` |
+| `banner`/`toast`/`tooltip`/`popover` | live region/popover API | `JWindow`/`JToolTip`/`JPopupMenu` | `Snackbar`/`PopupWindow` | custom/`UIPopoverPresentationController` |
+| `card`/`field`/`page-header` | `div`/`section` | `JPanel` | custom `View` | `UIView` |
+| `spinner`/`skeleton`/`kbd`/`divider`/`spacer` | CSS/SVG/`kbd`/`hr`/flex | custom paint/`JLabel`/`JSeparator`/`Box` | `ProgressBar`/custom/`TextView`/`Divider`/`Space` | `UIActivityIndicatorView`/custom/`UILabel`/`UIView`/`UIView` |
+
+Platform requirements:
+
+- **Web:** semantic elements/ARIA; CSS variables; `:focus-visible`; reduced motion; overlay
+  scrollbars; URL/query state.
+- **Swing:** custom painting for tags/badges/cards; `UIManager`/tokens; `AccessibleContext`;
+  key bindings; overlay scrollbars; logical pixels; host window/menu behavior.
+- **Android:** `contentDescription`/roles; 44 dp touch; window insets; `RecyclerView`; theme
+  attributes.
+- **iOS:** `accessibilityLabel`/traits; safe-area guides; `UITableView`/
+  `UICollectionView`; explicit `size` for dynamic type; reduced-motion APIs.
+
+Text measurement: Web Canvas 2D; Swing `FontMetrics` with fractional metrics off; Android
+`Paint.measureText`/`StaticLayout`; iOS TextKit/`NSString`. Production metrics may differ per
+platform but must be stable for a platform/font/locale. Tests use reference measurement
+(§12.4).
+
+**Prototype note:** the HTML prototype in `screen-workflow.md` is the shared web/behavior
+review artifact. Native desktop/mobile fidelity needs a native renderer or screenshots; do
+not treat HTML pixels as native acceptance.
+
+---
+
+# Part II — Reference
+
+## 11. Validation and error codes
+
+Errors are ordered by line/column/path, then code:
 
 ```json
-{ "code": "E012", "severity": "error", "line": 42, "path": "root/1/0", "message": "button has neither text nor icon" }
+{ "code": "E012", "severity": "error", "line": 42, "path": "root/1/0", "message": "text is required" }
 ```
 
-| Code | Severity | Condition |
-| --- | --- | --- |
-| `E001` | error | Missing/invalid `gui-v1` |
-| `E002` | error | Tabs or indentation not a multiple of two spaces |
-| `E003` | error | Unknown theme key |
-| `E004` | error | Duplicate screen id |
-| `E005` | error | Unknown type |
-| `E006` | error | Leaf has children |
-| `E007` | error | Unknown attribute (unless `x-`) |
-| `E008` | error | Invalid enum |
-| `E009` | error | Invalid numeric range |
-| `E010` | error | Non-token spacing value |
-| `E012` | error | Required text missing |
-| `E013` | error | Button has neither text nor icon |
-| `E014` | error | `list-item` has both `icon` and `badge` |
-| `E015` | error | `tabs` has no `tab`, or a non-`tab` child |
-| `E016` | error | Duplicate tab id or `active` not an enabled tab |
-| `E017` | error | `action-bar` child is not a button |
-| `E018` | error | `carousel.active` outside slide range |
-| `E019` | error | Table structure/cell count invalid |
-| `E020` | error | Document child order/count invalid |
-| `E021` | error | More than one default button in a footer, or `default` outside a footer |
-| `E022` | error | `screen-ref` missing/unknown/cyclic |
-| `E023` | error | Radio group structure/value/checked invalid |
-| `E024` | error | Pagination page out of range |
-| `E025` | error | Invalid time/date-range format or bounds |
-| `E026` | error | Missing image `src`/`alt` or avatar `alt` |
-| `E027` | error | Menu child invalid |
-| `E028` | error | Field has no control child |
-| `E029` | error | Invalid `visible-at`/`hide-at` breakpoint |
-| `E030` | error | `wrap=true` outside `columns` |
-| `E031` | error | Duplicate id after reference expansion |
-| `E032` | error | `for` does not resolve |
-| `E033` | error | `label.level` outside 1–6 |
-| `E034` | error | `tooltip-placement` invalid |
-| `E035` | error | Tooltip/popover `anchor` or `for` does not resolve |
-| `E036` | error | Toast `duration` negative or `placement` invalid |
-| `E037` | error | Tree structure invalid (non-`tree-item` child, or `tree-item` outside `tree`) |
-| `E038` | error | Table `sort` column or direction invalid, or sorting/resizing unsupported |
-| `W001` | warning | Percentage resolved as `auto` because the parent is indefinite |
-| `W002` | warning | Unsupported component on target platform |
-| `W003` | warning | Text truncated or clipped |
-| `W004` | warning | Non-default font fallback used |
+| Code | Condition |
+| --- | --- |
+| `E001` | Missing/invalid `gui-v2` |
+| `E002` | Tabs or indentation not a multiple of two spaces |
+| `E003` | Unknown theme key |
+| `E004` | Duplicate screen id |
+| `E005` | Unknown node type |
+| `E006` | Leaf component has children |
+| `E007` | Unknown attribute (unless `x-`) |
+| `E008` | Invalid enum |
+| `E009` | Invalid numeric range |
+| `E010` | Non-token spacing value |
+| `E011` | Invalid color token/hex |
+| `E012` | Required text missing |
+| `E013` | Button has neither text nor icon |
+| `E014` | `list-item` has both `icon` and `avatar` |
+| `E015` | `tabs` has no `tab`, or a non-`tab` child |
+| `E016` | Duplicate tab id or `active` not enabled |
+| `E017` | `action-bar` child is not a button |
+| `E018` | Table structure/cell count invalid |
+| `E019` | Table `sort` column/direction invalid |
+| `E020` | `field` has no control child, or more than one |
+| `E021` | `radio-group` child not radio, or `value` unresolved |
+| `E022` | Menu child not `menu-item`/`divider` |
+| `E023` | Duplicate id after expansion |
+| `E024` | `for`/`anchor` target unresolved |
+| `E025` | Tree structure invalid |
+| `E026` | Toast duration negative/placement invalid |
+| `E027` | Invalid `visible-at`/`hide-at` |
+| `E028` | `wrap=true` outside `row` |
+| `E029` | `text.level` outside 1–6 |
+| `E030` | `image` missing `src`/`alt`, or `avatar` missing all of `src`, `initials`, `alt` |
+| `E031` | `list` child not `list-item`/`divider` |
+| `E032` | Duplicate/reserved component name |
+| `E033` | Unknown project component |
+| `E034` | Missing required component parameter |
+| `E035` | Component reference cycle |
+| `E036` | Invalid slot usage |
+| `E037` | Unresolved `${...}` placeholder |
+| `E038` | Duplicate/invalid parameter or slot name |
+| `E039` | Component body not exactly one root |
+| `E040` | Component declaration after first screen or not top-level |
+| `E041` | Positional text on project component without `param text` |
+| `W001` | Percentage resolved as `auto` (indefinite parent) |
+| `W002` | Unsupported component on target platform |
+| `W003` | Text truncated/clipped |
+| `W004` | Non-default font fallback |
 
-Unknown `x-` attributes are preserved. Renderers MUST NOT silently repair errors.
+Unknown `x-` attributes are preserved. Renderers must not silently repair errors.
 
 ---
 
-## 10. AST, normalization, and testing
+## 12. AST, normalization and testing
 
-### 10.1 Canonical AST
+### 12.1 Canonical AST
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "theme": {},
+  "components": [],
   "screens": [
     {
       "id": "login",
       "title": "Sign in",
-      "kind": "screen",
-      "layout": "rows",
-      "attrs": { "mode": "light", "pad": "xl", "gap": "l" },
+      "kind": "dialog",
+      "layout": "column",
+      "attrs": { "width": "400", "pad": "xl", "gap": "l" },
       "path": "login",
       "children": [
         {
-          "type": "label",
+          "type": "text",
           "text": "Welcome back",
-          "attrs": { "size": "large", "weight": "bold" },
+          "attrs": { "size": "lg", "weight": "semibold", "level": "1" },
           "path": "login/0",
           "children": []
         }
@@ -1177,24 +1156,22 @@ Unknown `x-` attributes are preserved. Renderers MUST NOT silently repair errors
 }
 ```
 
-- `text` is `null` when absent.
-- `attrs` contains explicit attributes only in the raw AST; the **normalized AST** applies defaults and resolves booleans/aliases.
-- Stable paths are structural, not `id`-based.
-- Canonical JSON for tests: sorted keys, 2-space indentation, UTF-8, trailing newline.
+`text` is `null` when absent. Raw `attrs` are explicit; normalized AST applies defaults and
+resolves booleans/aliases. Raw AST has a `components` array with name/title/params/slots/body.
+After expansion, project nodes disappear from screen trees; definitions may remain for
+tooling. Paths are structural, not `id`-based. Canonical JSON: sorted keys, two-space
+indent, UTF-8, trailing newline.
 
-### 10.2 Normalization rules
+### 12.2 Normalization
 
-1. Apply all defaults from §4 and §6.
-2. Convert bare booleans to `true`.
-3. Resolve spacing/radius tokens to numeric values in the **resolved** AST.
-4. Resolve color tokens per mode.
-5. Expand `screen-ref`; reject cycles and duplicate IDs.
-6. Assign structural paths.
-7. Clamp min/max.
-8. Resolve percentages (definite parent) or mark `W001`.
-9. Determine breakpoint visibility from the provided viewport width.
+1. Register definitions; reject duplicate/reserved/cyclic names.
+2. Apply defaults; convert bare booleans.
+3. Resolve spacing, radius and color tokens.
+4. Expand built-in and project components, substituting params/slots.
+5. Reject duplicate IDs; assign paths.
+6. Clamp min/max; resolve percentages (`W001`); determine breakpoint visibility.
 
-### 10.3 Layout output
+### 12.3 Layout output
 
 ```json
 {
@@ -1206,199 +1183,158 @@ Unknown `x-` attributes are preserved. Renderers MUST NOT silently repair errors
 }
 ```
 
-All numbers are 1/64 px. `content` is the padding-adjusted box. Painted pixels are derived at render time.
+Numbers are 1/64 px; `content` is padding-adjusted.
 
-### 10.4 Reference measurement
+### 12.4 Reference measurement
 
-Conformance tests use a deterministic measurement mode:
+- Each grapheme advances `0.5 × font size`: small 6.5, normal 8, large 10.
+- Line heights 18/24/28; weight does not change advance.
+- `…` is one cluster; greedy wrap at spaces; long words break at grapheme boundaries.
+- Images use width/height/aspect; failure uses placeholder size.
+- Pin the Unicode version for byte-exact non-ASCII tests.
 
-- Each Unicode grapheme cluster advances **0.5 × font size**.
-- Small 13 → 6.5; normal 16 → 8; large 20 → 10.
-- Line heights are 18/24/28.
-- Font weight does not change advance.
-- Ellipsis `…` is one cluster.
-- Greedy wrap at spaces; break long words at grapheme boundaries.
-- Images use `width`/`height`/`aspect`; load failure uses the placeholder size.
-- Grapheme segmentation uses the Unicode version bundled with the test harness. For byte-exact golden tests, use ASCII-only strings; pin the Unicode version for other scripts.
+Production uses platform metrics; layout is identical. Tests stub or use reference mode.
 
-Production renderers use platform metrics. The layout algorithm is identical; only the measurement function differs. Tests MUST stub or use reference mode.
+### 12.5 Tests and determinism
 
-### 10.5 Conformance tests
+| Test | Expected |
+| --- | --- |
+| Parser | AST or error codes |
+| Normalizer | canonical normalized AST |
+| Theme | resolved light/dark values |
+| Layout | exact 1/64 boxes for row/column/grid/wrap/stack |
+| Text | exact line boxes/ellipsis |
+| Primitives | preferred size, roles, states |
+| Extended/project | identical boxes/roles to expansion |
+| Component errors | missing params, cycles, bad slots, names |
+| Accessibility | role/name/state tree |
+| Overlays | placement, roles, dismissal |
+| Tree/table | expansion, selection, sorting |
+| Platform | correct native/custom widget |
+| Visual | screenshot tolerance per platform |
 
-A conforming implementation SHOULD provide:
-
-| Test | Input | Expected |
-| --- | --- | --- |
-| Parser | valid/invalid documents | AST or error codes |
-| Normalizer | defaults/booleans/tokens | canonical normalized AST |
-| Theme | light/dark overrides | resolved token values |
-| Layout | rows/columns/grid/wrap | exact 1/64 boxes |
-| Text | single-line/wrap/max-lines | exact line boxes and ellipsis |
-| Components | each catalog entry | preferred size, roles, states |
-| Accessibility | composed screen | role/name/state tree |
-| Overlays | tooltip/popover/toast/anchor | placement, roles, dismissal |
-| Tree/table | expansion, selection, sorting | state and role tree |
-| References | screen-ref/cycle | expanded tree or E022 |
-| Platform | component smoke test | correct native/custom widget |
-| Visual | screenshots with test font | pixel tolerance per platform |
-
-Fixture shape:
-
-```json
-{
-  "spec": "...",
-  "viewport": { "width": 390, "height": 844, "safe": { "top": 0, "bottom": 0 } },
-  "measurement": "reference",
-  "expected": {
-    "boxes": [ { "path": "login", "x": 0, "y": 0, "w": 24960, "h": 54016 } ],
-    "accessibility": [ { "path": "login/0", "role": "heading", "name": "Welcome back" } ],
-    "errors": []
-  }
-}
-```
-
-### 10.6 Determinism checklist
-
-- No implicit padding, margin, font, color, or control chrome.
-- All sizes quantized to 1/64.
-- Overlay scrollbars only.
-- Safe-area insets explicit.
-- Reference measurement for tests.
-- Stable structural paths.
-- Validation errors deterministic and ordered.
-- No animations affect layout.
-- No platform default theme leaks into components; custom draw where needed.
+Determinism checklist: no implicit padding/margin/font/color/chrome; all sizes 1/64;
+overlay scrollbars; explicit safe areas; reference measurement; stable paths; deterministic
+component expansion; ordered validation errors; no animation affecting layout; no platform
+theme leaks.
 
 ---
 
-## 11. Quick reference
+## 13. Versioning and conformance
 
-### 11.1 Syntax
+### 13.1 Conformance levels
+
+| Level | Covers |
+| --- | --- |
+| **P** Parser | Syntax, structural validation, normalized AST, stable paths. |
+| **L** Layout | Tokens/sizes, layout algorithm, 1/64 px boxes. |
+| **C** Primitives | Every primitive with §6.2 defaults. |
+| **X** Extended | Built-in and project components by expansion or equivalent. |
+| **A** Accessibility | Accessibility tree and platform semantics (§9). |
+| **R** Renderer | Paint and interaction states on a target platform. |
+
+A renderer may claim a subset but must declare unsupported primitives/components/features.
+
+### 13.2 Versioning and change process
+
+- First non-comment line is `gui-v2`.
+- `x-` attributes are extensions; preserve and ignore.
+- Unknown types, attributes, enums or theme keys are errors; reject rather than guess.
+- Breaking syntax/token changes require a new directive. Additive revisions keep `gui-v2`
+  and update the revision.
+- Change process: propose with user problem; check contrast/accessibility/platform/patterns;
+  update docs and revision; update examples/tests/changelog; review with the design owner.
+- Deprecation: mark replacement/removal version; keep working for at least one minor release
+  unless security/accessibility forces a break; provide migration note.
+- Quality: tokens only; correct component; all states; keyboard/focus/roles; contrast/touch;
+  content rules; responsive; documented deviations; automated token/contrast/catalog/visual/
+  accessibility/link checks.
+
+### 13.3 Changelog
+
+| Version | Change |
+| --- | --- |
+| 2.0 | Combined guide and spec; introduced primitive/extended/project layers, master spacing, three-neutral color model, screen-document composition and guide/workflow split. |
+
+---
+
+## 14. Cheat sheet
+
+### 14.1 Syntax
 
 ```text
-gui-v1
+gui-v2
 
 theme
   key=value
 
-screen <id> "<title>" rows|columns|grid [attributes]
+component <name> ["<description>"]
+  param <name> [=<default>]
+  slot [<name>]
+  <body root>
+
+screen <id> "<title>" [attributes]
   <type> ["<text>"] [attributes]
     <type> ["<text>"] [attributes]
 ```
 
-Two spaces per level. `#` starts a whole-line comment. Strings are JSON-quoted. Booleans may be bare.
+Two spaces per level; `#` whole-line comment; JSON-quoted strings; bare booleans;
+`${name}` parameter; `slot`/`slot name` insertion points.
 
-### 11.2 Attributes
+### 14.2 Common attributes
 
 ```text
-Placement: h=left|center|right|fill   v=top|center|bottom|fill
-Sizing:    width/height=auto|<n>|<n>%  min-/max-  grow=<n>
-Box:       bg=<color>  border=<bool|n>  border-color=<color>
-           radius=<n|sm|md|lg|xl|pill|none>  shadow=<none|sm|md|lg>
-           pad=<none|xs|s|m|l|xl>  pad-x=<same>  pad-y=<same>
-Color:     mode=light|dark  tone=<tone>
-Behavior:  id=<id>  action=<name>  visible=<bool>  scroll=<none|y|x|both>
-           tooltip="..."  tooltip-placement=<top|right|bottom|left>
-           visible-at="sm md lg xl"  hide-at="sm md lg xl"
-Layout:    justify=<start|center|end|between|around|evenly>
-           align-items=<auto|start|center|end|stretch>  wrap=<bool>
-           col-gap=<spacing>  row-gap=<spacing>
-Grid:      cols="<tracks>"  rows="<tracks>"  col=<n>  row=<n>
-           col-span=<n>  row-span=<n>  flow=row|column
+Placement:  h=left|center|right|fill   v=top|center|bottom|fill
+Sizing:     width/height=auto|<n>|<n>%  min-/max-  grow=<n>
+Box:        bg=<color>  border=<bool|n>  border-color=<color>
+            radius=<n|sm|md|lg|pill|none>  shadow=<none|sm|md|lg>
+            pad=<none|xs|s|m|l|xl>  pad-x=<same>  pad-y=<same>
+Color:      mode=light|dark  tone=<tone>
+Behavior:   id=<id>  action=<name>  visible=<bool>  scroll=<none|y|x|both>
+            tooltip="..."  tooltip-placement=<top|right|bottom|left>
+            visible-at="sm md lg xl"  hide-at="sm md lg xl"
+Layout:     justify=<start|center|end|between|around|evenly>
+            align=<start|center|end|stretch>  wrap=<bool>
+            gap=<spacing>  col-gap=<spacing>  row-gap=<spacing>
+Grid:       cols="<tracks>"  rows="<tracks>"  col=<n>  row=<n>
+            col-span=<n>  row-span=<n>  flow=row|column
 ```
 
-### 11.3 Containers
+### 14.3 Component names
 
 ```text
-rows|columns|grid
-list navigation=<bool> divider=<bool> empty="..."
-tabs active=<tab-id> variant=<underline|pills|segmented> placement=<top|bottom>
-     equal=<bool> scrollable=<bool>
-tab "label" id=<id> icon="name" badge="text" badge-tone=<tone> disabled
-    layout=<rows|columns|grid> gap=<spacing> pad=<spacing>
-action-bar placement=<bottom|top> equal=<bool> align=<left|right|between>
-           separator=<bool> safe=<bool>
-carousel active=<n> show-indicators=<bool> show-arrows=<bool> loop=<bool> snap=<bool>
-field "label" for=<id> hint="..." error="..." required
-banner tone=<tone> title="..." icon="name" variant=<soft|solid> dismissible
-menu open=<bool> anchor=<id> placement=<bottom-start|bottom-end|top-start|top-end|left|right>
-popover anchor=<id> placement=<bottom-start|bottom-end|top-start|top-end|left|right>
-        open=<bool> dismissible=<bool> modal=<bool>
-toast tone=<tone> title="..." placement=<bottom|top> duration=<ms> dismissible=<bool>
-radio-group value="..." orientation=<vertical|horizontal> label="..." disabled
-tree selection=<single|multiple|none> label="..."
-tree-item "label" expanded=<bool> selected=<bool> disabled icon="name" badge="text"
-table cols="<tracks>" caption="..." empty="..." selectable sortable resizable sort="<col>:asc|desc"
-      striped dense
-table-head
-table-row selected disabled
-table-cell align=<left|center|right>
-breadcrumbs separator="/"
-document scroll=<none|y>
-document-footer separator=<bool>
-screen-ref screen=<id>
+Containers: row, column, grid, stack
+Primitives: text, icon, image, divider, spacer, button, textfield, textarea, select,
+            checkbox, radio, switch, slider, progress, avatar, badge, tag, spinner,
+            skeleton, kbd
+Extended:   field, card, page-header, list, list-item, table, table-head, table-row,
+            table-cell, tabs, tab, banner, toast, menu, menu-item, breadcrumbs,
+            pagination, action-bar, empty-state, metric, radio-group, tree, tree-item,
+            tooltip, popover
+Project:    component <name> with param/slot lines and one body root
 ```
 
-### 11.4 Components
+Use the component tables in §6 for attributes, structure and styling.
+
+### 14.4 Defaults
 
 ```text
-label "text" size=<small|normal|large> weight=<regular|medium|semibold|bold>
-      tone=<tone> wrap=<bool> max-lines=<n> align=<left|center|right>
-      for=<id> level=<1..6>
-textfield value="..." input=<text|number|email|tel|url|search> label="..."
-          placeholder="..." icon="name" icon-right="name" icon-tone=<tone>
-          required disabled readonly invalid max-length=<n>
-textarea value="..." rows=<n> label="..." placeholder="..."
-         icon="name" icon-right="name" icon-tone=<tone> disabled invalid
-date value="YYYY-MM-DD" min="..." max="..." label="..." icon="name" icon-right="name"
-time value="HH:MM" min="..." max="..." step=<n> label="..."
-date-range start="YYYY-MM-DD" end="YYYY-MM-DD" min="..." max="..." label="..."
-password value="..." revealed=<bool> label="..." placeholder="..." icon="name"
-dropdown value="..." options="Label=value|Label=value" label="..." placeholder="..."
-checkbox "label" checked disabled tone=<tone>
-radio "label" value="..." checked disabled tone=<tone>
-switch "label" checked disabled tone=<tone>
-slider value=<n> min=<n> max=<n> step=<n|any> tone=<tone> show-value=<bool>
-icon "name" size=<n> tone=<tone> label="..."
-tag "text" tone=<tone> size=<small|normal> icon="name"
-badge "text" tone=<tone>
-button "text" variant=<primary|secondary|outline|ghost|danger> size=<small|normal|large>
-       tone=<tone> icon="name" icon-right="name" align=<left|center|right>
-       disabled default label="..."
-list-item "title" description="..." icon="name" icon-tone=<tone>
-          badge="text" badge-tone=<tone> selected disabled
-progress value=<0..100> tone=<tone> show-value=<bool> indeterminate=<bool>
-spinner size=<n> tone=<tone> label="..."
-skeleton shape=<line|circle|rect> lines=<n> animated=<bool> label="..."
-divider orientation=<horizontal|vertical> thickness=<n> color=<color> inset=<spacing>
-spacer
-image src="..." alt="..." fit=<cover|contain> aspect=<free|1:1|4:3|3:2|16:9|21:9>
-avatar src="..." initials="..." alt="..." size=<n> shape=<circle|rounded>
-       status=<online|away|busy|offline> tone=<tone>
-pagination page=<n> pages=<n> siblings=<n> show-first-last=<bool>
-           show-prev-next=<bool> disabled label="..."
-kbd "key" size=<small|normal> tone=<tone>
-menu-item "label" icon="name" shortcut="..." tone=<tone> selected disabled
-tooltip "text" for=<id> placement=<top|right|bottom|left> open=<bool>
-document-header "title" description="..." icon="name" icon-tone=<tone> level=<1..6>
-```
-
-### 11.5 Defaults
-
-```text
-Font:      system-ui, 16px base, 13px small, 20px large
-Weights:   400 / 500 / 600 / 700
-Spacing:   4px unit -> none 0, xs 4, s 8, m 12, l 16, xl 24
-Radii:     6 / 10 / 14 / 20 / pill
-Controls:  40px height; S/M inset; 44px touch target
-Breakpoints: sm 640, md 900, lg 1200, xl 1440
-Rows:      48px (40 dense); menu item 40px; tree item 40px; pagination 32px
-Modes:     light/dark; semantic info/success/alert/warning/error
-Badges:    blue, purple, pink, teal, indigo, cyan, lime, gray
-Icons:     16 / 20 / 24
-Motion:    fast 120ms; normal 200ms; slow 320ms; ease cubic-bezier(0.2, 0, 0, 1)
-Shadows:   sm 1px/2px; md 4px/8px; lg 12px/24px
-Layers:    base 0; sticky 10; overlay 20; dialog 30; toast 40; tooltip 50
-State:     focus ring 2px + 2px offset; hover 6%/8%; pressed 10%/12%
-           disabled 50%; overlay scrollbars; 1/64px layout units
+Font:        Inter/system-ui, 16px base, 13px small, 20px large
+Weights:     400 / 500 / 600 / 700
+Spacing:     space=8 -> none 0, xs 4, s 8, m 16, l 24, xl 32
+             (space=10 -> 0, 5, 10, 20, 30, 40)
+Radii:       sm 4 / md 8 / lg 16 / pill 999
+Controls:    32 small / 40 normal / 48 large; 44 touch target
+Borders:     1px; focus ring 2px + 2px offset
+Modes:       light/dark
+Neutrals:    bg / surface / fg, plus muted, border, hover, pressed, scrim
+Brand:       light #2563EB / dark #60A5FA
+Semantic:    info, success, warning, alert, error
+Badges:      blue, purple, pink, teal, indigo, cyan, lime, gray
+Icons:       16 / 20 / 24
+Motion:      fast 120ms / normal 200ms / slow 320ms
+Easing:      cubic-bezier(0.2, 0, 0, 1)
+Shadows:     sm 1px/2px; md 4px/8px; lg 12px/24px
+Breakpoints: sm 640 / md 900 / lg 1200 / xl 1440
+Layout:      1/64px units; overlay scrollbars; no implicit margins
 ```
