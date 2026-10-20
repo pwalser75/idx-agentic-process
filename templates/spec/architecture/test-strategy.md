@@ -4,7 +4,7 @@ The strategy is platform- and technology-agnostic: it defines test **levels** by
 of the system under test and by what is real versus faked, never by tooling. The concrete
 tools for each level live in [`coding-guidelines.md`](coding-guidelines.md); the
 presentation references for L4 live in [`gui-spec.md`](../references/gui-spec.md) and the
-screen documents under `spec/screens/`.
+screen documents under `spec/requirements/user-interface/screens/`.
 
 ## Levels
 

@@ -28,9 +28,12 @@ Projects without a UI skip this role.
    `spec/modules/{module}/module.md` and `tech-stack.md` for a multi-subproject project. Use the
    artifact kind (web app, mobile app, desktop app, …) for platform mapping.
 3. `spec/agent/input-ledger.md` — the accepted UI decisions; never repeat or contradict them.
-4. Existing `spec/screens/**`, `spec/flows/**`, `spec/theme.gui`,
-   `spec/components/components.gui`, `spec/data/**`, `prototypes/**`, and
-   `spec/design/prototype-builder.md` if present.
+4. Existing `spec/requirements/user-interface/screens/**`,
+   `spec/requirements/user-interface/flows/**`,
+   `spec/requirements/user-interface/theme.gui`,
+   `spec/requirements/user-interface/components/components.gui`,
+   `spec/requirements/user-interface/data/**`, `prototypes/**`, and
+   `spec/architecture/prototype-builder.md` if present.
 5. `spec/agent/lessons-learned-designer.md`, if present.
 
 ## Procedure
@@ -38,18 +41,22 @@ Projects without a UI skip this role.
 1. **Find the affected design surface.** Identify the screens and flows affected by new or
    changed requirements and architecture. Prefer updating an existing screen document over
    creating a near-duplicate.
-2. **Draft or update screen documents.** Write `spec/screens/{screen-name}.md` with front
+2. **Draft or update screen documents.** Write
+   `spec/requirements/user-interface/screens/{screen-name}.md` with front
    matter (`screen`, `title`, `status`, `provenance`, `owner`, `updated`, `route`, `data`,
    `scenarios`) and one primary `gui-v2` block. Cover purpose, data and bindings, actions,
    navigation, interactions, states (default/loading/empty/error), accessibility, and open
    questions. Follow `screen-workflow.md` and `gui-spec.md` exactly; do not invent tokens,
    components, layout rules, data sources, permissions or business behavior.
-3. **Update the supporting design artifacts** when needed: `spec/flows/{flow-name}.md`,
-   `spec/theme.gui`, `spec/components/components.gui` and `spec/data/{screen-name}.json`.
+3. **Update the supporting design artifacts** when needed:
+   `spec/requirements/user-interface/flows/{flow-name}.md`,
+   `spec/requirements/user-interface/theme.gui`,
+   `spec/requirements/user-interface/components/components.gui` and
+   `spec/requirements/user-interface/data/{screen-name}.json`.
 4. **Build the review prototype.** If the project has a prototype builder, run the command in
-   `spec/design/prototype-builder.md` to generate or refresh the HTML under
+   `spec/architecture/prototype-builder.md` to generate or refresh the HTML under
    `prototypes/`. If no builder exists yet, create a small one in the project's agreed stack,
-   document its command and contract in `spec/design/prototype-builder.md` (start from
+   document its command and contract in `spec/architecture/prototype-builder.md` (start from
    this skill's `templates/prototype-builder.md`), and commit it with the project. The builder
    is project tooling, not a predefined IAP component. Never hand-edit generated HTML.
 5. **Record resolved decisions.** Append each resolved human decision — question, options,
@@ -75,7 +82,7 @@ re-invokes `/design`.
 Read-only. Prints `FILE STATUS TITLE` for screen documents.
 
 ```bash
-for f in spec/screens/*.md; do
+for f in spec/requirements/user-interface/screens/*.md; do
   [ -e "$f" ] || continue
   status=$(sed -n 's/^status:[[:space:]]*//p' "$f" | head -1)
   title=$(sed -n 's/^#[[:space:]]*//p' "$f" | head -1)
@@ -92,12 +99,12 @@ done | sort -t"$(printf '\t')" -k2,2 -k1,1
 - **Never create tickets.** Planning is the PLANNER's job. If the design needs work, report it.
 - **Never edit `input.md`, the requirements, the architecture, the bundled references or the
   input ledger's past entries.** Append resolved decisions to the ledger; the only
-  design-process file you write is `spec/design/prototype-builder.md` for the project's
+  design-process file you write is `spec/architecture/prototype-builder.md` for the project's
   builder contract.
 - **Never edit the bundled `spec/references/gui-spec.md` or `spec/references/screen-workflow.md`.**
 - **Never hand-edit generated prototypes.** Regenerate them with the project builder. If the
   builder is missing or broken, create or repair it in the project's stack and update
-  `spec/design/prototype-builder.md`.
+  `spec/architecture/prototype-builder.md`.
 - **The prototype builder is project tooling.** Do not add a predefined builder to IAP; create
   the one the project needs, in its agreed stack, and commit it with the project.
 - **Respect the project shape.** If the artifact kind or platform changes, stop and report that

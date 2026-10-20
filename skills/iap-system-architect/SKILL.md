@@ -65,11 +65,11 @@ Exclude generated code, vendored dependencies and build output.
    observable: performance, scalability, security, availability, observability,
    maintainability, compatibility, and the mechanisms that implement them.
 6. **Document the project-specific UI artifacts** **only when the project has a UI**:
-   reconstruct `spec/theme.gui` from the observed tokens (colors/modes, typography,
-   spacing, shape, motion) and themes; `spec/components/components.gui` from recurring
-   project UI components; inferred `spec/screens/{screen-name}.md` stubs from observed
+   reconstruct `spec/requirements/user-interface/theme.gui` from the observed tokens (colors/modes, typography,
+   spacing, shape, motion) and themes; `spec/requirements/user-interface/components/components.gui` from recurring
+   project UI components; inferred `spec/requirements/user-interface/screens/{screen-name}.md` stubs from observed
    routes/screens, with the `gui-v2` block and data/actions/navigation/interactions/states
-   where they can be evidenced; and observations for `spec/data/` where example data is
+   where they can be evidenced; and observations for `spec/requirements/user-interface/data/` where example data is
    evident. `spec/references/gui-spec.md` is the bundled normative `gui-v2` format and
    `spec/references/screen-workflow.md` the authoring workflow; read them to interpret
    screens but do not reconstruct or rewrite them. If there is no UI, say so.

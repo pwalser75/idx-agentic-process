@@ -12,7 +12,7 @@ a second specification.
 
 ## Quick start
 
-1. **Draft.** The planning agent writes `spec/screens/<id>.md` with front matter and one
+1. **Draft.** The planning agent writes `spec/requirements/user-interface/screens/<id>.md` with front matter and one
    primary `gui-v2` block.
 2. **Document.** Add purpose, data, actions, navigation, states and open questions. Add
    interactions and accessibility notes only when they apply.
@@ -487,8 +487,8 @@ Review the definition, not the HTML; comments go in the document or issue tracke
 
 ### 13.2 Inputs and composition
 
-Inputs: screen document, `spec/theme.gui`, `spec/components/components.gui`,
-`spec/data/<id>.json`, and `gui-spec.md`.
+Inputs: screen document, `spec/requirements/user-interface/theme.gui`, `spec/requirements/user-interface/components/components.gui`,
+`spec/requirements/user-interface/data/<id>.json`, and `gui-spec.md`.
 
 ```text
 gui-v2

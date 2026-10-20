@@ -179,16 +179,17 @@ if [ "$WITH_SPEC" -eq 1 ]; then
   rm -f "$PROJECT_DIR/spec/architecture/gui-spec.md" \
     "$PROJECT_DIR/spec/architecture/screen-workflow.md"
 
-  # Migration: the project prototype-builder contract moved to spec/design/. Move it
-  # without overwriting a copy already at the new path.
-  if [ -f "$PROJECT_DIR/spec/architecture/prototype-builder.md" ]; then
-    mkdir -p "$PROJECT_DIR/spec/design"
-    if [ ! -e "$PROJECT_DIR/spec/design/prototype-builder.md" ]; then
-      mv "$PROJECT_DIR/spec/architecture/prototype-builder.md" \
-        "$PROJECT_DIR/spec/design/prototype-builder.md"
+  # Migration: the project prototype-builder contract lives in spec/architecture/. Move it
+  # back from the former spec/design/ location without overwriting a copy already there.
+  if [ -f "$PROJECT_DIR/spec/design/prototype-builder.md" ]; then
+    mkdir -p "$PROJECT_DIR/spec/architecture"
+    if [ ! -e "$PROJECT_DIR/spec/architecture/prototype-builder.md" ]; then
+      mv "$PROJECT_DIR/spec/design/prototype-builder.md" \
+        "$PROJECT_DIR/spec/architecture/prototype-builder.md"
     else
       echo "install.sh: note: both spec/architecture/prototype-builder.md and spec/design/prototype-builder.md exist; remove the old one." >&2
     fi
+    rmdir "$PROJECT_DIR/spec/design" 2>/dev/null || true
   fi
 
   # Record the process version and keep a copy of the process definition.

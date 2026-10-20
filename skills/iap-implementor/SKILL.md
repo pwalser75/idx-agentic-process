@@ -55,7 +55,7 @@ the next ticket. That loop runs until no READY, unblocked ticket remains or it g
    stop.
 5. **Implement.** Create and update the code, tests, configuration and documentation
    needed, following the architecture, decomposition and coding guidelines, and — for UI
-   work — the approved `spec/screens/{screen-name}.md` documents and
+   work — the approved `spec/requirements/user-interface/screens/{screen-name}.md` documents and
    `spec/references/gui-spec.md` (tokens, components, patterns, content, syntax, layout,
    behavior, accessibility, platform mapping). Use existing tokens and components instead of
    inventing new styles. Treat the acceptance criteria as the definition of done. **Tests

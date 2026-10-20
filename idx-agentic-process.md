@@ -62,7 +62,7 @@ The human drives the loop; the agent does the ticket work.
 - project shape: the artifact kind(s) and tech stack(s) of the project. A single-subproject project records it in `spec/architecture/tech-stack.md`; a multi-subproject project records one module per subproject under `spec/modules/{module}/`.
 - module: a subproject with its own build/package unit and tech stack, used only when the project has more than one subproject.
 - agreed shape: a single-subproject `tech-stack.md` with `status: agreed`, or every module with `status: agreed`, in both cases naming the artifact kind, language and version; only an agreed shape may be planned.
-- screen document: a co-owned Markdown file under `spec/screens/` containing one primary `gui-v2` screen definition plus purpose, data, actions, navigation, interactions, states, accessibility notes and open questions. Its status is `draft`, `review`, `approved`, `implemented` or `deprecated`.
+- screen document: a co-owned Markdown file under `spec/requirements/user-interface/screens/` containing one primary `gui-v2` screen definition plus purpose, data, actions, navigation, interactions, states, accessibility notes and open questions. Its status is `draft`, `review`, `approved`, `implemented` or `deprecated`.
 - approved screen: a screen document with status `approved`; the only state from which UI implementation tickets may be planned.
 - prototype: a generated HTML review artifact under `prototypes/`, built by the project's prototype builder from a screen document and example data. The builder is project tooling — created or maintained by UI-DESIGNER on first use and committed with the project — not a predefined IAP component. It is not production code and is never hand-edited.
 - UI ticket: a ticket that changes a user-visible screen. It references one or more `ui-screens`, and defaults to `acceptance-type: HUMAN` unless the change is mechanical and covered by screenshot/visual regression tests.
@@ -80,31 +80,27 @@ project-root/
 │  │  │  └─ {model-name}.md             # (X) Domain model, with name, attributes and descriptions
 │  │  ├─ features/                      # (X) Features of the domain
 │  │  │  └─ {feature-name}.md           # (X) Document per feature, describing the feature and the functionalities
+│  │  └─ user-interface/                # (X) UI requirements; never implementation or bundled references
+│  │     ├─ screens/{screen-name}.md    # (X) Screen definition + data, actions, navigation, interactions, states
+│  │     ├─ flows/{flow-name}.md        # (X) Entry/exit, ordered screens, shared state, back/cancel behavior
+│  │     ├─ theme.gui                   # (X) Project theme and token overrides
+│  │     ├─ components/components.gui   # (X) Project-defined extended components
+│  │     └─ data/{screen-name}.json     # (X) Named scenarios and reserved `_state`
 │  ├─ architecture/                     # (X) Architectural design and requirements
 │  │  ├─ tech-stack.md                  # (X) Single-subproject shape (created by shape refinement)
 │  │  ├─ integration.md                 # (X) Integration with other systems, APIs (ports and adapters).
 │  │  ├─ decomposition.md               # (X) Project-level module map (multi) or package map (single)
 │  │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
 │  │  ├─ quality-aspects.md             # (X) Quality Aspects (= non-functional requirements)
+│  │  ├─ prototype-builder.md           # (X) Prototype-builder contract: command, inputs, outputs (tooling, not a requirement)
 │  │  └─ ...                            # (X) Additional guidelines
-│  ├─ references/                       # (X) Bundled normative references (refreshed by the installer)
+│  ├─ references/                       # (X) Bundled normative references (refreshed by the installer; never edit)
 │  │  ├─ gui-spec.md                    # (X) UI design guide and normative gui-v2 specification
 │  │  └─ screen-workflow.md             # (X) Screen authoring, review and prototype workflow
 │  ├─ modules/                          # (X) Only when the project has more than one subproject
 │  │  └─ {module}/                      # (X) One folder per module
 │  │     ├─ module.md                    # (X) Artifact kind, purpose, boundaries, dependencies, status
 │  │     └─ tech-stack.md                # (X) Language/version, frameworks, runtime, libraries, tooling
-│  ├─ design/                           # (X) UI design process artifacts
-│  │  └─ prototype-builder.md           # (X) Project prototype-builder contract and command
-│  ├─ screens/                          # (X) Screen documents, one primary screen per file
-│  │  └─ {screen-name}.md               # (X) Screen definition + data, actions, navigation, interactions, states
-│  ├─ flows/                            # (X) Multi-screen journeys
-│  │  └─ {flow-name}.md                 # (X) Entry/exit, ordered screens, shared state, back/cancel behavior
-│  ├─ components/                       # (X) Shared project components
-│  │  └─ components.gui                 # (X) Project-defined extended components
-│  ├─ theme.gui                         # (X) Project theme and token overrides
-│  ├─ data/                             # (X) Example data for screens and prototypes
-│  │  └─ {screen-name}.json             # (X) Named scenarios and reserved `_state`
 │  ├─ tickets/                          # (X) Tickets for the implementation
 │  │  └─ {id}-{type}-{name}.md          # (X) A ticket, with a distinct id, type and name
 │  └─ agent/                            # (A) Folder managed by the agent, it can document anything here
@@ -145,7 +141,9 @@ It then decides what to make out of this information (new input, in the context 
 UI input follows the same path: FACILITATOR records the human decision in the input-ledger and
 the requirements/architecture documents. UI-DESIGNER (`/design`) then turns it into screen
 documents, project theme/components and a review prototype. FACILITATOR does not edit
-`spec/screens/`, `spec/theme.gui` or `spec/components/components.gui` directly.
+`spec/requirements/user-interface/screens/`,
+`spec/requirements/user-interface/theme.gui` or
+`spec/requirements/user-interface/components/components.gui` directly.
 
 Clarifications are input too: questions raised by FACILITATOR, UI-DESIGNER, PLANNER, ANALYST
 or REVIEWER (technology choices, implementation variants, ambiguous requirements, UI
@@ -322,19 +320,20 @@ UI work uses two bundled references under `spec/references/`:
   screen-document structure, data, actions, navigation, interactions, states, review and
   prototype generation.
 
-Project-specific UI design lives outside the bundled references:
+Project-specific UI requirements live under `spec/requirements/user-interface/`:
 
-- `spec/screens/{screen-name}.md` — screen documents. One primary screen per file, with a
+- `screens/{screen-name}.md` — screen documents. One primary screen per file, with a
   `gui-v2` block, data/bindings, actions, navigation, interactions, states, accessibility
   notes and open questions. Owned by UI-DESIGNER and the human; status is `draft`, `review`,
   `approved`, `implemented` or `deprecated`.
-- `spec/flows/{flow-name}.md` — multi-screen journeys.
-- `spec/components/components.gui` — shared project-defined extended components.
-- `spec/theme.gui` — project theme and token overrides.
-- `spec/data/{screen-name}.json` — example data and scenarios.
-- `spec/design/prototype-builder.md` — the project's prototype-builder contract: command,
-  inputs, outputs and how to regenerate. The builder itself is project tooling, not part of IAP.
-- `prototypes/` — generated HTML review artifacts; never hand-edited.
+- `flows/{flow-name}.md` — multi-screen journeys.
+- `components/components.gui` — shared project-defined extended components.
+- `theme.gui` — project theme and token overrides.
+- `data/{screen-name}.json` — example data and scenarios.
+
+The prototype-builder contract is tooling, not a requirement: `spec/architecture/prototype-builder.md`.
+The builder itself is project code, not part of IAP. Generated review HTML stays in `prototypes/`
+and is never hand-edited.
 
 UI design is a stage between architecture and planning:
 
@@ -367,7 +366,8 @@ Which agents use the UI artifacts:
 - **GUIDE** and **RECONCILER** include UI artifacts in their checks.
 
 Projects without a UI skip `/design` and do not use `gui-spec.md`, `screen-workflow.md`,
-`spec/screens/`, `spec/flows/` or `prototypes/`.
+`spec/requirements/user-interface/screens/`, `spec/requirements/user-interface/flows/` or
+`prototypes/`.
 
 ## Tickets
 
@@ -448,7 +448,7 @@ prototype: {prototype}
 {what and why; link the requirement(s) and, for UI tickets, the approved screen document(s)}
 ## UI
 {omit for non-UI tickets}
-- Screens: {spec/screens/...}
+- Screens: {spec/requirements/user-interface/screens/...}
 - Prototype: {prototypes/screens/...}
 - States: {default, loading, empty, error, ...}
 - Interactions: {refresh, filter, sort, ...}
@@ -681,7 +681,7 @@ When it accepts the input, it appends it — and any clarification it resolved �
 requirements and architecture documents. For UI input it records the high-level decision in the
 requirements/architecture documents and the input-ledger; screen documents, project theme/components
 and the review prototype are updated by UI-DESIGNER through `/design`. FACILITATOR does not edit
-`spec/screens/`, `spec/theme.gui` or `spec/components/components.gui`.
+`spec/requirements/user-interface/screens/`, `spec/requirements/user-interface/theme.gui` or `spec/requirements/user-interface/components/components.gui`.
 Afterwards it clears the `input.md`, making it ready for the next round of input by the user.
 It commits the updated requirements/architecture and the appended ledger on the main branch as `facilitate: {summary}`.
 It also runs the pre-planning project-shape interview when the shape is not settled: a
@@ -702,26 +702,33 @@ available. Projects without a UI skip this role.
 
 Documents:
 - Works with: `spec/requirements/**`; `spec/architecture/**`; `spec/modules/**`;
-  `spec/agent/input-ledger.md`; `spec/screens/**`; `spec/flows/**`; `spec/theme.gui`;
-  `spec/components/components.gui`; `spec/data/**`; `prototypes/**`.
-- May modify: `spec/screens/**` (status `draft`/`review` only; only the human sets
-  `approved`); `spec/flows/**`; `spec/theme.gui`; `spec/components/components.gui`;
-  `spec/data/**`; `spec/agent/input-ledger.md`; `prototypes/**` (generated via the project
-  builder only, never by hand); `spec/design/prototype-builder.md` and the project's
-  prototype-builder code.
+  `spec/agent/input-ledger.md`; `spec/requirements/user-interface/screens/**`;
+  `spec/requirements/user-interface/flows/**`;
+  `spec/requirements/user-interface/theme.gui`;
+  `spec/requirements/user-interface/components/components.gui`;
+  `spec/requirements/user-interface/data/**`; `prototypes/**`.
+- May modify: `spec/requirements/user-interface/screens/**` (status `draft`/`review` only;
+  only the human sets `approved`); `spec/requirements/user-interface/flows/**`;
+  `spec/requirements/user-interface/theme.gui`;
+  `spec/requirements/user-interface/components/components.gui`;
+  `spec/requirements/user-interface/data/**`; `spec/agent/input-ledger.md`; `prototypes/**`
+  (generated via the project builder only, never by hand);
+  `spec/architecture/prototype-builder.md` and the project's prototype-builder code.
 
 Owns the UI design stage. It reads the requirements, architecture, input-ledger, existing
 screen documents, flows, project theme/components, example data and prototypes. It identifies
 the screens and flows affected by new or changed requirements, then:
 
-- creates or updates `spec/screens/{screen-name}.md` with front matter, one primary `gui-v2`
-  block, data and bindings, actions, navigation, interactions, states, accessibility notes
-  and open questions;
-- creates or updates `spec/flows/`, `spec/theme.gui`, `spec/components/components.gui` and
-  `spec/data/` when the design requires it;
+- creates or updates `spec/requirements/user-interface/screens/{screen-name}.md` with front
+  matter, one primary `gui-v2` block, data and bindings, actions, navigation, interactions,
+  states, accessibility notes and open questions;
+- creates or updates `spec/requirements/user-interface/flows/`,
+  `spec/requirements/user-interface/theme.gui`,
+  `spec/requirements/user-interface/components/components.gui` and
+  `spec/requirements/user-interface/data/` when the design requires it;
 - builds or regenerates the review prototype under `prototypes/` using the project’s
   prototype builder. If no builder exists yet, it creates a small one in the project's agreed
-  stack, documents its command and contract in `spec/design/prototype-builder.md`, and
+  stack, documents its command and contract in `spec/architecture/prototype-builder.md`, and
   commits it with the project. The builder is project tooling, not a predefined IAP component;
 - marks inferred content and records unresolved questions with options and a recommendation;
 - records resolved human decisions in `spec/agent/input-ledger.md` before acting on them.
@@ -748,7 +755,7 @@ version. Otherwise run the project-shape refinement first.
 
 Documents:
 - Works with: `spec/requirements/**`; `spec/architecture/**`; `spec/modules/**`;
-  `spec/screens/**`; `spec/tickets/**`; `spec/agent/ticket-index.md`;
+  `spec/requirements/user-interface/screens/**`; `spec/tickets/**`; `spec/agent/ticket-index.md`;
   `spec/agent/planning-log.md`; `spec/agent/input-ledger.md`.
 - May modify: `spec/tickets/**` (create and update tickets, including status changes for new,
   updated and reclaimed tickets); `spec/agent/ticket-index.md`;
@@ -763,7 +770,7 @@ It gives the ticket a number (sequence number, if possible) and a name, a descri
 Each ticket links the project shape it changes: `architecture/tech-stack.md` for a
 single-subproject project, or the module(s) and their `tech-stack.md` for a multi-subproject
 project. If a ticket spans modules, list all of them.
-For UI tickets, it links the applicable `spec/screens/{screen-name}.md` documents,
+For UI tickets, it links the applicable `spec/requirements/user-interface/screens/{screen-name}.md` documents,
 `spec/references/gui-spec.md` sections and the generated prototype so the implementor does not
 have to infer the intended data, actions, states, tokens, components or patterns. It adds
 `ui-screens` and, where useful, `prototype` metadata to the ticket. UI tickets that change
@@ -794,7 +801,7 @@ Precondition: none, can be invoked anytime.
 
 Documents:
 - Works with: `spec/tickets/**`; `spec/requirements/**`; `spec/architecture/**`;
-  `spec/modules/**`; `spec/screens/**`; `spec/agent/ticket-index.md`;
+  `spec/modules/**`; `spec/requirements/user-interface/screens/**`; `spec/agent/ticket-index.md`;
   `spec/agent/input-ledger.md`.
 - May modify: `spec/tickets/**` (create and update tickets and their status in DRAFT/READY,
   including `blocked-by`); `spec/agent/input-ledger.md`.
@@ -837,8 +844,8 @@ Precondition: at least one ticket READY, clean working tree, on main.
 
 Documents:
 - Works with: the claimed ticket in `spec/tickets/**`; `spec/requirements/**`;
-  `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/screens/**` and
-  `spec/data/**`; `prototypes/**` as a visual reference.
+  `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/requirements/user-interface/screens/**` and
+  `spec/requirements/user-interface/data/**`; `prototypes/**` as a visual reference.
 - May modify: the claimed ticket in `spec/tickets/**` (status, task checkboxes, comments);
   `prototypes/**` (regenerate only, never hand-edit); project code, tests, configuration and
   documentation outside `spec/`.
@@ -853,7 +860,7 @@ Repeat while a READY, unblocked ticket exists:
 - create a feature branch from up-to-date main, named `{id}-{type}-{name}`.
 - set the ticket STATUS: IN_PROGRESS and commit the claim on that branch.
 - implement code, tests, configuration and documentation on the branch.
-- for UI work, follow the approved `spec/screens/{screen-name}.md` documents and
+- for UI work, follow the approved `spec/requirements/user-interface/screens/{screen-name}.md` documents and
   `spec/references/gui-spec.md` for tokens, components, patterns, content, syntax, layout,
   behavior, accessibility and platform mapping. Use existing tokens and components instead of
   inventing new styles; use the generated prototype as a visual reference.
@@ -882,8 +889,8 @@ Invoked by: the orchestrating agent, after the IMPLEMENTOR hands a ticket over i
 
 Documents:
 - Works with: `spec/tickets/**` (IN_REVIEW tickets); `spec/requirements/**`;
-  `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/screens/**` and
-  `spec/data/**`; `prototypes/**`; `spec/agent/input-ledger.md`; the feature branch.
+  `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/requirements/user-interface/screens/**` and
+  `spec/requirements/user-interface/data/**`; `prototypes/**`; `spec/agent/input-ledger.md`; the feature branch.
 - May modify: the reviewed ticket in `spec/tickets/**` (status DONE or READY, comments);
   `spec/agent/input-ledger.md` (append resolved, durable clarifications only).
 
@@ -895,7 +902,7 @@ Looks at tickets in status IN_REVIEW and checks:
 - the build and tests are green; no test is skipped or flaky.
 - the branch contains only changes within the ticket's scope; unrelated changes are a separate ticket.
 - the branch is clean (all work committed) and rebased on the current main.
-- for UI work, the change follows the approved `spec/screens/{screen-name}.md` documents and
+- for UI work, the change follows the approved `spec/requirements/user-interface/screens/{screen-name}.md` documents and
   `spec/references/gui-spec.md` (tokens, components, patterns, content, syntax, defaults, layout,
   behavior, accessibility, validation, platform mapping);
 - for UI work, the documented data/bindings, actions, navigation, interactions and states are
@@ -961,8 +968,8 @@ Documents:
   `spec/modules/**`; `spec/agent/source-ledger.md`;
   `spec/agent/reverse-engineering-report.md`.
 - May modify: `spec/architecture/**`; `spec/modules/**` (inferred modules and stacks, `status: draft`);
-  `spec/theme.gui`; `spec/components/components.gui`; `spec/screens/**` (inferred stubs only);
-  `spec/data/**` (observed example data); `spec/agent/source-ledger.md`;
+  `spec/requirements/user-interface/theme.gui`; `spec/requirements/user-interface/components/components.gui`; `spec/requirements/user-interface/screens/**` (inferred stubs only);
+  `spec/requirements/user-interface/data/**` (observed example data); `spec/agent/source-ledger.md`;
   `spec/agent/reverse-engineering-report.md`.
 
 Reconstructs the non-functional reality: the project shape (artifact kinds and tech stacks),
@@ -981,12 +988,15 @@ shape to `agreed`.
 Writes/updates the files under `architecture/`, again marked as inferred and with evidence.
 For UI projects it also reconstructs the project-specific UI artifacts:
 
-- `spec/theme.gui` from observed tokens, colors, typography, spacing and themes;
-- `spec/components/components.gui` from recurring project UI components;
-- inferred `spec/screens/{screen-name}.md` stubs from observed routes/screens, with the
+- `spec/requirements/user-interface/theme.gui` from observed tokens, colors, typography,
+  spacing and themes;
+- `spec/requirements/user-interface/components/components.gui` from recurring project UI
+  components;
+- inferred `spec/requirements/user-interface/screens/{screen-name}.md` stubs from observed
+  routes/screens, with the
   `gui-v2` block, data/actions/navigation/interactions/states where they can be evidenced, and
   open questions where they cannot;
-- observations for `spec/data/` where example data is evident.
+- observations for `spec/requirements/user-interface/data/` where example data is evident.
 
 It does not rewrite the bundled `spec/references/gui-spec.md` or
 `spec/references/screen-workflow.md`; those are references, not reconstructed project state.
@@ -1133,7 +1143,7 @@ one run.
 
 Documents:
 - Works with: `spec/tickets/**` (DONE tickets); `spec/release-notes.md`; for UI tickets,
-  `spec/screens/**` (to verify the screen documents are approved); the build file.
+  `spec/requirements/user-interface/screens/**` (to verify the screen documents are approved); the build file.
 - May modify: `spec/tickets/**` (replace the comments with the post-merge summary and set
   the ticket CLOSED); `spec/release-notes.md`.
 
@@ -1278,8 +1288,8 @@ command/skill definitions, the bundled `spec/references/gui-spec.md` and
 `spec/references/screen-workflow.md`, the process copy (`spec/agent/idx-agentic-process.md`) and
 the process marker. It creates `architecture/test-strategy.md` if it is missing (a
 project-owned seed). The content of
-`spec/requirements`, `spec/modules`, `spec/screens`, `spec/flows`, `spec/components`,
-`spec/theme.gui`, `spec/data`, `spec/tickets` and `spec/agent/input-ledger.md` is never touched.
+`spec/requirements`, `spec/requirements/user-interface`, `spec/modules`, `spec/tickets` and
+`spec/agent/input-ledger.md` is never touched.
 If the prototype builder changes, regenerate prototypes with `/design` or the project builder;
 do not hand-edit them.
 When a process change alters statuses, metadata fields or role contracts, re-running the

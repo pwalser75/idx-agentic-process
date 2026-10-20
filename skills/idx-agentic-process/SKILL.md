@@ -80,7 +80,13 @@ project-root/
    ├─ release-notes.md                  # (X) release notes of the current version (optional)
    ├─ requirements/                     # (X) implementation-agnostic requirements
    │  ├─ domain-models/{model-name}.md  # (X) name, description, attributes
-   │  └─ features/{feature-name}.md     # (X) feature + its functions/use cases
+   │  ├─ features/{feature-name}.md     # (X) feature + its functions/use cases
+   │  └─ user-interface/                # (X) UI requirements; never implementation or bundled references
+   │     ├─ screens/{screen-name}.md    # (X) screen document (gui-v2) + data, actions, states
+   │     ├─ flows/{flow-name}.md        # (X) multi-screen journeys
+   │     ├─ theme.gui                   # (X) project theme and token overrides
+   │     ├─ components/components.gui   # (X) project-defined extended components
+   │     └─ data/{screen-name}.json     # (X) example data and scenarios
    ├─ architecture/                     # (X) non-functional design and constraints
    │  ├─ tech-stack.md                  # (X) single-subproject shape (created by shape refinement)
    │  ├─ integration.md                 # (X) integration with other systems, APIs
@@ -88,6 +94,7 @@ project-root/
    │  ├─ decomposition.md               # (X) module map (multi) or package map (single)
    │  ├─ coding-guidelines.md           # (X) naming, structure, error handling, testing
    │  ├─ quality-aspects.md             # (X) non-functional requirements
+   │  ├─ prototype-builder.md           # (X) prototype-builder contract (tooling, not a requirement)
    │  └─ ...                            # (X) additional guidelines
    ├─ references/                       # (X) bundled normative references (refreshed by the installer)
    │  ├─ gui-spec.md                    # (X) normative gui-v2 screen format
@@ -96,13 +103,6 @@ project-root/
    │  └─ {module}/
    │     ├─ module.md                   # (X) artifact kind, purpose, boundaries, dependencies, status
    │     └─ tech-stack.md               # (X) language/version, frameworks, runtime, tooling
-   ├─ design/                           # (X) UI design process artifacts
-   │  └─ prototype-builder.md           # (X) project prototype-builder contract and command
-   ├─ screens/{screen-name}.md          # (X) screen document (gui-v2) + data, actions, states
-   ├─ flows/{flow-name}.md              # (X) multi-screen journeys
-   ├─ components/components.gui         # (X) project-defined extended components
-   ├─ theme.gui                         # (X) project theme and token overrides
-   ├─ data/{screen-name}.json           # (X) example data and scenarios
    ├─ tickets/{id}-{type}-{name}.md     # (X) work units
    └─ agent/                            # (A) agent-owned workspace
       ├─ input-ledger.md                # (A) append-only seed: accepted input + clarifications

@@ -82,6 +82,12 @@ project-root/
    ├─ requirements/                     # (X) Requirements of this project
    │  ├─ domain-models/{model-name}.md  # (X) Domain model: name, attributes, descriptions
    │  ├─ features/{feature-name}.md     # (X) Feature: description and functionalities
+   │  └─ user-interface/                # (X) UI requirements: no implementation, no bundled refs
+   │     ├─ screens/{screen-name}.md    # (X) Screen document (gui-v2) + data, actions, states
+   │     ├─ flows/{flow-name}.md        # (X) Multi-screen journeys
+   │     ├─ theme.gui                   # (X) Project theme and token overrides
+   │     ├─ components/components.gui   # (X) Project-defined extended components
+   │     └─ data/{screen-name}.json     # (X) Example data and scenarios
    ├─ architecture/                     # (X) Architectural design and requirements
    │  ├─ tech-stack.md                  # (X) Single-subproject shape: artifact kind + stack
    │  ├─ integration.md                 # (X) Integration with other systems, APIs
@@ -89,6 +95,7 @@ project-root/
    │  ├─ decomposition.md               # (X) Module map (multi) or package map (single)
    │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
    │  ├─ quality-aspects.md             # (X) Non-functional requirements
+   │  ├─ prototype-builder.md           # (X) Prototype-builder contract (tooling, not a requirement)
    │  └─ ...                            # (X) Additional guidelines
    ├─ references/                       # (X) Bundled normative references (refreshed by the installer)
    │  ├─ gui-spec.md                    # (X) Normative gui-v2 screen format
@@ -97,13 +104,6 @@ project-root/
    │  └─ {module}/
    │     ├─ module.md                   # (X) Artifact kind, purpose, boundaries, dependencies, status
    │     └─ tech-stack.md               # (X) Language/version, frameworks, runtime, tooling
-   ├─ design/                           # (X) UI design process artifacts
-   │  └─ prototype-builder.md           # (X) Project prototype-builder contract and command
-   ├─ screens/{screen-name}.md          # (X) Screen document (gui-v2) + data, actions, states
-   ├─ flows/{flow-name}.md              # (X) Multi-screen journeys
-   ├─ components/components.gui         # (X) Project-defined extended components
-   ├─ theme.gui                         # (X) Project theme and token overrides
-   ├─ data/{screen-name}.json           # (X) Example data and scenarios
    ├─ tickets/{id}-{type}-{name}.md     # (X) A ticket with id, type and name
    └─ agent/                            # (A) Folder managed by the agent
       ├─ input-ledger.md                # (A) Append-only seed: accepted input + clarifications
@@ -303,9 +303,9 @@ An upgrade refreshes the command/skill definitions, the bundled references
 (`gui-spec.md`, `screen-workflow.md`) in `spec/references/`, the process copy in
 `spec/agent/idx-agentic-process.md` and the version marker. It never touches your
 requirements, project architecture content, tickets or input ledger. On upgrade from a
-release that kept them under `spec/architecture/`, the installer moves the
-prototype-builder contract to `spec/design/prototype-builder.md` and removes the old
-bundled reference copies. If a process change alters ticket metadata or statuses, run
+release that kept the prototype-builder contract under `spec/design/`, the installer moves
+it back to `spec/architecture/prototype-builder.md` and removes the old bundled reference
+copies. If a process change alters ticket metadata or statuses, run
 `/reconcile` afterwards.
 
 ### Removing IAP
