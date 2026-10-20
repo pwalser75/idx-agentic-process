@@ -83,17 +83,19 @@ project-root/
 │  ├─ architecture/                     # (X) Architectural design and requirements
 │  │  ├─ tech-stack.md                  # (X) Single-subproject shape (created by shape refinement)
 │  │  ├─ integration.md                 # (X) Integration with other systems, APIs (ports and adapters).
-│  │  ├─ gui-spec.md                    # (X) Bundled UI design guide and normative gui-v2 specification
-│  │  ├─ screen-workflow.md             # (X) Bundled screen authoring, review and prototype workflow
-│  │  ├─ prototype-builder.md           # (X) Project prototype-builder contract and command
 │  │  ├─ decomposition.md               # (X) Project-level module map (multi) or package map (single)
 │  │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
 │  │  ├─ quality-aspects.md             # (X) Quality Aspects (= non-functional requirements)
 │  │  └─ ...                            # (X) Additional guidelines
+│  ├─ references/                       # (X) Bundled normative references (refreshed by the installer)
+│  │  ├─ gui-spec.md                    # (X) UI design guide and normative gui-v2 specification
+│  │  └─ screen-workflow.md             # (X) Screen authoring, review and prototype workflow
 │  ├─ modules/                          # (X) Only when the project has more than one subproject
 │  │  └─ {module}/                      # (X) One folder per module
 │  │     ├─ module.md                    # (X) Artifact kind, purpose, boundaries, dependencies, status
 │  │     └─ tech-stack.md                # (X) Language/version, frameworks, runtime, libraries, tooling
+│  ├─ design/                           # (X) UI design process artifacts
+│  │  └─ prototype-builder.md           # (X) Project prototype-builder contract and command
 │  ├─ screens/                          # (X) Screen documents, one primary screen per file
 │  │  └─ {screen-name}.md               # (X) Screen definition + data, actions, navigation, interactions, states
 │  ├─ flows/                            # (X) Multi-screen journeys
@@ -311,7 +313,7 @@ module's `tech-stack.md` lacks the language or version. It also refuses an ambig
 project-level `tech-stack.md` together with modules, or multiple subprojects without modules).
 It reports the missing decisions and points back to the refinement interview.
 
-UI work uses two bundled references under `architecture/`:
+UI work uses two bundled references under `spec/references/`:
 
 - `gui-spec.md` is the UI design guide and the normative, versioned `gui-v2` specification:
   syntax, tokens, layout, components, patterns, accessibility, platform mapping, validation
@@ -330,7 +332,7 @@ Project-specific UI design lives outside the bundled references:
 - `spec/components/components.gui` — shared project-defined extended components.
 - `spec/theme.gui` — project theme and token overrides.
 - `spec/data/{screen-name}.json` — example data and scenarios.
-- `spec/architecture/prototype-builder.md` — the project's prototype-builder contract: command,
+- `spec/design/prototype-builder.md` — the project's prototype-builder contract: command,
   inputs, outputs and how to regenerate. The builder itself is project tooling, not part of IAP.
 - `prototypes/` — generated HTML review artifacts; never hand-edited.
 
@@ -578,8 +580,8 @@ Each agent starts with a clean context (to prevent context pollution).
 Each role section lists the spec documents it reads (`Works with`) and the spec files it may
 create, edit or delete (`May modify`). Anything not listed under "May modify" is read-only for
 that role; the (H)/(A)/(X) edit rights still apply. No role edits the process definition or the
-bundled architecture references (`architecture/gui-spec.md`,
-`architecture/screen-workflow.md`). In addition, every writing role may maintain its own
+bundled references (`spec/references/gui-spec.md`,
+`spec/references/screen-workflow.md`). In addition, every writing role may maintain its own
 `spec/agent/lessons-learned-{role}.md`.
 
 ### Role loop (handover)
@@ -695,8 +697,8 @@ Type: SUBAGENT
 Command: `/design`.
 Invoked by: HUMAN.
 Precondition: the project shape is `agreed` and shows a UI; requirements and architecture
-exist; `architecture/gui-spec.md` and `architecture/screen-workflow.md` are available. Projects
-without a UI skip this role.
+exist; `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are
+available. Projects without a UI skip this role.
 
 Documents:
 - Works with: `spec/requirements/**`; `spec/architecture/**`; `spec/modules/**`;
@@ -705,7 +707,7 @@ Documents:
 - May modify: `spec/screens/**` (status `draft`/`review` only; only the human sets
   `approved`); `spec/flows/**`; `spec/theme.gui`; `spec/components/components.gui`;
   `spec/data/**`; `spec/agent/input-ledger.md`; `prototypes/**` (generated via the project
-  builder only, never by hand); `spec/architecture/prototype-builder.md` and the project's
+  builder only, never by hand); `spec/design/prototype-builder.md` and the project's
   prototype-builder code.
 
 Owns the UI design stage. It reads the requirements, architecture, input-ledger, existing
@@ -719,14 +721,14 @@ the screens and flows affected by new or changed requirements, then:
   `spec/data/` when the design requires it;
 - builds or regenerates the review prototype under `prototypes/` using the project’s
   prototype builder. If no builder exists yet, it creates a small one in the project's agreed
-  stack, documents its command and contract in `spec/architecture/prototype-builder.md`, and
+  stack, documents its command and contract in `spec/design/prototype-builder.md`, and
   commits it with the project. The builder is project tooling, not a predefined IAP component;
 - marks inferred content and records unresolved questions with options and a recommendation;
 - records resolved human decisions in `spec/agent/input-ledger.md` before acting on them.
 
 It never invents data sources, permissions, business rules, interactions or navigation. It
-never creates implementation tickets, never edits `architecture/gui-spec.md` or
-`architecture/screen-workflow.md`, and never hand-edits generated prototypes. It moves
+never creates implementation tickets, never edits `spec/references/gui-spec.md` or
+`spec/references/screen-workflow.md`, and never hand-edits generated prototypes. It moves
 screen documents between `draft` and `review`; only the human moves them to `approved`.
 
 Batch (no human available): it may write draft screen documents and a prototype marked
@@ -762,7 +764,7 @@ Each ticket links the project shape it changes: `architecture/tech-stack.md` for
 single-subproject project, or the module(s) and their `tech-stack.md` for a multi-subproject
 project. If a ticket spans modules, list all of them.
 For UI tickets, it links the applicable `spec/screens/{screen-name}.md` documents,
-`architecture/gui-spec.md` sections and the generated prototype so the implementor does not
+`spec/references/gui-spec.md` sections and the generated prototype so the implementor does not
 have to infer the intended data, actions, states, tokens, components or patterns. It adds
 `ui-screens` and, where useful, `prototype` metadata to the ticket. UI tickets that change
 user-visible screens default to `acceptance-type: HUMAN`.
@@ -852,7 +854,7 @@ Repeat while a READY, unblocked ticket exists:
 - set the ticket STATUS: IN_PROGRESS and commit the claim on that branch.
 - implement code, tests, configuration and documentation on the branch.
 - for UI work, follow the approved `spec/screens/{screen-name}.md` documents and
-  `architecture/gui-spec.md` for tokens, components, patterns, content, syntax, layout,
+  `spec/references/gui-spec.md` for tokens, components, patterns, content, syntax, layout,
   behavior, accessibility and platform mapping. Use existing tokens and components instead of
   inventing new styles; use the generated prototype as a visual reference.
 - if implementation reveals that the approved screen document is wrong or incomplete, stop and
@@ -894,7 +896,7 @@ Looks at tickets in status IN_REVIEW and checks:
 - the branch contains only changes within the ticket's scope; unrelated changes are a separate ticket.
 - the branch is clean (all work committed) and rebased on the current main.
 - for UI work, the change follows the approved `spec/screens/{screen-name}.md` documents and
-  `architecture/gui-spec.md` (tokens, components, patterns, content, syntax, defaults, layout,
+  `spec/references/gui-spec.md` (tokens, components, patterns, content, syntax, defaults, layout,
   behavior, accessibility, validation, platform mapping);
 - for UI work, the documented data/bindings, actions, navigation, interactions and states are
   implemented; the prototype or screenshot comparison matches the approved screen document;
@@ -955,11 +957,10 @@ Precondition: IAP is installed, `spec/` exists and the project contains source c
 Documents:
 - Works with: build and dependency manifests, module/folder structure, formatter/linter
   configuration, CI/CD and deployment definitions, UI/theming/style sources and existing
-  documentation; `spec/architecture/**` (including the bundled references);
+  documentation; `spec/architecture/**`; `spec/references/**`;
   `spec/modules/**`; `spec/agent/source-ledger.md`;
   `spec/agent/reverse-engineering-report.md`.
-- May modify: `spec/architecture/**` except the bundled `gui-spec.md` and
-  `screen-workflow.md`; `spec/modules/**` (inferred modules and stacks, `status: draft`);
+- May modify: `spec/architecture/**`; `spec/modules/**` (inferred modules and stacks, `status: draft`);
   `spec/theme.gui`; `spec/components/components.gui`; `spec/screens/**` (inferred stubs only);
   `spec/data/**` (observed example data); `spec/agent/source-ledger.md`;
   `spec/agent/reverse-engineering-report.md`.
@@ -987,8 +988,8 @@ For UI projects it also reconstructs the project-specific UI artifacts:
   open questions where they cannot;
 - observations for `spec/data/` where example data is evident.
 
-It does not rewrite the bundled `architecture/gui-spec.md` or
-`architecture/screen-workflow.md`; those are references, not reconstructed project state.
+It does not rewrite the bundled `spec/references/gui-spec.md` or
+`spec/references/screen-workflow.md`; those are references, not reconstructed project state.
 Open questions and low-confidence areas go into `spec/agent/reverse-engineering-report.md`.
 
 ### GUIDE
@@ -1192,7 +1193,7 @@ These must always hold. Any role that finds one violated must report it and stop
 - prototypes are generated artifacts; they are never hand-edited.
 - UI tickets that change user-visible screens default to `acceptance-type: HUMAN`.
 - screen ids are unique; flows, data fixtures, scenarios and data bindings resolve.
-- `architecture/gui-spec.md` and `architecture/screen-workflow.md` are bundled references; agents do not edit them as project design.
+- `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are bundled references; agents do not edit them as project design.
 
 `/reconcile` validates and repairs these; `/guide` reports violations it cannot repair.
 
@@ -1273,8 +1274,8 @@ Then:
 9. Commit `spec/` together with the code.
 
 Updating the process: pull the distribution and re-run its installer. It refreshes the
-command/skill definitions, the bundled `architecture/gui-spec.md` and
-`architecture/screen-workflow.md`, the process copy (`spec/agent/idx-agentic-process.md`) and
+command/skill definitions, the bundled `spec/references/gui-spec.md` and
+`spec/references/screen-workflow.md`, the process copy (`spec/agent/idx-agentic-process.md`) and
 the process marker. It creates `architecture/test-strategy.md` if it is missing (a
 project-owned seed). The content of
 `spec/requirements`, `spec/modules`, `spec/screens`, `spec/flows`, `spec/components`,

@@ -17,12 +17,12 @@ reviewable and implementation-ready; the human approves them.
 
 **Command:** `/design` · **Type:** SUBAGENT · **Invoked by:** HUMAN
 **Precondition:** the project shape is `agreed` and shows a UI; requirements and architecture
-exist; `architecture/gui-spec.md` and `architecture/screen-workflow.md` are available. Projects
-without a UI skip this role.
+exist; `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are available.
+Projects without a UI skip this role.
 
 ## Inputs to read first
 
-1. `spec/requirements/**` and `spec/architecture/**` — including `design-system.md`,
+1. `spec/requirements/**`, `spec/architecture/**` and `spec/references/**` — including
    `gui-spec.md` and `screen-workflow.md`.
 2. The project shape: `architecture/tech-stack.md` for a single subproject, or
    `spec/modules/{module}/module.md` and `tech-stack.md` for a multi-subproject project. Use the
@@ -30,7 +30,7 @@ without a UI skip this role.
 3. `spec/agent/input-ledger.md` — the accepted UI decisions; never repeat or contradict them.
 4. Existing `spec/screens/**`, `spec/flows/**`, `spec/theme.gui`,
    `spec/components/components.gui`, `spec/data/**`, `prototypes/**`, and
-   `spec/architecture/prototype-builder.md` if present.
+   `spec/design/prototype-builder.md` if present.
 5. `spec/agent/lessons-learned-designer.md`, if present.
 
 ## Procedure
@@ -47,9 +47,9 @@ without a UI skip this role.
 3. **Update the supporting design artifacts** when needed: `spec/flows/{flow-name}.md`,
    `spec/theme.gui`, `spec/components/components.gui` and `spec/data/{screen-name}.json`.
 4. **Build the review prototype.** If the project has a prototype builder, run the command in
-   `spec/architecture/prototype-builder.md` to generate or refresh the HTML under
+   `spec/design/prototype-builder.md` to generate or refresh the HTML under
    `prototypes/`. If no builder exists yet, create a small one in the project's agreed stack,
-   document its command and contract in `spec/architecture/prototype-builder.md` (start from
+   document its command and contract in `spec/design/prototype-builder.md` (start from
    this skill's `templates/prototype-builder.md`), and commit it with the project. The builder
    is project tooling, not a predefined IAP component. Never hand-edit generated HTML.
 5. **Record resolved decisions.** Append each resolved human decision — question, options,
@@ -90,13 +90,14 @@ done | sort -t"$(printf '\t')" -k2,2 -k1,1
 - **Never invent design facts.** If data, permissions, navigation, interactions, behavior or
   states are unclear, record an open question with options and a recommendation.
 - **Never create tickets.** Planning is the PLANNER's job. If the design needs work, report it.
-- **Never edit `input.md`, the requirements, the architecture or the input ledger's past
-  entries.** Append resolved decisions to the ledger; the only architecture file you write is
-  `spec/architecture/prototype-builder.md` for the project's builder contract.
-- **Never edit the bundled `architecture/gui-spec.md` or `architecture/screen-workflow.md`.**
+- **Never edit `input.md`, the requirements, the architecture, the bundled references or the
+  input ledger's past entries.** Append resolved decisions to the ledger; the only
+  design-process file you write is `spec/design/prototype-builder.md` for the project's
+  builder contract.
+- **Never edit the bundled `spec/references/gui-spec.md` or `spec/references/screen-workflow.md`.**
 - **Never hand-edit generated prototypes.** Regenerate them with the project builder. If the
   builder is missing or broken, create or repair it in the project's stack and update
-  `spec/architecture/prototype-builder.md`.
+  `spec/design/prototype-builder.md`.
 - **The prototype builder is project tooling.** Do not add a predefined builder to IAP; create
   the one the project needs, in its agreed stack, and commit it with the project.
 - **Respect the project shape.** If the artifact kind or platform changes, stop and report that

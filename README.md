@@ -85,19 +85,20 @@ project-root/
    ├─ architecture/                     # (X) Architectural design and requirements
    │  ├─ tech-stack.md                  # (X) Single-subproject shape: artifact kind + stack
    │  ├─ integration.md                 # (X) Integration with other systems, APIs
-   │  ├─ design-system.md               # (X) UI design system (entry point)
-   │  ├─ gui-spec.md                    # (X) Normative gui-v2 screen format (bundled)
-   │  ├─ screen-workflow.md             # (X) Screen authoring/review workflow (bundled)
-   │  ├─ prototype-builder.md           # (X) Project prototype-builder contract and command
    │  ├─ test-strategy.md               # (X) Test levels and required coverage
    │  ├─ decomposition.md               # (X) Module map (multi) or package map (single)
    │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
    │  ├─ quality-aspects.md             # (X) Non-functional requirements
    │  └─ ...                            # (X) Additional guidelines
+   ├─ references/                       # (X) Bundled normative references (refreshed by the installer)
+   │  ├─ gui-spec.md                    # (X) Normative gui-v2 screen format
+   │  └─ screen-workflow.md             # (X) Screen authoring/review workflow
    ├─ modules/                          # (X) Only when the project has >1 subproject
    │  └─ {module}/
    │     ├─ module.md                   # (X) Artifact kind, purpose, boundaries, dependencies, status
    │     └─ tech-stack.md               # (X) Language/version, frameworks, runtime, tooling
+   ├─ design/                           # (X) UI design process artifacts
+   │  └─ prototype-builder.md           # (X) Project prototype-builder contract and command
    ├─ screens/{screen-name}.md          # (X) Screen document (gui-v2) + data, actions, states
    ├─ flows/{flow-name}.md              # (X) Multi-screen journeys
    ├─ components/components.gui         # (X) Project-defined extended components
@@ -213,7 +214,7 @@ scripts live inside the skill that uses them where possible:
 - **templates** — the copy-once `spec/` skeleton in `templates/spec/`, including the
   project-owned `architecture/test-strategy.md`;
 - **references** — the installer-refreshed `gui-spec.md` and `screen-workflow.md` in
-  `references/`;
+  `references/` (installed to `spec/references/`);
 - the input, project-shape and ticket templates in `iap-facilitator` and `iap-planner`;
 - small read-only scripts inside the agent skills that need them, instead of one shared
   external helper.
@@ -255,8 +256,8 @@ The installer:
 - creates the missing parts of `spec/` from `templates/spec/` — an empty `spec/input.md`,
   the requirement and architecture folders (including the project-owned
   `architecture/test-strategy.md`), the ticket folder and the agent ledger;
-- refreshes the bundled architecture references `gui-spec.md` and `screen-workflow.md` in
-  `spec/architecture/`;
+- refreshes the bundled references `gui-spec.md` and `screen-workflow.md` in
+  `spec/references/`;
 - records the IAP version in `spec/agent/process-version.md`.
 
 The installer does not create `architecture/tech-stack.md` or `spec/modules/`; the
@@ -298,11 +299,14 @@ cd ~/code/my-project
 ~/idx-agentic-process/install.sh          # add --global if that is how you installed it
 ```
 
-An upgrade refreshes the command/skill definitions, the bundled architecture references
-(`gui-spec.md`, `screen-workflow.md`), the process copy in
+An upgrade refreshes the command/skill definitions, the bundled references
+(`gui-spec.md`, `screen-workflow.md`) in `spec/references/`, the process copy in
 `spec/agent/idx-agentic-process.md` and the version marker. It never touches your
-requirements, project architecture content, tickets or input ledger. If a process change
-alters ticket metadata or statuses, run `/reconcile` afterwards.
+requirements, project architecture content, tickets or input ledger. On upgrade from a
+release that kept them under `spec/architecture/`, the installer moves the
+prototype-builder contract to `spec/design/prototype-builder.md` and removes the old
+bundled reference copies. If a process change alters ticket metadata or statuses, run
+`/reconcile` afterwards.
 
 ### Removing IAP
 

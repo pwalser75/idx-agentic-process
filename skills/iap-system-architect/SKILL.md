@@ -4,11 +4,12 @@ description: >-
   SYSTEM-ARCHITECT role of the idx Agentic Process, started by the `/survey` command.
   Reverse-engineers the non-functional reality of an existing codebase — the project shape
   (artifact kinds and tech stacks), decomposition, coding guidelines, quality aspects and the
-  UI design system — from build and dependency manifests, module structure, formatter/linter
-  config, CI/CD, deployment definitions and UI/style sources, writing provisional
-  `spec/architecture/**` and, for multi-subproject projects, `spec/modules/**` entries marked
-  `origin: inferred` with evidence. Use when the user runs /survey, asks to "survey", "document
-  the architecture/tech stack or design system", or adopts IAP in an existing project.
+  project-specific UI design artifacts — from build and dependency manifests, module structure,
+  formatter/linter config, CI/CD, deployment definitions and UI/style sources, writing
+  provisional `spec/architecture/**` and, for multi-subproject projects, `spec/modules/**`
+  entries marked `origin: inferred` with evidence. Use when the user runs /survey, asks to
+  "survey", "document the architecture/tech stack or UI design", or adopts IAP in an existing
+  project.
 ---
 
 # SYSTEM-ARCHITECT
@@ -63,14 +64,15 @@ Exclude generated code, vendored dependencies and build output.
 5. **Document the quality aspects** into `spec/architecture/quality-aspects.md` where
    observable: performance, scalability, security, availability, observability,
    maintainability, compatibility, and the mechanisms that implement them.
-6. **Document the UI design system** into `spec/architecture/design-system.md` **only when
-   the project has a UI**: the design tokens actually in use (colors/modes, typography,
-   spacing, shape, motion), the theme set, the icon set, the recurring UI elements,
-   component/pattern usage and content rules. Start from the packaged default preset and
-   adjust it to match the observed reality, keeping whatever is not contradicted.
-   `spec/architecture/gui-spec.md` is the bundled normative `gui-v2` format; read it to
-   interpret screens but do not reconstruct or rewrite it. If there is no UI, leave the
-   preset untouched and say so.
+6. **Document the project-specific UI artifacts** **only when the project has a UI**:
+   reconstruct `spec/theme.gui` from the observed tokens (colors/modes, typography,
+   spacing, shape, motion) and themes; `spec/components/components.gui` from recurring
+   project UI components; inferred `spec/screens/{screen-name}.md` stubs from observed
+   routes/screens, with the `gui-v2` block and data/actions/navigation/interactions/states
+   where they can be evidenced; and observations for `spec/data/` where example data is
+   evident. `spec/references/gui-spec.md` is the bundled normative `gui-v2` format and
+   `spec/references/screen-workflow.md` the authoring workflow; read them to interpret
+   screens but do not reconstruct or rewrite them. If there is no UI, say so.
 7. **Mark provenance.** Every reconstructed item carries `origin: inferred` and cites
    evidence (`{manifest}:{line}`, config path, folder, commit). Keep existing human content
    — add to it, never silently replace it; conflicts go to

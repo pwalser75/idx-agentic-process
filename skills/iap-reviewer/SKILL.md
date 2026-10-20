@@ -28,8 +28,8 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 2. The requirements/architecture they link to, the project shape (the single
    `architecture/tech-stack.md`, or the relevant module's `module.md` and `tech-stack.md`),
    and `spec/architecture/quality-aspects.md` and `coding-guidelines.md` (the test and
-   coverage standards live there) — plus `design-system.md` and `gui-spec.md` when the ticket
-   changes the UI.
+   coverage standards live there) — plus `spec/references/gui-spec.md` and the approved
+   screen documents when the ticket changes the UI.
 3. `spec/agent/input-ledger.md` — accepted decisions and prior clarifications; never repeat
    or contradict them.
 4. The **feature branch** diff versus `main` — you review the branch, not the working
@@ -50,8 +50,9 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
    - Does it use the project shape's agreed artifact kind, language, language version and stack,
      without silent substitutions?
    - Does it follow the architecture, decomposition, coding guidelines and quality aspects —
-     and, for UI changes, the design system's tokens, components, patterns and content, plus
-     the `gui-spec.md` syntax, defaults, layout and accessibility rules?
+     and, for UI changes, the approved screen documents and the
+     `spec/references/gui-spec.md` tokens, components, patterns, content, syntax, defaults,
+     layout, accessibility and platform rules?
    - Is the scope confined to the ticket, with no unrelated changes?
    - Are the build and tests green on the branch, with no test skipped or flaky?
    - Is the branch clean (all work committed) and rebased on the current `main`?

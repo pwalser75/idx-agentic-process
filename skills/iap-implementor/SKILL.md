@@ -24,8 +24,8 @@ strictly within each ticket's scope.
    the single `architecture/tech-stack.md`, or the relevant `spec/modules/{module}/module.md`
    and `tech-stack.md`.
 2. `spec/architecture/coding-guidelines.md`, `quality-aspects.md` and — for any UI work —
-   `design-system.md` and `gui-spec.md`, plus the existing source, tests and configuration,
-   to match conventions.
+   `spec/references/gui-spec.md` and the approved screen documents, plus the existing source,
+   tests and configuration, to match conventions.
 3. Git state: current branch, working tree, recent history.
 
 ## Procedure
@@ -55,10 +55,11 @@ the next ticket. That loop runs until no READY, unblocked ticket remains or it g
    stop.
 5. **Implement.** Create and update the code, tests, configuration and documentation
    needed, following the architecture, decomposition and coding guidelines, and — for UI
-   work — `design-system.md` (tokens, components, patterns, content, accessibility) and
-   `gui-spec.md` (syntax, layout, behavior, platform mapping). Use existing tokens and
-   components instead of inventing new styles. Treat the acceptance criteria as the
-   definition of done. **Tests covering the new or changed behaviour are required.**
+   work — the approved `spec/screens/{screen-name}.md` documents and
+   `spec/references/gui-spec.md` (tokens, components, patterns, content, syntax, layout,
+   behavior, accessibility, platform mapping). Use existing tokens and components instead of
+   inventing new styles. Treat the acceptance criteria as the definition of done. **Tests
+   covering the new or changed behaviour are required.**
 6. **Verify locally.** Run the build, tests and linters the project uses and confirm every
    acceptance criterion. Do not claim success without evidence.
 7. **Keep the ticket current.** Check off tasks (`- [x]`), append dated comments for

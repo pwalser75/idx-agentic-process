@@ -170,9 +170,26 @@ if [ "$WITH_SPEC" -eq 1 ]; then
 
   # Bundled references are refreshed on upgrade.
   refresh "$SOURCE_DIR/references/gui-spec.md" \
-    "$PROJECT_DIR/spec/architecture/gui-spec.md"
+    "$PROJECT_DIR/spec/references/gui-spec.md"
   refresh "$SOURCE_DIR/references/screen-workflow.md" \
+    "$PROJECT_DIR/spec/references/screen-workflow.md"
+
+  # Migration: bundled references moved out of architecture. They are process-owned and
+  # safe to remove; the refreshed copies live in spec/references/.
+  rm -f "$PROJECT_DIR/spec/architecture/gui-spec.md" \
     "$PROJECT_DIR/spec/architecture/screen-workflow.md"
+
+  # Migration: the project prototype-builder contract moved to spec/design/. Move it
+  # without overwriting a copy already at the new path.
+  if [ -f "$PROJECT_DIR/spec/architecture/prototype-builder.md" ]; then
+    mkdir -p "$PROJECT_DIR/spec/design"
+    if [ ! -e "$PROJECT_DIR/spec/design/prototype-builder.md" ]; then
+      mv "$PROJECT_DIR/spec/architecture/prototype-builder.md" \
+        "$PROJECT_DIR/spec/design/prototype-builder.md"
+    else
+      echo "install.sh: note: both spec/architecture/prototype-builder.md and spec/design/prototype-builder.md exist; remove the old one." >&2
+    fi
+  fi
 
   # Record the process version and keep a copy of the process definition.
   refresh "$SOURCE_DIR/idx-agentic-process.md" \

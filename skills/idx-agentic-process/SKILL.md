@@ -84,19 +84,20 @@ project-root/
    ├─ architecture/                     # (X) non-functional design and constraints
    │  ├─ tech-stack.md                  # (X) single-subproject shape (created by shape refinement)
    │  ├─ integration.md                 # (X) integration with other systems, APIs
-   │  ├─ design-system.md               # (X) UI design system (default preset, entry point)
-   │  ├─ gui-spec.md                    # (X) normative gui-v2 screen format (bundled)
-   │  ├─ screen-workflow.md             # (X) screen authoring/review workflow (bundled)
-   │  ├─ prototype-builder.md           # (X) project prototype-builder contract and command
    │  ├─ test-strategy.md               # (X) test levels and required coverage
    │  ├─ decomposition.md               # (X) module map (multi) or package map (single)
    │  ├─ coding-guidelines.md           # (X) naming, structure, error handling, testing
    │  ├─ quality-aspects.md             # (X) non-functional requirements
    │  └─ ...                            # (X) additional guidelines
+   ├─ references/                       # (X) bundled normative references (refreshed by the installer)
+   │  ├─ gui-spec.md                    # (X) normative gui-v2 screen format
+   │  └─ screen-workflow.md             # (X) screen authoring/review workflow
    ├─ modules/                          # (X) only when the project has >1 subproject
    │  └─ {module}/
    │     ├─ module.md                   # (X) artifact kind, purpose, boundaries, dependencies, status
    │     └─ tech-stack.md               # (X) language/version, frameworks, runtime, tooling
+   ├─ design/                           # (X) UI design process artifacts
+   │  └─ prototype-builder.md           # (X) project prototype-builder contract and command
    ├─ screens/{screen-name}.md          # (X) screen document (gui-v2) + data, actions, states
    ├─ flows/{flow-name}.md              # (X) multi-screen journeys
    ├─ components/components.gui         # (X) project-defined extended components
@@ -139,8 +140,10 @@ Rules that follow:
   `date-time`, `currency`, …).
 - **Architecture** describes *how* it is built: the project shape (artifact kinds and tech
   stacks), decomposition into modules/packages, coding guidelines, quality aspects
-  (non-functional requirements) and, for projects with a UI, the design system
-  (`design-system.md`) and its normative `gui-v2` format (`gui-spec.md`).
+  (non-functional requirements) and, for projects with a UI, the project-specific UI
+  artifacts (screen documents, theme, components) plus the bundled `gui-v2` format
+  (`spec/references/gui-spec.md`) and authoring workflow
+  (`spec/references/screen-workflow.md`).
 
 ## Project shape
 

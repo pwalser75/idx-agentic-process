@@ -36,7 +36,7 @@ nothing to facilitate and stop.
 
 1. **Read and understand.** Parse every statement in `input.md`. Classify it as a
    requirement (feature, function, domain model), architecture (tech stack, decomposition,
-   quality aspect, design system, guideline), constraint, or unresolved/ambiguous.
+   quality aspect, UI decision, guideline), constraint, or unresolved/ambiguous.
 2. **Clarify before accepting.** If a statement is ambiguous, contradictory or has a
    risky consequence, ask the human and **propose concrete suggestions** to choose from.
    You may also suggest clearer wording. Only proceed once the human is satisfied, or the
@@ -64,11 +64,12 @@ nothing to facilitate and stop.
    - create/update a requirement document — `requirements/features/{feature}.md` for
      features and their functions, `requirements/domain-models/{model}.md` for domain
      models (name, description, attributes with name/description/language-agnostic type);
-   - create/update an architecture document under `architecture/` — reach for
-     `architecture/design-system.md` for UI decisions (principles, tokens, themes,
-     component usage, patterns), and `architecture/gui-spec.md` for the normative screen
-     syntax and component behavior; create a **new** architecture document when none of
-     the existing ones is a good fit;
+   - create/update an architecture document under `architecture/` for non-functional
+     decisions, including UI constraints and high-level UI decisions.
+     `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are bundled
+     references, not project state — do not rewrite them, and leave screen documents, theme
+     and components to UI-DESIGNER; create a **new** architecture document when none of the
+     existing ones is a good fit;
    - **do nothing yet** and keep it as unresolved input for a later round.
 5. **Settle the project shape before planning.** If the shape is not settled — a single
    `architecture/tech-stack.md` that is missing or not `agreed`, or a multi-subproject project
