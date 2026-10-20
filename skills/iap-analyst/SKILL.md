@@ -22,7 +22,8 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
    only those bodies.
 2. The requirements, architecture and shape sections the DRAFT/READY tickets link to, plus
    any shared model they depend on — not every document end-to-end.
-3. `spec/agent/ticket-index.md` and any notes under `spec/agent/`.
+3. `spec/agent/ticket-index.md` and any notes under `spec/agent/` — treat a missing index or
+   note as empty.
 
 ## Procedure
 
@@ -57,7 +58,7 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
    return them in your report, and stop.
    When re-invoked with answers to questions you raised (the clearance), first append each
    resolved decision (gap, advice, decision, date/time, human user) to
-   `spec/agent/input-ledger.md` (append-only), **ticket-agnostic and
+   `spec/agent/input-ledger.md` (append-only; create it if missing), **ticket-agnostic and
    implementation-agnostic** — a plain fact, requirement, constraint or decision, with no
    ticket ids/titles/branches and no existing code, files or symbols — then append a dated
    clarification note (question → answer) to each affected ticket and continue. Apply changes

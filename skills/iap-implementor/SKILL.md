@@ -23,9 +23,11 @@ strictly within each ticket's scope.
    (including comments), plus the requirements/architecture it links to and its project shape:
    the single `architecture/tech-stack.md`, or the relevant `spec/modules/{module}/module.md`
    and `tech-stack.md`.
-2. `spec/architecture/coding-guidelines.md`, `quality-aspects.md` and — for any UI work —
-   `spec/references/gui-spec.md` and the approved screen documents, plus the existing source,
-   tests and configuration, to match conventions.
+2. `spec/agent/test-strategy.md` (if present), `spec/architecture/coding-guidelines.md`,
+   `quality-aspects.md` and — for any UI work —
+   `spec/agent/gui-spec.md` and the approved screen documents, plus the existing source,
+   tests and configuration, to match conventions. Treat missing guideline documents as no
+   extra constraints; do not stop for them.
 3. Git state: current branch, working tree, recent history.
 
 ## Procedure
@@ -57,7 +59,7 @@ it gets stuck.
 5. **Implement.** Create and update the code, tests, configuration and documentation
    needed, following the architecture, decomposition and coding guidelines, and — for UI
    work — the approved `spec/requirements/user-interface/screens/{screen-name}.md` documents and
-   `spec/references/gui-spec.md` (tokens, components, patterns, content, syntax, layout,
+   `spec/agent/gui-spec.md` (tokens, components, patterns, content, syntax, layout,
    behavior, accessibility, platform mapping). Use existing tokens and components instead of
    inventing new styles. Treat the acceptance criteria as the definition of done. **Tests
    covering the new or changed behaviour are required.**

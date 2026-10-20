@@ -17,7 +17,7 @@ You tell the human what to do next. You change nothing.
 ## Inputs to read
 
 1. Ticket state in one pass — run the ticket state script below.
-2. `spec/input.md` (non-empty?), `spec/agent/planning-log.md`.
+2. `spec/input.md` (non-empty?), `spec/agent/planning-log.md` (missing means no previous plan).
 3. Project shape: whether a single `architecture/tech-stack.md` is missing or not `agreed`, or
    a multi-subproject project has missing/non-agreed modules or incomplete stacks.
 4. Git state: current branch, dirty tree, in-progress rebase/merge, feature branches.

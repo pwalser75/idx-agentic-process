@@ -18,7 +18,7 @@ You show the state of the process. You change nothing.
 1. Run the ticket listing script below from the project root.
 2. **Print its output verbatim.** Do not parse, sort, pad, filter or reformat it.
 3. If it prints nothing, either there are no open tickets or `spec/` is absent. Check for
-   `spec/tickets/`; if it is missing, report that IAP is not installed and that `install.sh`
+   `spec/tickets/`; if it is missing, report that IAP is not bootstrapped and that `/bootstrap`
    should be run (see `README.md`).
 4. Only if the human explicitly asks for per-status counts, run the count script below.
 

@@ -17,18 +17,19 @@ reviewable and implementation-ready; the human approves them.
 
 **Command:** `/design` · **Type:** SUBAGENT · **Invoked by:** HUMAN
 **Precondition:** the project shape is `agreed` and shows a UI; requirements and architecture
-exist; `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are available.
+exist; `spec/agent/gui-spec.md` and `spec/agent/screen-workflow.md` are available.
 Projects without a UI skip this role.
 
 ## Inputs to read first
 
 1. The `spec/requirements/**` and `spec/architecture/**` sections that affect the screens and
-   flows being designed, plus the relevant `spec/references/gui-spec.md` and
+   flows being designed, plus the relevant `spec/agent/gui-spec.md` and
    `screen-workflow.md` sections — search first, read targeted ranges.
 2. The project shape: `architecture/tech-stack.md` for a single subproject, or
    `spec/modules/{module}/module.md` and `tech-stack.md` for a multi-subproject project. Use the
    artifact kind (web app, mobile app, desktop app, …) for platform mapping.
 3. `spec/agent/input-ledger.md` — the accepted UI decisions; never repeat or contradict them.
+   Create it with a short append-only header if missing.
 4. Existing `spec/requirements/user-interface/screens/**`,
    `spec/requirements/user-interface/flows/**`,
    `spec/requirements/user-interface/theme.gui`,
@@ -62,7 +63,7 @@ Projects without a UI skip this role.
    is project tooling, not a predefined IAP component. Never hand-edit generated HTML.
 5. **Record resolved decisions.** Append each resolved human decision — question, options,
    recommendation, chosen answer, date/time and human user — to
-   `spec/agent/input-ledger.md` before acting on it.
+   `spec/agent/input-ledger.md` before acting on it. Create it if missing.
 6. **Hand over for review.** Leave screens in `draft` or `review`; only the human moves them to
    `approved`. Never approve your own screen documents. Guide the review: give the prototype
    entry point and the command to open it, say what to check on each screen (definition, data,
@@ -108,7 +109,7 @@ done | sort -t"$(printf '\t')" -k2,2 -k1,1
   input ledger's past entries.** Append resolved decisions to the ledger; the only
   design-process file you write is `spec/architecture/prototype-builder.md` for the project's
   builder contract.
-- **Never edit the bundled `spec/references/gui-spec.md` or `spec/references/screen-workflow.md`.**
+- **Never edit the bundled `spec/agent/gui-spec.md` or `spec/agent/screen-workflow.md`.**
 - **Never hand-edit generated prototypes.** Regenerate them with the project builder. If the
   builder is missing or broken, create or repair it in the project's stack and update
   `spec/architecture/prototype-builder.md`.

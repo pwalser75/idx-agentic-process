@@ -95,27 +95,26 @@ project-root/
    ├─ architecture/                     # (X) Architectural design and requirements
    │  ├─ tech-stack.md                  # (X) Single-subproject shape: artifact kind + stack
    │  ├─ integration.md                 # (X) Integration with other systems, APIs
-   │  ├─ test-strategy.md               # (X) Test levels and required coverage
    │  ├─ decomposition.md               # (X) Module map (multi) or package map (single)
    │  ├─ coding-guidelines.md           # (X) Additional coding guidelines
    │  ├─ quality-aspects.md             # (X) Non-functional requirements
    │  ├─ prototype-builder.md           # (X) Prototype-builder contract (tooling, not a requirement)
    │  └─ ...                            # (X) Additional guidelines
-   ├─ references/                       # (X) Bundled normative references (refreshed by the installer)
-   │  ├─ gui-spec.md                    # (X) Normative gui-v2 screen format
-   │  └─ screen-workflow.md             # (X) Screen authoring/review workflow
    ├─ modules/                          # (X) Only when the project has >1 subproject
    │  └─ {module}/
    │     ├─ module.md                   # (X) Artifact kind, purpose, boundaries, dependencies, status
    │     └─ tech-stack.md               # (X) Language/version, frameworks, runtime, tooling
    ├─ tickets/{id}-{type}-{name}.md     # (X) A ticket with id, type and name
-   └─ agent/                            # (A) Folder managed by the agent
+   └─ agent/                            # (A) Agent-managed folder; test-strategy is (X)
       ├─ input-ledger.md                # (A) Append-only seed: accepted input + clarifications
       ├─ ticket-index.md                # (A) Tickets <-> requirements/architecture links
       ├─ planning-log.md                # (A) Last-seen revision/hash of spec/
       ├─ source-ledger.md               # (A) Hash ledger of scanned sources
       ├─ reverse-engineering-report.md  # (A) Open questions from /excavate & /survey
       ├─ lessons-learned-{role}.md      # (A) Reusable lessons for one role
+      ├─ gui-spec.md                    # (A) Bundled gui-v2 format and UI design guide (never edit)
+      ├─ screen-workflow.md             # (A) Bundled screen authoring/review workflow (never edit)
+      ├─ test-strategy.md               # (X) Project-owned test levels and coverage (from /bootstrap)
       ├─ process-version.md             # (A) IAP version used
       └─ idx-agentic-process.md         # (A) Copy of the process definition
 ```
@@ -192,6 +191,7 @@ compacted at durability barriers (after `/accept`, or after a planning/design co
 
 | Command        | Role / skill          | Type     | Precondition                                |
 |----------------|-----------------------|----------|---------------------------------------------|
+| `/bootstrap`   | `iap-bootstrap`       | SUBAGENT | project root; may be run on an existing spec |
 | `/facilitate`  | `iap-facilitator`     | PRIMARY  | input non-empty or shape unsettled          |
 | `/design`      | `iap-designer`        | SUBAGENT | shape `agreed`, UI project                  |
 | `/plan`        | `iap-planner`         | SUBAGENT | project shape `agreed`                      |
@@ -212,32 +212,23 @@ human may run it directly.
 
 ## Installation
 
-IAP ships as a bundle: the [`skills/`](skills/) folder (one folder per role, each with a
-`SKILL.md` per the open [Agent Skills](https://agentskills.io) standard), the
-[`commands/`](commands/) folder (one thin wrapper per slash command), the
-[`templates/`](templates/) folder used to seed `spec/`, the
-[`references/`](references/) folder with the bundled normative documents, the process
-definition [`idx-agentic-process.md`](idx-agentic-process.md) and `VERSION`. Templates and
-scripts live inside the skill that uses them where possible:
-
-- **templates** — the copy-once `spec/` skeleton in `templates/spec/`, including the
-  project-owned `architecture/test-strategy.md`;
-- **references** — the installer-refreshed `gui-spec.md` and `screen-workflow.md` in
-  `references/` (installed to `spec/references/`);
-- the input, project-shape and ticket templates in `iap-facilitator` and `iap-planner`;
-- small read-only scripts inside the agent skills that need them, instead of one shared
-  external helper.
+IAP ships as two self-contained folders: [`skills/`](skills/) (one folder per role, each with
+a `SKILL.md` per the open [Agent Skills](https://agentskills.io) standard) and
+[`commands/`](commands/) (one thin wrapper per slash command). Everything the process needs at
+runtime is inside them — role logic, templates, scripts and the [`/bootstrap`](commands/bootstrap.md)
+assets under `skills/iap-bootstrap/assets/`. There is no installer and no repository-root
+`templates/` or `references/` folder to copy.
 
 ### Requirements
 
 - **Git** — IAP tracks requirements, tickets and code in one repository.
-- **Bash** — the installer and the read-only scripts embedded in the agent skills are bash.
+- **Bash** — the `/bootstrap` script and the read-only scripts embedded in the agent skills
+  are bash.
 - **An agent tool** with skills and slash commands: **OpenCode** or **Claude Code**.
 
 ### Download the process
 
-Clone the repository once and keep it — the installer copies from it, and pulling it is how
-you upgrade:
+Clone the repository once and keep it; pulling it is how you upgrade:
 
 ```bash
 git clone https://github.com/pwalser75/idx-agentic-process.git ~/idx-agentic-process
@@ -248,55 +239,52 @@ You can also download a ZIP from GitHub; the commands below assume the folder
 
 ### Install into a new or existing project
 
-Run the installer from the IAP download and point it at your project:
+Copy the two folders into the project's agent folder, then run `/bootstrap` once from the
+project. This example is a **project-local install** for OpenCode; use `.claude` for Claude
+Code:
 
 ```bash
 cd ~/code/my-project
-~/idx-agentic-process/install.sh
+mkdir -p .opencode/commands .opencode/skills
+cp -R ~/idx-agentic-process/commands/. .opencode/commands/
+cp -R ~/idx-agentic-process/skills/. .opencode/skills/
 ```
 
-The default is a **project-local install**: the skills and commands are copied into
-`.opencode/` (OpenCode) or `.claude/` (Claude Code), so they can be committed and shared
-with collaborators and cloud agents. Commit `.opencode/` or `.claude/` and `spec/` (except the
-local-only `spec/input.md`).
+Then, in the project, run:
 
-The installer:
-- copies `skills/` and `commands/` into the project's tool folder;
-- creates the missing parts of `spec/` from `templates/spec/` — an empty `spec/input.md`,
-  the requirement and architecture folders (including the project-owned
-  `architecture/test-strategy.md`), the ticket folder and the agent ledger;
-- refreshes the bundled references `gui-spec.md` and `screen-workflow.md` in
-  `spec/references/`;
-- records the IAP version in `spec/agent/process-version.md`.
-
-The installer does not create `architecture/tech-stack.md` or `spec/modules/`; the
-`/facilitate` project-shape interview creates the right one for the project.
-
-If `spec/` already exists, it only adds missing files and refreshes the process machinery.
-Existing requirements, project architecture content, tickets and the input ledger are never
-overwritten (the bundled `gui-spec.md` and `screen-workflow.md` references are refreshed).
-
-`--tool` is optional. The installer uses Claude Code when `.claude/` (or `~/.claude/`) is
-present and OpenCode otherwise. To choose explicitly:
-
-```bash
-~/idx-agentic-process/install.sh --project ~/code/my-project --tool claude
+```text
+/bootstrap
 ```
 
-Run `~/idx-agentic-process/install.sh --help` for all options.
+Commit `.opencode/` or `.claude/` and `spec/` (except the local-only `spec/input.md`), so
+collaborators and cloud agents have the same commands, skills and process documents.
+
+`/bootstrap`:
+
+- creates the `spec/` folder skeleton, with `.gitkeep` files in empty folders;
+- creates an empty `spec/input.md` when missing and never clears an existing one;
+- creates `spec/.gitignore` with `input.md` when missing;
+- copies `gui-spec.md`, `screen-workflow.md`, `test-strategy.md`,
+  `idx-agentic-process.md` and `process-version.md` into `spec/agent/`.
+
+It creates `test-strategy.md` only when missing; the bundled `gui-spec.md`,
+`screen-workflow.md`, process copy and version marker are refreshed. It does not create
+`architecture/tech-stack.md`, `spec/modules/`, requirements, tickets or the input ledger:
+those are generated on first use by the role that owns them.
 
 ### Global install
 
-Install the skills and commands once for all projects:
+Copy the same two folders into the global agent folder once. For OpenCode:
 
 ```bash
-cd ~/code/my-project
-~/idx-agentic-process/install.sh --global
+mkdir -p ~/.opencode/commands ~/.opencode/skills
+cp -R ~/idx-agentic-process/commands/. ~/.opencode/commands/
+cp -R ~/idx-agentic-process/skills/. ~/.opencode/skills/
 ```
 
-This symlinks `skills/` and `commands/` into `~/.opencode/` or `~/.claude/`. `spec/` is still
-installed into the current project, so run the installer in each project that uses IAP. Keep
-the `~/idx-agentic-process` clone; the symlinks point into it.
+Use `~/.claude` for Claude Code. `/bootstrap` still runs in each project and creates that
+project's `spec/`; it finds its assets in the global skills folder. Keep the
+`~/idx-agentic-process` clone for upgrades.
 
 ### Upgrading
 
@@ -304,36 +292,43 @@ the `~/idx-agentic-process` clone; the symlinks point into it.
 cd ~/idx-agentic-process
 git pull
 
+# copy commands/ and skills/ into the project again (or into ~/.opencode / ~/.claude)
 cd ~/code/my-project
-~/idx-agentic-process/install.sh          # add --global if that is how you installed it
+mkdir -p .opencode/commands .opencode/skills
+cp -R ~/idx-agentic-process/commands/. .opencode/commands/
+cp -R ~/idx-agentic-process/skills/. .opencode/skills/
 ```
 
-An upgrade refreshes the command/skill definitions, the bundled references
-(`gui-spec.md`, `screen-workflow.md`) in `spec/references/`, the process copy in
-`spec/agent/idx-agentic-process.md` and the version marker. It never touches your
-requirements, project architecture content, tickets or input ledger. On upgrade from a
-release that kept the prototype-builder contract under `spec/design/`, the installer moves
-it back to `spec/architecture/prototype-builder.md` and removes the old bundled reference
-copies. If a process change alters ticket metadata or statuses, run
-`/reconcile` afterwards.
+Then run `/bootstrap` in the project. It refreshes the bundled references
+(`spec/agent/gui-spec.md`, `spec/agent/screen-workflow.md`), the process copy
+(`spec/agent/idx-agentic-process.md`) and the version marker. It creates
+`spec/agent/test-strategy.md` only when it is missing, and never touches your requirements,
+project architecture content, tickets, screen documents or input ledger. If a process change
+alters ticket metadata or statuses, run `/reconcile` afterwards.
+
+`/bootstrap` reports legacy paths such as `spec/references/` and old bundled reference copies;
+it does not delete them. Remove them after verifying the `spec/agent/` copies.
 
 ### Removing IAP
 
-Delete the IAP skills and commands from the project's tool folder (`.opencode/` or
-`.claude/`), then delete `spec/` if you no longer want the process. For a global install, also
-remove the IAP links from `~/.opencode/skills`, `~/.opencode/commands` (or the `~/.claude/`
-equivalents).
+Delete the IAP `skills/` and `commands/` from the project's tool folder (`.opencode/` or
+`.claude/`), then delete `spec/` if you no longer want the process. For a global install,
+remove the IAP skill and command folders from `~/.opencode` (or `~/.claude`).
 
 ## Quick start: a new project
 
-1. Create the project and install IAP:
+1. Create the project, copy the commands and skills, and bootstrap `spec/`:
 
    ```bash
    mkdir my-project
    cd my-project
    git init
-   ~/idx-agentic-process/install.sh
+   mkdir -p .opencode/commands .opencode/skills
+   cp -R ~/idx-agentic-process/commands/. .opencode/commands/
+   cp -R ~/idx-agentic-process/skills/. .opencode/skills/
    ```
+
+   Then run `/bootstrap` in the project. It creates `spec/` and an empty `spec/input.md`.
 
 2. Describe your project in `spec/input.md`, then digest it into requirements and
    architecture:
@@ -368,7 +363,8 @@ equivalents).
 
 ## Adopting an existing codebase
 
-1. Install IAP in the existing repository (see [Installation](#installation)).
+1. Copy the `commands/` and `skills/` folders into the existing repository and run `/bootstrap`
+   (see [Installation](#installation)).
 2. `/survey` and `/excavate` to reconstruct the project shape, architecture and requirements
    from the code (repeat as the code changes).
 3. Review the inferred documents, and accept the project shape in the refinement interview — a
@@ -385,33 +381,32 @@ If anything gets inconsistent, run `/reconcile` to audit and safely repair it.
 ```
 idx-agentic-process/
 ├─ README.md                    # this file
-├─ install.sh                   # installs IAP into a project
 ├─ .gitignore
 ├─ idx-agentic-process.md       # canonical process definition (read-only for agents)
 ├─ VERSION                      # IAP version
 ├─ LICENSE                      # Apache License 2.0
 ├─ NOTICE                       # copyright notice
 ├─ commands/                    # slash commands (one thin wrapper per skill)
-│  ├─ facilitate.md  design.md  plan.md  refine.md
+│  ├─ bootstrap.md  facilitate.md  design.md  plan.md  refine.md
 │  ├─ implement.md  review.md  accept.md  tickets.md
 │  └─ excavate.md  survey.md  guide.md  reconcile.md
-├─ references/                  # bundled normative references (refreshed by the installer)
-│  ├─ gui-spec.md               # gui-v2 format and UI design guide
-│  └─ screen-workflow.md        # screen authoring, review and prototype workflow
-├─ templates/                   # files the installer seeds into spec/ (never overwrites)
-│  └─ spec/                     # spec/ skeleton (folders, stubs, ledger, test strategy)
-└─ skills/                      # one folder per skill
+└─ skills/                      # one folder per skill; the only runtime bundle
    ├─ idx-agentic-process/      # process overview skill
-   ├─ iap-facilitator/          # SKILL.md + input and project-shape templates
+   ├─ iap-bootstrap/            # SKILL.md + assets/ + scripts/bootstrap.sh
+   │  ├─ assets/                # gui-spec, screen-workflow, test-strategy, process copy, VERSION
+   │  └─ scripts/bootstrap.sh   # creates spec/ and installs the assets   ├─ iap-facilitator/          # SKILL.md + input and project-shape templates
    ├─ iap-designer/             # SKILL.md + prototype-builder template
    ├─ iap-planner/              # SKILL.md + templates/ticket-template.md
    ├─ iap-tickets/              # SKILL.md (read-only listing scripts)
-   ├─ iap-analyst/  iap-implementor/  iap-reviewer/  iap-accept/
-   └─ iap-archaeologist/  iap-system-architect/  iap-guide/  iap-reconciler/
+   └─ iap-analyst/  iap-implementor/  iap-reviewer/  iap-accept/
+      iap-archaeologist/  iap-system-architect/  iap-guide/  iap-reconciler/
 ```
 
 The `commands/` folder holds the slash-command wrappers; each `skills/<skill>/` folder holds
-its `SKILL.md` plus any templates or scripts it needs.
+its `SKILL.md` plus any templates, assets or scripts it needs. Copying these two folders is
+the complete installation. `skills/iap-bootstrap/assets/idx-agentic-process.md` is the copy of
+the canonical process definition that `/bootstrap` installs; keep it in sync with the root
+file when releasing.
 
 ## License
 

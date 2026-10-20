@@ -27,11 +27,12 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
    review questions and their answers, and the task list.
 2. The requirements/architecture they link to, the project shape (the single
    `architecture/tech-stack.md`, or the relevant module's `module.md` and `tech-stack.md`),
-   and `spec/architecture/quality-aspects.md` and `coding-guidelines.md` (the test and
-   coverage standards live there) — plus `spec/references/gui-spec.md` and the approved
-   screen documents when the ticket changes the UI.
+   `spec/agent/test-strategy.md` (test levels and required coverage), and
+   `spec/architecture/quality-aspects.md` and `coding-guidelines.md` (project constraints and
+   conventions) — plus `spec/agent/gui-spec.md` and the approved screen documents when the
+   ticket changes the UI. Treat missing guideline documents as no extra constraints.
 3. `spec/agent/input-ledger.md` — accepted decisions and prior clarifications; never repeat
-   or contradict them.
+   or contradict them. Treat a missing ledger as empty; create it when you first append.
 4. The **feature branch** diff versus `main` — you review the branch, not the working
    tree: the responsible commits, the changed files, the tests.
 5. The build/test/lint output (re-run it if you can).
@@ -51,7 +52,7 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
      without silent substitutions?
    - Does it follow the architecture, decomposition, coding guidelines and quality aspects —
      and, for UI changes, the approved screen documents and the
-     `spec/references/gui-spec.md` tokens, components, patterns, content, syntax, defaults,
+     `spec/agent/gui-spec.md` tokens, components, patterns, content, syntax, defaults,
      layout, accessibility and platform rules?
    - Is the scope confined to the ticket, with no unrelated changes?
    - Are the build and tests green on the branch, with no test skipped or flaky?
@@ -71,8 +72,8 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
      from it;
    - on re-invocation with answers, append `### Review answers — <date> (human)` and a dated
      clarification note. Record a durable project-level decision in
-     `spec/agent/input-ledger.md` (ticket-agnostic, implementation-agnostic); keep
-     ticket-local answers in the ticket comments. Then continue the review.
+     `spec/agent/input-ledger.md` (ticket-agnostic, implementation-agnostic; create it if
+     missing); keep ticket-local answers in the ticket comments. Then continue the review.
 5. **If it is correct, accept it.** Set `status: DONE`, add a dated acceptance comment
    stating what was verified and how, and commit.
 6. **Leave the merge to the orchestrator.** For an `AUTOMATIC` ticket, return it as DONE in

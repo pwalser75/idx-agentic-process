@@ -26,7 +26,8 @@ only role that reads `input.md` as work, and the only one that clears it.
 2. The existing `spec/requirements/**`, `spec/architecture/**` and `spec/modules/**` that the
    input affects — search for the models, features and decisions first, and open a whole
    document only when needed to fit the input in.
-3. `spec/agent/input-ledger.md` — never repeat what was already accepted.
+3. `spec/agent/input-ledger.md` — never repeat what was already accepted; create it from
+   `templates/input-ledger.md` when missing.
 4. `spec/agent/process-version.md` and, if present, `spec/agent/idx-agentic-process.md`.
 
 If `input.md` is empty, still check the project shape: run the project-shape interview when the
@@ -43,7 +44,9 @@ nothing to facilitate and stop.
    You may also suggest clearer wording. Only proceed once the human is satisfied, or the
    point is explicitly deferred.
 3. **Record the accepted input** in `spec/agent/input-ledger.md` — **append-only, never
-   rewrite past entries**. Include any clarification you resolved (question and answer):
+   rewrite past entries**. Create the file and its parent directory from
+   `templates/input-ledger.md` if missing. Include any clarification you resolved (question
+   and answer):
 
    ```markdown
    ## {ISO date-time} — {human user}
@@ -67,7 +70,7 @@ nothing to facilitate and stop.
      models (name, description, attributes with name/description/language-agnostic type);
    - create/update an architecture document under `architecture/` for non-functional
      decisions, including UI constraints and high-level UI decisions.
-     `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are bundled
+     `spec/agent/gui-spec.md` and `spec/agent/screen-workflow.md` are bundled
      references, not project state — do not rewrite them, and leave screen documents, theme
      and components to UI-DESIGNER; create a **new** architecture document when none of the
      existing ones is a good fit;
@@ -111,7 +114,7 @@ language, language version and stack. Run this as an interview, not as a guess.
    `artifact-kind`, `status: draft` and the stack; remove `spec/modules/` if it exists. For
    multiple subprojects, create `spec/modules/{module}/module.md` and `tech-stack.md` for each
    (start from this skill's `templates/module/module.md` and
-   `templates/module/tech-stack.md`), update `architecture/decomposition.md`, and remove
+   `templates/module/tech-stack.md`), create or update `architecture/decomposition.md`, and remove
    `architecture/tech-stack.md`. Set `status: agreed` only after the human accepts the shape.
 6. **Keep it current.** When the artifact kind, boundaries or stack changes, set the affected
    shape back to `draft`, update the documents, return affected tickets to DRAFT and replan. If

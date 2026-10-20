@@ -23,6 +23,10 @@ The process enables the human-in-the-loop, but does not enforce it.
 
 The human drives the loop; the agent does the ticket work.
 
+Before the first loop, copy the `commands/` and `skills/` folders into the project's agent
+folder and run `/bootstrap` once. It creates `spec/` and an empty `spec/input.md`; every other
+spec file is generated on first use by the role that writes it.
+
 1. **Capture input**: add facts to `spec/input.md`, then run `/facilitate`. It folds the input into the
    requirement and architecture documents, appends it to the input ledger, and clears `input.md`.
 2. **Review (optional)**: read the updated `requirements/` and `architecture/` documents; repeat step 1
@@ -98,22 +102,22 @@ project-root/
 │  │  ├─ quality-aspects.md             # (X) Quality Aspects (= non-functional requirements)
 │  │  ├─ prototype-builder.md           # (X) Prototype-builder contract: command, inputs, outputs (tooling, not a requirement)
 │  │  └─ ...                            # (X) Additional guidelines
-│  ├─ references/                       # (X) Bundled normative references (refreshed by the installer; never edit)
-│  │  ├─ gui-spec.md                    # (X) UI design guide and normative gui-v2 specification
-│  │  └─ screen-workflow.md             # (X) Screen authoring, review and prototype workflow
 │  ├─ modules/                          # (X) Only when the project has more than one subproject
 │  │  └─ {module}/                      # (X) One folder per module
 │  │     ├─ module.md                    # (X) Artifact kind, purpose, boundaries, dependencies, status
 │  │     └─ tech-stack.md                # (X) Language/version, frameworks, runtime, libraries, tooling
 │  ├─ tickets/                          # (X) Tickets for the implementation
 │  │  └─ {id}-{type}-{name}.md          # (X) A ticket, with a distinct id, type and name
-│  └─ agent/                            # (A) Folder managed by the agent, it can document anything here
+│  └─ agent/                            # (A) Agent-managed folder; bundled refs are read-only, test-strategy is co-owned
 │     ├─ input-ledger.md                # (A) append-only seed: accepted input and resolved clarifications
 │     ├─ ticket-index.md                # (A) tickets ↔ requirements/architecture links
 │     ├─ planning-log.md                # (A) last-seen revision/hash of spec/
 │     ├─ source-ledger.md               # (A) hash ledger of scanned sources
 │     ├─ reverse-engineering-report.md  # (A) open questions from `/excavate` & `/survey`
 │     ├─ lessons-learned-{role}.md      # (A) reusable lessons for one role (see Reflection)
+│     ├─ gui-spec.md                    # (A) Bundled UI design guide and normative gui-v2 specification (never edit)
+│     ├─ screen-workflow.md             # (A) Bundled screen authoring, review and prototype workflow (never edit)
+│     ├─ test-strategy.md               # (X) Project-owned test levels and required coverage (created by `/bootstrap`)
 │     ├─ process-version.md             # (A) IAP version used
 │     └─ idx-agentic-process.md         # (A) copy of this process
 └─ prototypes/                          # (A) Generated review HTML; do not edit by hand
@@ -121,6 +125,13 @@ project-root/
    ├─ screens/{screen-name}.html        # (A) Generated screen page
    └─ assets/                           # (A) Generated theme, component and runtime assets
 ```
+
+`/bootstrap` creates only the folder skeleton, `input.md`, the bundled documents under
+`spec/agent/` and `test-strategy.md`. Everything else is generated on first use by the role
+that owns it: a role creates the file and parent directory when it first writes, and treats a
+missing file it only reads as "not defined yet". A missing spec file is not an error.
+`test-strategy.md` is the exception among the seeded documents: it is project-owned, created
+once by `/bootstrap` and refined by the project.
 
 ## Input
 
@@ -315,7 +326,7 @@ module's `tech-stack.md` lacks the language or version. It also refuses an ambig
 project-level `tech-stack.md` together with modules, or multiple subprojects without modules).
 It reports the missing decisions and points back to the refinement interview.
 
-UI work uses two bundled references under `spec/references/`:
+UI work uses two bundled references under `spec/agent/`:
 
 - `gui-spec.md` is the UI design guide and the normative, versioned `gui-v2` specification:
   syntax, tokens, layout, components, patterns, accessibility, platform mapping, validation
@@ -565,7 +576,7 @@ Format of the release notes:
 - **{title}**: {description}
 ```
 
-Release notes are not created by the installer; they are created on-the-fly by `/accept` when missing.
+Release notes are not created by `/bootstrap`; they are created on-the-fly by `/accept` when missing.
 
 ## Roles
 
@@ -587,8 +598,8 @@ are the only durable handover state.
 Each role section lists the spec documents it reads (`Works with`) and the spec files it may
 create, edit or delete (`May modify`). Anything not listed under "May modify" is read-only for
 that role; the (H)/(A)/(X) edit rights still apply. No role edits the process definition or the
-bundled references (`spec/references/gui-spec.md`,
-`spec/references/screen-workflow.md`). In addition, every writing role may maintain its own
+bundled references (`spec/agent/gui-spec.md`,
+`spec/agent/screen-workflow.md`). In addition, every writing role may maintain its own
 `spec/agent/lessons-learned-{role}.md`.
 
 ### Role loop (handover)
@@ -774,7 +785,7 @@ Type: SUBAGENT
 Command: `/design`.
 Invoked by: HUMAN.
 Precondition: the project shape is `agreed` and shows a UI; requirements and architecture
-exist; `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are
+exist; `spec/agent/gui-spec.md` and `spec/agent/screen-workflow.md` are
 available. Projects without a UI skip this role.
 
 Documents:
@@ -811,8 +822,8 @@ the screens and flows affected by new or changed requirements, then:
 - records resolved human decisions in `spec/agent/input-ledger.md` before acting on them.
 
 It never invents data sources, permissions, business rules, interactions or navigation. It
-never creates implementation tickets, never edits `spec/references/gui-spec.md` or
-`spec/references/screen-workflow.md`, and never hand-edits generated prototypes. It moves
+never creates implementation tickets, never edits `spec/agent/gui-spec.md` or
+`spec/agent/screen-workflow.md`, and never hand-edits generated prototypes. It moves
 screen documents between `draft` and `review`; only the human moves them to `approved`.
 
 Batch (no human available): it may write draft screen documents and a prototype marked
@@ -859,7 +870,7 @@ Each ticket links the project shape it changes: `architecture/tech-stack.md` for
 single-subproject project, or the module(s) and their `tech-stack.md` for a multi-subproject
 project. If a ticket spans modules, list all of them.
 For UI tickets, it links the applicable `spec/requirements/user-interface/screens/{screen-name}.md` documents,
-`spec/references/gui-spec.md` sections and the generated prototype so the implementor does not
+`spec/agent/gui-spec.md` sections and the generated prototype so the implementor does not
 have to infer the intended data, actions, states, tokens, components or patterns. It adds
 `ui-screens` and, where useful, `prototype` metadata to the ticket. UI tickets that change
 user-visible screens default to `acceptance-type: HUMAN`.
@@ -932,7 +943,7 @@ Precondition: at least one ticket READY, clean working tree, on main.
 
 Documents:
 - Works with: the claimed ticket in `spec/tickets/**`; `spec/requirements/**`;
-  `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/requirements/user-interface/screens/**` and
+  `spec/architecture/**`; `spec/agent/test-strategy.md`; `spec/modules/**`; for UI work, `spec/requirements/user-interface/screens/**` and
   `spec/requirements/user-interface/data/**`; `prototypes/**` as a visual reference.
 - May modify: the claimed ticket in `spec/tickets/**` (status, task checkboxes, comments);
   `prototypes/**` (regenerate only, never hand-edit); project code, tests, configuration and
@@ -951,7 +962,7 @@ context:
 - set the ticket STATUS: IN_PROGRESS and commit the claim on that branch.
 - implement code, tests, configuration and documentation on the branch.
 - for UI work, follow the approved `spec/requirements/user-interface/screens/{screen-name}.md` documents and
-  `spec/references/gui-spec.md` for tokens, components, patterns, content, syntax, layout,
+  `spec/agent/gui-spec.md` for tokens, components, patterns, content, syntax, layout,
   behavior, accessibility and platform mapping. Use existing tokens and components instead of
   inventing new styles; use the generated prototype as a visual reference.
 - if implementation reveals that the approved screen document is wrong or incomplete, stop and
@@ -984,7 +995,7 @@ Invoked by: the orchestrating agent, after the IMPLEMENTOR hands a ticket over i
 
 Documents:
 - Works with: `spec/tickets/**` (IN_REVIEW tickets); `spec/requirements/**`;
-  `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/requirements/user-interface/screens/**` and
+  `spec/architecture/**`; `spec/agent/test-strategy.md`; `spec/modules/**`; for UI work, `spec/requirements/user-interface/screens/**` and
   `spec/requirements/user-interface/data/**`; `prototypes/**`; `spec/agent/input-ledger.md`; the feature branch.
 - May modify: the reviewed ticket in `spec/tickets/**` (status DONE or READY, comments);
   `spec/agent/input-ledger.md` (append resolved, durable clarifications only).
@@ -998,7 +1009,7 @@ Looks at tickets in status IN_REVIEW and checks:
 - the branch contains only changes within the ticket's scope; unrelated changes are a separate ticket.
 - the branch is clean (all work committed) and rebased on the current main.
 - for UI work, the change follows the approved `spec/requirements/user-interface/screens/{screen-name}.md` documents and
-  `spec/references/gui-spec.md` (tokens, components, patterns, content, syntax, defaults, layout,
+  `spec/agent/gui-spec.md` (tokens, components, patterns, content, syntax, defaults, layout,
   behavior, accessibility, validation, platform mapping);
 - for UI work, the documented data/bindings, actions, navigation, interactions and states are
   implemented; the prototype or screenshot comparison matches the approved screen document;
@@ -1007,7 +1018,9 @@ Looks at tickets in status IN_REVIEW and checks:
   design change, the reviewer rejects the ticket and reports that `/design` and re-approval are
   required; it does not approve an undocumented design change.
 
-Test/coverage standards are not set here; they live in `architecture/quality-aspects.md` and `architecture/coding-guidelines.md`.
+Test/coverage standards are not set here; they live in `agent/test-strategy.md` (test levels
+and required coverage), supported by `architecture/quality-aspects.md` (non-functional
+constraints) and `architecture/coding-guidelines.md` (project tooling and conventions).
 
 If the review is too large for one focused pass, it writes the findings and remaining checks
 to the ticket (or the `RQ` set), leaves it `IN_REVIEW`, and reports `checkpoint`; a fresh
@@ -1063,7 +1076,7 @@ Precondition: IAP is installed, `spec/` exists and the project contains source c
 Documents:
 - Works with: build and dependency manifests, module/folder structure, formatter/linter
   configuration, CI/CD and deployment definitions, UI/theming/style sources and existing
-  documentation; `spec/architecture/**`; `spec/references/**`;
+  documentation; `spec/architecture/**`; `spec/agent/**`;
   `spec/modules/**`; `spec/agent/source-ledger.md`;
   `spec/agent/reverse-engineering-report.md`.
 - May modify: `spec/architecture/**`; `spec/modules/**` (inferred modules and stacks, `status: draft`);
@@ -1097,8 +1110,8 @@ For UI projects it also reconstructs the project-specific UI artifacts:
   open questions where they cannot;
 - observations for `spec/requirements/user-interface/data/` where example data is evident.
 
-It does not rewrite the bundled `spec/references/gui-spec.md` or
-`spec/references/screen-workflow.md`; those are references, not reconstructed project state.
+It does not rewrite the bundled `spec/agent/gui-spec.md` or
+`spec/agent/screen-workflow.md`; those are references, not reconstructed project state.
 Open questions and low-confidence areas go into `spec/agent/reverse-engineering-report.md`.
 
 ### GUIDE
@@ -1305,7 +1318,7 @@ These must always hold. Any role that finds one violated must report it and stop
 - prototypes are generated artifacts; they are never hand-edited.
 - UI tickets that change user-visible screens default to `acceptance-type: HUMAN`.
 - screen ids are unique; flows, data fixtures, scenarios and data bindings resolve.
-- `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are bundled references; agents do not edit them as project design.
+- `spec/agent/gui-spec.md` and `spec/agent/screen-workflow.md` are bundled references; agents do not edit them as project design.
 
 `/reconcile` validates and repairs these; `/guide` reports violations it cannot repair.
 
@@ -1352,19 +1365,43 @@ These must always hold. Any role that finds one violated must report it and stop
 
 ### Installation
 
-The distribution bundle is the `skills/` and `commands/` folders, the `templates/` used to
-seed `spec/`, the `references/` folder with the bundled normative documents, and the process
-definition `idx-agentic-process.md` with `VERSION`. `skills/` holds the role logic plus its
-templates and scripts; `commands/` holds the thin slash-command wrappers, one per skill.
+The distribution bundle is the `skills/` and `commands/` folders. Role logic, templates,
+scripts and the `/bootstrap` assets live inside `skills/`; `commands/` holds the thin
+slash-command wrappers. No installer, repository-root `templates/` or `references/` folder is
+needed.
 
-Install IAP with the installer in the distribution repository (see `README.md`). It copies
-the skills and commands into the project's agent folder — `.opencode` (OpenCode) or `.claude`
-(Claude Code) — for a project-local installation, or into `~/.opencode` / `~/.claude` for a
-global installation.
+Install by copying both folders into the project's agent folder — `.opencode` (OpenCode) or
+`.claude` (Claude Code) — for a project-local installation, or into the equivalent global
+folder for a global installation. Commit a project-local tool folder so collaborators and
+cloud agents have it.
 
-The installer creates the missing `spec/` files from the bundled templates. Commit a
-project-local tool folder so collaborators and cloud agents have it. Generated `prototypes/`
-may be added to `.gitignore`; screen documents, flows, theme/components and data are versioned.
+Then run `/bootstrap` once in the project. It creates the `spec/` skeleton and an empty
+`spec/input.md`, and copies the bundled documents into `spec/agent/`:
+
+- `gui-spec.md` and `screen-workflow.md` — bundled references, refreshed on every bootstrap;
+- `test-strategy.md` — project-owned seed, created only when missing;
+- `idx-agentic-process.md` and `process-version.md` — process copy and version marker.
+
+`/bootstrap` never clears an existing `input.md` and never overwrites project content. It is
+also the upgrade path: replace the `commands/` and `skills/` folders, then run `/bootstrap`
+again. Generated `prototypes/` may be added to `.gitignore`; screen documents, flows,
+theme/components and data are versioned.
+
+### BOOTSTRAP
+
+Type: SUBAGENT
+Command: `/bootstrap`.
+Invoked by: HUMAN.
+Precondition: a project root. `spec/` may or may not exist.
+
+Creates the `spec/` folder skeleton and an empty `spec/input.md`; creates `.gitkeep` files in
+empty folders so the structure survives Git, and `spec/.gitignore` with `input.md`. Copies
+`gui-spec.md`, `screen-workflow.md`, `test-strategy.md`, `idx-agentic-process.md` and
+`process-version.md` into `spec/agent/`.
+It is idempotent: it preserves an existing `input.md`, never overwrites project content, and
+creates `test-strategy.md` only when missing. It does not create requirements, architecture
+stubs, tickets or the input ledger; those are generated on first use by the role that owns
+them. It reports the assets source, version, created/preserved files and any legacy paths.
 
 ### Agent host configuration
 
@@ -1385,42 +1422,42 @@ Fresh contexts per command and checkpoints at durability barriers are the primar
 
 ### Starting a project
 
-Install IAP in the project first (see `README.md`); the installer creates `spec/input.md` and
-the initial `spec/` folders.
-
-Then:
-1. The human describes the project in `spec/input.md`.
-2. `/facilitate` turns that input into requirements and architecture documents.
-3. `/facilitate` runs the project-shape interview: a single subproject is recorded in
+1. Copy `commands/` and `skills/` into the project's agent folder and run `/bootstrap`; it
+   creates the `spec/` skeleton and an empty `spec/input.md`.
+2. The human describes the project in `spec/input.md`.
+3. `/facilitate` turns that input into requirements and architecture documents.
+4. `/facilitate` runs the project-shape interview: a single subproject is recorded in
    `architecture/tech-stack.md`; multiple subprojects are written under `spec/modules/{module}/`.
    The human accepts the shape until `status: agreed`.
-4. Repeat the requirements and project-shape refinement loop until the picture is stable.
-5. For UI projects, `/design` creates or updates screen documents and the review prototype; the
+5. Repeat the requirements and project-shape refinement loop until the picture is stable.
+6. For UI projects, `/design` creates or updates screen documents and the review prototype; the
    human reviews and moves the screen documents to `approved`.
-6. `/plan` creates tickets; `/refine` promotes them to READY.
-7. `/implement` and `/review` drive the implementation loop.
-8. `/accept` closes the implementation and merges the code.
-9. Commit `spec/` together with the code.
+7. `/plan` creates tickets; `/refine` promotes them to READY.
+8. `/implement` and `/review` drive the implementation loop.
+9. `/accept` closes the implementation and merges the code.
+10. Commit `spec/` together with the code.
 
-Updating the process: pull the distribution and re-run its installer. It refreshes the
-command/skill definitions, the bundled `spec/references/gui-spec.md` and
-`spec/references/screen-workflow.md`, the process copy (`spec/agent/idx-agentic-process.md`) and
-the process marker. It creates `architecture/test-strategy.md` if it is missing (a
-project-owned seed). The content of
-`spec/requirements`, `spec/requirements/user-interface`, `spec/modules`, `spec/tickets` and
-`spec/agent/input-ledger.md` is never touched.
+Updating the process: replace the `commands/` and `skills/` folders and run `/bootstrap`
+again. It refreshes the bundled `spec/agent/gui-spec.md` and
+`spec/agent/screen-workflow.md`, the process copy (`spec/agent/idx-agentic-process.md`) and
+the process marker. It creates `spec/agent/test-strategy.md` only when it is missing (a
+project-owned seed). Apart from the refreshed references, process copy and marker, the content
+of `spec/requirements`, `spec/requirements/user-interface`, `spec/modules`, `spec/tickets` and
+the rest of `spec/agent/` — including `test-strategy.md`, the input ledger and lessons — is
+never touched.
 If the prototype builder changes, regenerate prototypes with `/design` or the project builder;
 do not hand-edit them.
-When a process change alters statuses, metadata fields or role contracts, re-running the
-installer updates the definitions and the process copy; the human then runs `/reconcile` to
-migrate existing tickets, screen documents and ledgers, and appends a short note to
-`spec/agent/input-ledger.md`.
+When a process change alters statuses, metadata fields or role contracts, replacing the
+definitions and running `/bootstrap` updates the process copy; the human then runs
+`/reconcile` to migrate existing tickets, screen documents and ledgers, and appends a short note
+to `spec/agent/input-ledger.md`.
 
 ### How to use this process in existing projects
 
-For an existing project the process is adopted in slices: install IAP first, then
-reverse-engineer the current reality into the requirement and architecture documents over time.
-It can be used before reverse-engineering is complete — the missing parts simply stay unresolved.
+For an existing project the process is adopted in slices: copy the `commands/` and `skills/`
+folders and run `/bootstrap`, then reverse-engineer the current reality into the requirement
+and architecture documents over time. It can be used before reverse-engineering is complete —
+the missing parts simply stay unresolved.
 
 Reverse-engineering is itself agent work, provided by additional subagents (command + skill).
 Because the requirement and architecture documents are co-owned (X), these agents never silently
@@ -1428,7 +1465,8 @@ overwrite human content: they write *provisional* content marked as inferred, to
 evidence and a report in `spec/agent/`, and the human accepts or corrects it.
 
 Order of adoption:
-1. Install IAP in the existing repository (see `README.md`).
+1. Copy the `commands/` and `skills/` folders into the existing repository and run
+   `/bootstrap` (see `README.md`).
 2. `/survey` and `/excavate` to reconstruct the project shape, architecture and requirements
    (repeat as code changes).
 3. The human reviews the inferred documents, corrects them, and accepts the project shape

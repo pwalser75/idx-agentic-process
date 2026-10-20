@@ -10,7 +10,7 @@ verbatim to the human.
 
 1. Load the `iap-designer` skill and follow it exactly.
 2. Precondition: the project shape is `agreed` and shows a UI, requirements and architecture
-   exist, and `spec/references/gui-spec.md` and `spec/references/screen-workflow.md` are
+   exist, and `spec/agent/gui-spec.md` and `spec/agent/screen-workflow.md` are
    available. If not, report it and stop.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
 

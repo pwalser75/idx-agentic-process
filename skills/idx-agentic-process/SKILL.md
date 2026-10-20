@@ -2,7 +2,7 @@
 name: idx-agentic-process
 description: >-
   Entry point for the idx Agentic Process (IAP), a human+agent development process driven
-  by a `spec/` folder and slash commands (/facilitate, /design, /plan, /refine,
+  by a `spec/` folder and slash commands (/bootstrap, /facilitate, /design, /plan, /refine,
   /implement, /review, /accept, /tickets, /excavate, /survey, /guide, /reconcile). Use at
   the start of a session in a repository that contains a `spec/` folder, or when the user
   mentions IAP, the idx agentic process, `spec/` requirements/architecture/tickets, an
@@ -91,33 +91,35 @@ project-root/
    ├─ architecture/                     # (X) non-functional design and constraints
    │  ├─ tech-stack.md                  # (X) single-subproject shape (created by shape refinement)
    │  ├─ integration.md                 # (X) integration with other systems, APIs
-   │  ├─ test-strategy.md               # (X) test levels and required coverage
    │  ├─ decomposition.md               # (X) module map (multi) or package map (single)
    │  ├─ coding-guidelines.md           # (X) naming, structure, error handling, testing
    │  ├─ quality-aspects.md             # (X) non-functional requirements
    │  ├─ prototype-builder.md           # (X) prototype-builder contract (tooling, not a requirement)
    │  └─ ...                            # (X) additional guidelines
-   ├─ references/                       # (X) bundled normative references (refreshed by the installer)
-   │  ├─ gui-spec.md                    # (X) normative gui-v2 screen format
-   │  └─ screen-workflow.md             # (X) screen authoring/review workflow
    ├─ modules/                          # (X) only when the project has >1 subproject
    │  └─ {module}/
    │     ├─ module.md                   # (X) artifact kind, purpose, boundaries, dependencies, status
    │     └─ tech-stack.md               # (X) language/version, frameworks, runtime, tooling
    ├─ tickets/{id}-{type}-{name}.md     # (X) work units
-   └─ agent/                            # (A) agent-owned workspace
+   └─ agent/                            # (A) agent-managed folder; bundled refs are read-only, test-strategy is co-owned
       ├─ input-ledger.md                # (A) append-only seed: accepted input + clarifications
       ├─ ticket-index.md                # (A) tickets <-> requirements/architecture links
       ├─ planning-log.md                # (A) last-seen revision/hash of spec/
       ├─ source-ledger.md               # (A) hash ledger of scanned sources
       ├─ reverse-engineering-report.md  # (A) open questions from /excavate & /survey
       ├─ lessons-learned-{role}.md      # (A) reusable lessons for one role
+      ├─ gui-spec.md                    # (A) bundled normative gui-v2 screen format (never edit)
+      ├─ screen-workflow.md             # (A) bundled screen authoring/review workflow (never edit)
+      ├─ test-strategy.md               # (X) project-owned test levels and coverage (from /bootstrap)
       ├─ process-version.md             # (A) IAP version used
       └─ idx-agentic-process.md         # (A) copy of this process
 ```
 
 Rules that follow:
 
+- **Missing files are normal.** `/bootstrap` seeds only the skeleton and bundled documents.
+  A role creates the file and parent directory on first write, and treats a missing file it
+  only reads as not defined yet. A missing spec file is not an error.
 - **Never edit `input.md` content.** The only agent action is to clear it after its
   content has been accepted into the ledger and the spec.
 - **Never silently overwrite (X) content.** When inferring, keep human content and add
@@ -143,8 +145,8 @@ Rules that follow:
   stacks), decomposition into modules/packages, coding guidelines, quality aspects
   (non-functional requirements) and, for projects with a UI, the project-specific UI
   artifacts (screen documents, theme, components) plus the bundled `gui-v2` format
-  (`spec/references/gui-spec.md`) and authoring workflow
-  (`spec/references/screen-workflow.md`).
+  (`spec/agent/gui-spec.md`) and authoring workflow
+  (`spec/agent/screen-workflow.md`).
 
 ## Project shape
 
@@ -271,6 +273,7 @@ change. See "Context hygiene and checkpoints" in the canonical process for the f
 
 | Role                  | Type     | Command       | Precondition                              |
 |-----------------------|----------|---------------|-------------------------------------------|
+| BOOTSTRAP             | SUBAGENT | `/bootstrap`  | project root; may exist                   |
 | FACILITATOR           | PRIMARY  | `/facilitate` | input non-empty or shape unsettled        |
 | UI-DESIGNER           | SUBAGENT | `/design`     | shape agreed, UI project                  |
 | PLANNER               | SUBAGENT | `/plan`       | project shape agreed                      |
@@ -344,31 +347,32 @@ Additional commands (also expressed as skills): `/tickets` (list open tickets), 
 
 ## Installation and adoption
 
-- **New project:** install IAP (see `README.md`) → write `spec/input.md` → `/facilitate` →
-  repeat until stable → settle the project shape (single `tech-stack.md`, or one module per
-  subproject) until it is `agreed` → `/plan` → `/refine` → `/implement` (with `/review`) →
-  `/accept` → commit `spec/` with the code.
-- **Existing project:** install IAP → `/survey` + `/excavate` to reconstruct the project shape,
-  architecture and requirements as provisional documents → the human reviews and accepts them,
-  including the shape and its stacks → then the normal loop. Reverse-engineering agents never
-  silently overwrite human content.
-- **Updating the process:** pull the distribution and re-run its installer. It refreshes the
-  command/skill definitions, the process copy and the version marker; the content of
-  `spec/requirements`, `spec/modules`, `spec/architecture`, `spec/tickets` and
-  `spec/agent/input-ledger.md` is never touched. After a process change that alters statuses or
-  metadata, the human runs `/reconcile` to migrate existing tickets and ledgers.
+- **New project:** copy the `commands/` and `skills/` folders into the project's agent folder,
+  run `/bootstrap` → write `spec/input.md` → `/facilitate` → repeat until stable → settle the
+  project shape (single `tech-stack.md`, or one module per subproject) until it is `agreed` →
+  `/plan` → `/refine` → `/implement` (with `/review`) → `/accept` → commit `spec/` with the
+  code.
+- **Existing project:** copy the folders and run `/bootstrap` → `/survey` + `/excavate` to
+  reconstruct the project shape, architecture and requirements as provisional documents → the
+  human reviews and accepts them, including the shape and its stacks → then the normal loop.
+  Reverse-engineering agents never silently overwrite human content.
+- **Updating the process:** replace the `commands/` and `skills/` folders and run `/bootstrap`.
+  It refreshes the bundled references, the process copy and the version marker; apart from
+  those, the content of `spec/requirements`, `spec/modules`, `spec/architecture`, `spec/tickets`
+  and `spec/agent/` — including `test-strategy.md`, the ledger and lessons — is never touched.
+  After a process change that alters statuses or metadata, the human runs `/reconcile` to
+  migrate existing tickets and ledgers.
 
 ## Installation
 
-The distribution bundle is the `skills/` and `commands/` folders, the `templates/` used to
-seed `spec/`, the `references/` folder with the bundled normative documents, and the process
-definition `idx-agentic-process.md`. The skills hold the role logic with their templates and
-scripts; `commands/` holds the thin slash-command wrappers.
+The distribution bundle is the `skills/` and `commands/` folders. The role logic, templates,
+scripts and `/bootstrap` assets live inside `skills/`; `commands/` holds the thin slash-command
+wrappers. There is no installer and no repository-root `templates/` or `references/` folder.
 
-Install IAP with the installer in the distribution repository. It copies the skills and
-commands into your project's agent folder — `.opencode` (OpenCode) or `.claude` (Claude Code)
-— for a project-local install, or into `~/.opencode` / `~/.claude` for a global install, and
-creates the initial `spec/` skeleton. See `README.md` for the exact commands.
+Copy both folders into the project's agent folder — `.opencode` (OpenCode) or `.claude`
+(Claude Code) — or into the equivalent global folder, then run `/bootstrap` once in the
+project. It creates the `spec/` skeleton and empty `spec/input.md`, and installs the bundled
+documents under `spec/agent/`. See `README.md` for the exact commands.
 
 ## Where to look next
 

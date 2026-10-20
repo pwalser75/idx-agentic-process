@@ -51,8 +51,8 @@ Exclude generated code, vendored dependencies and build output.
    conflicts with human content, do not overwrite: record the conflict in the report and
    leave the human content in place.
 6. **Write the report.** Put open questions, uncertainties and low-confidence areas in
-   `spec/agent/reverse-engineering-report.md`, each with evidence and a suggested next
-   step.
+   `spec/agent/reverse-engineering-report.md` (create it if missing), each with evidence and a
+   suggested next step.
 7. **Update the ledger** (`spec/agent/source-ledger.md`) with the new hashes, the commit and
    the run date-time.
 8. **Report** what was reconstructed, what changed since the last run, and the top open

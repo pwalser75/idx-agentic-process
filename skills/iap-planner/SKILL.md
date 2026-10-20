@@ -32,7 +32,7 @@ Otherwise planning is blocked.
 3. `spec/agent/planning-log.md` (create if missing) — the revision/hash of the
    requirements, architecture and project shape seen at the last `/plan` run.
 4. `spec/agent/input-ledger.md` — accepted input and prior clarifications; never repeat or
-   contradict them.
+   contradict them. Create it with a short append-only header if missing.
 5. Git history (`git log`, current branch) if the project is a repository.
 
 **Planning gate.** If the shape is not settled — for a single subproject a missing/non-agreed
@@ -59,7 +59,7 @@ project-shape refinement interview.
      it in your report and stop; you never block and never improvise.
    On re-invocation with the human's answers (the clearance):
    - first append each resolved decision (gap, advice, decision, date/time, human user) to
-     `spec/agent/input-ledger.md` (append-only), **ticket-agnostic and
+     `spec/agent/input-ledger.md` (append-only; create it if missing), **ticket-agnostic and
      implementation-agnostic** — a plain fact, requirement, constraint or decision, with no
      ticket ids/titles/branches and no existing code, files or symbols;
    - then append a dated clarification note (question → answer) to every ticket the answer

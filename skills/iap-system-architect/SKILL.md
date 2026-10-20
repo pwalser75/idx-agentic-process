@@ -70,13 +70,13 @@ Exclude generated code, vendored dependencies and build output.
    project UI components; inferred `spec/requirements/user-interface/screens/{screen-name}.md` stubs from observed
    routes/screens, with the `gui-v2` block and data/actions/navigation/interactions/states
    where they can be evidenced; and observations for `spec/requirements/user-interface/data/` where example data is
-   evident. `spec/references/gui-spec.md` is the bundled normative `gui-v2` format and
-   `spec/references/screen-workflow.md` the authoring workflow; read them to interpret
+   evident. `spec/agent/gui-spec.md` is the bundled normative `gui-v2` format and
+   `spec/agent/screen-workflow.md` the authoring workflow; read them to interpret
    screens but do not reconstruct or rewrite them. If there is no UI, say so.
 7. **Mark provenance.** Every reconstructed item carries `origin: inferred` and cites
    evidence (`{manifest}:{line}`, config path, folder, commit). Keep existing human content
    — add to it, never silently replace it; conflicts go to
-   `spec/agent/reverse-engineering-report.md`.
+   `spec/agent/reverse-engineering-report.md` (create it if missing).
 8. **Update the ledger** (`spec/agent/source-ledger.md`) with the new hashes, commit and run
    date-time.
 9. **Report** what was reconstructed, what changed, and the open questions — in particular the
