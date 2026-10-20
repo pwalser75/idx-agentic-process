@@ -85,6 +85,7 @@ project-root/
 │  │     ├─ flows/{flow-name}.md        # (X) Entry/exit, ordered screens, shared state, back/cancel behavior
 │  │     ├─ theme.gui                   # (X) Project theme and token overrides
 │  │     ├─ components/components.gui   # (X) Project-defined extended components
+│  │     ├─ assets/{file}               # (X) Design assets referenced by screens (images, review photos)
 │  │     └─ data/{screen-name}.json     # (X) Named scenarios and reserved `_state`
 │  ├─ architecture/                     # (X) Architectural design and requirements
 │  │  ├─ tech-stack.md                  # (X) Single-subproject shape (created by shape refinement)

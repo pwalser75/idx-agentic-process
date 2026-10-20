@@ -86,6 +86,7 @@ project-root/
    │     ├─ flows/{flow-name}.md        # (X) multi-screen journeys
    │     ├─ theme.gui                   # (X) project theme and token overrides
    │     ├─ components/components.gui   # (X) project-defined extended components
+   │     ├─ assets/{file}               # (X) design assets referenced by screens (images, review photos)
    │     └─ data/{screen-name}.json     # (X) example data and scenarios
    ├─ architecture/                     # (X) non-functional design and constraints
    │  ├─ tech-stack.md                  # (X) single-subproject shape (created by shape refinement)
