@@ -60,7 +60,7 @@ done
 
 # --- Locate the bundle ------------------------------------------------------------------
 
-for entry in idx-agentic-process.md VERSION skills commands templates/spec; do
+for entry in idx-agentic-process.md VERSION skills commands templates/spec references; do
   [ -e "$SOURCE_DIR/$entry" ] || die "not an IAP bundle: missing '$entry' in $SOURCE_DIR"
 done
 
@@ -163,20 +163,16 @@ if [ "$WITH_SPEC" -eq 1 ]; then
     SPEC_STATE="created at $PROJECT_DIR/spec"
   fi
 
+  # The spec/ skeleton is created once and then owned by the project.
   mkdir -p "$PROJECT_DIR/spec"
   copy_missing "$SOURCE_DIR/templates/spec" "$PROJECT_DIR/spec"
   [ -f "$PROJECT_DIR/spec/input.md" ] || : > "$PROJECT_DIR/spec/input.md"
 
   # Bundled references are refreshed on upgrade.
-  refresh "$SOURCE_DIR/templates/gui-spec.md" \
+  refresh "$SOURCE_DIR/references/gui-spec.md" \
     "$PROJECT_DIR/spec/architecture/gui-spec.md"
-  refresh "$SOURCE_DIR/templates/screen-workflow.md" \
+  refresh "$SOURCE_DIR/references/screen-workflow.md" \
     "$PROJECT_DIR/spec/architecture/screen-workflow.md"
-
-  # Project guidance is created once and then owned by the project.
-  [ -f "$PROJECT_DIR/spec/architecture/test-strategy.md" ] || \
-    refresh "$SOURCE_DIR/templates/test-strategy.md" \
-      "$PROJECT_DIR/spec/architecture/test-strategy.md"
 
   # Record the process version and keep a copy of the process definition.
   refresh "$SOURCE_DIR/idx-agentic-process.md" \

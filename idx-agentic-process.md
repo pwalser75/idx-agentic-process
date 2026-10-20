@@ -145,13 +145,15 @@ the requirements/architecture documents. UI-DESIGNER (`/design`) then turns it i
 documents, project theme/components and a review prototype. FACILITATOR does not edit
 `spec/screens/`, `spec/theme.gui` or `spec/components/components.gui` directly.
 
-Clarifications are input too: questions raised by FACILITATOR, UI-DESIGNER, PLANNER or ANALYST
-(technology choices, implementation variants, ambiguous requirements, UI data/actions/behavior)
-and the human's answers are recorded in `input-ledger.md` before the role acts on them. Like
-facilitated input, these entries are append-only and carry date/time, human user and the
-resolution. FACILITATOR records the `input.md` it accepts and any clarification it resolves;
-DESIGN, PLAN and REFINE record the clarifications they resolve, so they are not lost and are
-not re-recorded if the same fact later arrives via `input.md`.
+Clarifications are input too: questions raised by FACILITATOR, UI-DESIGNER, PLANNER, ANALYST
+or REVIEWER (technology choices, implementation variants, ambiguous requirements, UI
+data/actions/behavior) and the human's answers are recorded before the role acts on them —
+the durable, project-level part in `input-ledger.md`, ticket-local details on the affected
+ticket. Like facilitated input, these entries are append-only and carry date/time, human user
+and the resolution. FACILITATOR records the `input.md` it accepts and any
+clarification it resolves; DESIGN, PLAN, REFINE and REVIEW record the clarifications they
+resolve, so they are not lost and are not re-recorded if the same fact later arrives via
+`input.md`.
 
 Recorded input is ticket-agnostic and implementation-agnostic. Every ledger entry states a
 fact, requirement, constraint or decision in plain terms, without referencing tickets (no
@@ -159,14 +161,17 @@ ids, titles, branches) and without referencing existing code (no files, symbols 
 implementation details). The ledger drives the tickets and the implementation, which happen
 downstream; the tickets and the code never flow back into the ledger.
 
-UI-DESIGNER, PLANNER and ANALYST do not guess past ambiguity. When they find a gap or an impediment that
-needs a human decision (missing or ambiguous requirements, a technology or implementation
-choice, conflicting constraints, a blocker, a ticket that cannot be made READY), they state
-the gap, advise on the options — with a recommendation and the trade-offs — and prompt the human to capture the decision.
-They never block and never improvise around it: they return the open
-questions in their report and stop. Only once the human has decided do they record the
-decision (gap, advice, decision, date/time, human user) in `input-ledger.md`, phrased as
-ticket-agnostic, implementation-agnostic input, and continue.
+No role guesses past ambiguity. When a role finds a gap or an impediment that needs a human
+decision (missing or ambiguous requirements, a technology or implementation choice,
+conflicting constraints, a blocker, a ticket that cannot be made READY), it asks
+interview-style: one compact numbered set; for each question, the gap, two or three viable
+options with trade-offs, a recommendation and why, and what the answer changes. It records
+the open questions where the work resumes — the ticket's comments for PLANNER, ANALYST and
+REVIEWER, or the screen document's open questions for UI-DESIGNER — returns them in its
+report and stops. It never blocks and never improvises. Only once the human has decided does
+it record the decision (gap, advice, decision, date/time, human user) in `input-ledger.md`,
+phrased as ticket-agnostic, implementation-agnostic input; note a ticket-local clarification
+on the affected ticket; and continue.
 
 ## Requirements
 
@@ -462,9 +467,9 @@ prototype: {prototype}
 
 ### Comments
 
-During work, `## Comments` is an append-only running log: dated notes from `/refine`,
-`/implement`, `/review` and human decisions. Never rewrite or remove them while the ticket is
-open.
+During work, `## Comments` is an append-only running log: dated notes from `/plan`, `/refine`,
+`/implement`, `/review`, planning clarifications, review questions/answers and human
+decisions. Never rewrite or remove them while the ticket is open.
 
 When `/accept` closes a ticket, it replaces the running log with one concise, dated
 post-merge summary. This is the only permitted rewrite of a ticket's comments. Keep only
@@ -492,7 +497,7 @@ ticket, put it there and leave at most a short reference in the summary.
     │                                                                            │ /review (accepted)
     │                                                                            ▼
     │                                                                        ╭──────╮
-    └◀─────────────────────── non-metadata edit of a ticket──────────────────│ DONE │
+    └◀────────────────────── scope-changing edit of a ticket─────────────────│ DONE │
                                                                              ╰──────╯
                                                                                  | /accept (human or agent)
                                                                                  ▼
@@ -518,8 +523,12 @@ deprecated`) and do not use the ticket status diagram. A UI ticket may only be p
 | IN_REVIEW                  | READY       | `/review` (rework)            | Reviewer                                  | comments state what remains                  |
 | IN_REVIEW                  | DONE        | `/review` (accept)            | Reviewer                                  | accepted                                     |
 | DONE                       | CLOSED      | `/accept` (accept)            | Orchestrator (AUTOMATIC) or Human (HUMAN) | accepted, feature branch can be merged       |
-| DRAFT/READY/IN_REVIEW/DONE | DRAFT       | non-metadata edit of a ticket | (anyone)                                  | forces re-refinement                         |
+| DRAFT/READY/IN_REVIEW/DONE | DRAFT       | scope-changing edit of a ticket | (anyone)                                | forces re-refinement                         |
 | CLOSED                     | —           | (none, terminal)              | —                                         | immutable; follow-up work is a new ticket    |
+
+`/review` may append review questions and answers to a ticket's comments without changing its
+status; the ticket stays `IN_REVIEW` until the review concludes. Questions and answers use
+stable `RQ` ids so a later `/review` resumes them instead of re-asking.
 
 ## Release Notes
 
@@ -642,7 +651,8 @@ Design guidelines for the agents:
 - Use the small read-only scripts in your skill where they help; adapt them in place or record a better one in your lessons file.
 - Return exactly one concise report: what was done, the evidence, and any questions/blockers.
 - If an invariant is violated, or a precondition is not met, stop and report it; never improvise around it.
-- Editing a ticket's Description, Tasks, Acceptance criteria or Comments is a non-metadata edit: set the ticket back to DRAFT.
+- **Ask, don't assume.** When a fact, requirement, behavior or implementation choice is unclear, ask interview-style with viable options, trade-offs and a recommendation, and wait for the human. Never encode an assumption as fact.
+- Editing a ticket's Description, Tasks or Acceptance criteria is a non-metadata edit: set the ticket back to DRAFT. Dated workflow notes by `/plan`, `/refine`, `/implement`, `/review` and human answers in `## Comments` are not content edits and do not change the status; a comment that changes scope or requirements does.
 - Optimize the skills to work as efficiently as possible.
 
 ### FACILITATOR
@@ -763,12 +773,14 @@ the UI ticket: it returns the blocker in its report and recommends `/design`.
 It also checks if any ticket in status IN_PROGRESS exists which is not claimed by an active subagent and whose branch does not exist, and sets it back to status READY.
 A ticket whose branch still exists is left for the RECONCILER (see Branches).
 It verifies the blocked-by attribute of existing tickets and checks if these tickets actually exist, and that no cyclic dependencies in the blockings exist.
-When it needs a decision, it surfaces the gap or impediment explicitly — the open question,
-the viable options, and which it recommends — and returns them in its report; it never
-guesses and never blocks. On re-invocation with the human's answers (the human's clearance)
-it records each resolved decision (gap, advice, decision, date/time, human user) in
+When it needs a decision, it asks interview-style — a numbered set of open questions, each
+with the viable options, trade-offs and its recommendation — and returns them in its report;
+it never guesses and never blocks. On re-invocation with the human's answers (the human's
+clearance) it records each resolved decision (gap, advice, decision, date/time, human user) in
 `spec/agent/input-ledger.md` — phrased as ticket-agnostic, implementation-agnostic input —
-before creating or updating tickets.
+and notes the clarification on every affected ticket as a dated comment before creating or
+updating tickets. A clarification that changes a ticket's Description, Tasks or Acceptance
+criteria is applied as a normal DRAFT edit.
 It commits the created/updated tickets on the main branch as `plan: {summary}`.
 
 ### ANALYST
@@ -869,8 +881,9 @@ Invoked by: the orchestrating agent, after the IMPLEMENTOR hands a ticket over i
 Documents:
 - Works with: `spec/tickets/**` (IN_REVIEW tickets); `spec/requirements/**`;
   `spec/architecture/**`; `spec/modules/**`; for UI work, `spec/screens/**` and
-  `spec/data/**`; `prototypes/**`; the feature branch.
-- May modify: the reviewed ticket in `spec/tickets/**` (status DONE or READY, comments).
+  `spec/data/**`; `prototypes/**`; `spec/agent/input-ledger.md`; the feature branch.
+- May modify: the reviewed ticket in `spec/tickets/**` (status DONE or READY, comments);
+  `spec/agent/input-ledger.md` (append resolved, durable clarifications only).
 
 Looks at tickets in status IN_REVIEW and checks:
 - all tasks are done and every acceptance criterion is fulfilled.
@@ -891,6 +904,17 @@ Looks at tickets in status IN_REVIEW and checks:
   required; it does not approve an undocumented design change.
 
 Test/coverage standards are not set here; they live in `architecture/quality-aspects.md` and `architecture/coding-guidelines.md`.
+
+When the evidence is ambiguous or the expected behavior is unclear — an acceptance criterion
+is contradictory, the requirements or screen document are silent, or the evidence supports
+more than one reading — the reviewer does not guess and does not reject the implementor for
+its own uncertainty. It asks interview-style: a numbered set of `RQ` questions, each with the
+options, trade-offs and a recommendation, and what the answer changes. It appends them to the
+ticket's `## Comments`, leaves the ticket `IN_REVIEW` and stops. On re-invocation with the
+human's answers it appends the answers and a dated clarification note, records a durable
+project-level decision in `spec/agent/input-ledger.md` (ticket-agnostic,
+implementation-agnostic), and continues. Unanswered questions stay on the ticket, so a later
+`/review` resumes them by `RQ` id.
 
 When it is satisfied with the result, it sets the ticket status to DONE and commits that change.
 Otherwise, it comments on the ticket what else needs to be done before the ticket can be closed, and sets the ticket back to READY.
@@ -1046,6 +1070,8 @@ Audit:
 Safe repairs (idempotent, never discard work):
 - return to main and clean the working tree (never drop uncommitted work; stash it and report it).
 - reset an abandoned IN_PROGRESS or IN_REVIEW ticket to READY; keep its branch and report it.
+  An IN_REVIEW ticket with open review questions and a branch is waiting for a human, not
+  abandoned — leave it.
 - delete branches already merged into main.
 - remove dangling `blocked-by` references; report cycles.
 - commit uncommitted design/planning artifacts (module documents, screen documents, flows,
@@ -1214,9 +1240,9 @@ These must always hold. Any role that finds one violated must report it and stop
 ### Installation
 
 The distribution bundle is the `skills/` and `commands/` folders, the `templates/` used to
-create `spec/`, and the process definition `idx-agentic-process.md` with `VERSION`. `skills/`
-holds the role logic plus its templates and scripts; `commands/` holds the thin slash-command
-wrappers, one per skill.
+seed `spec/`, the `references/` folder with the bundled normative documents, and the process
+definition `idx-agentic-process.md` with `VERSION`. `skills/` holds the role logic plus its
+templates and scripts; `commands/` holds the thin slash-command wrappers, one per skill.
 
 Install IAP with the installer in the distribution repository (see `README.md`). It copies
 the skills and commands into the project's agent folder — `.opencode` (OpenCode) or `.claude`
@@ -1249,7 +1275,8 @@ Then:
 Updating the process: pull the distribution and re-run its installer. It refreshes the
 command/skill definitions, the bundled `architecture/gui-spec.md` and
 `architecture/screen-workflow.md`, the process copy (`spec/agent/idx-agentic-process.md`) and
-the process marker. It creates `architecture/test-strategy.md` if it is missing. The content of
+the process marker. It creates `architecture/test-strategy.md` if it is missing (a
+project-owned seed). The content of
 `spec/requirements`, `spec/modules`, `spec/screens`, `spec/flows`, `spec/components`,
 `spec/theme.gui`, `spec/data`, `spec/tickets` and `spec/agent/input-ledger.md` is never touched.
 If the prototype builder changes, regenerate prototypes with `/design` or the project builder;

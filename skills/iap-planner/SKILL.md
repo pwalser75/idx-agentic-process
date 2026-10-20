@@ -29,7 +29,9 @@ Otherwise planning is blocked.
    body only to edit it or to check it for duplicate work.
 3. `spec/agent/planning-log.md` (create if missing) — the revision/hash of the
    requirements, architecture and project shape seen at the last `/plan` run.
-4. Git history (`git log`, current branch) if the project is a repository.
+4. `spec/agent/input-ledger.md` — accepted input and prior clarifications; never repeat or
+   contradict them.
+5. Git history (`git log`, current branch) if the project is a repository.
 
 **Planning gate.** If the shape is not settled — for a single subproject a missing/non-agreed
 `architecture/tech-stack.md`, or for multiple subprojects missing/non-agreed modules — do not
@@ -44,16 +46,25 @@ project-shape refinement interview.
    no previous entry, treat everything as new.
 2. **Decide the work.** For each change, decide whether it needs a ticket and whether an
    existing open ticket already covers it. Do not duplicate work.
-3. **Surface gaps and impediments.** Where a human decision is needed — a missing or
-   ambiguous requirement, a technology or implementation choice, conflicting constraints, a
-   blocker, or a change that cannot be turned into a clear ticket — do not guess. State the
-   gap, lay out the viable options with their trade-offs, say which you recommend, and
-   return them as open questions in your report and stop; you never block and never
-   improvise. On re-invocation with the human's answers (the clearance), first append each
-   resolved decision (gap, advice, decision, date/time, human user) to
-   `spec/agent/input-ledger.md` (append-only), **ticket-agnostic and
-   implementation-agnostic** — a plain fact, requirement, constraint or decision, with no
-   ticket ids/titles/branches and no existing code, files or symbols — then continue.
+3. **Surface gaps and impediments — ask, don't assume.** Where a human decision is needed — a
+   missing or ambiguous requirement, a technology or implementation choice, conflicting
+   constraints, a blocker, or a change that cannot be turned into a clear ticket — do not
+   guess. Ask interview-style:
+   - one compact numbered set; for each question give the gap, two or three viable options
+     with their trade-offs, your recommendation and why, and which ticket or decision it
+     blocks;
+   - record the set in the `## Comments` of every affected ticket that already exists, return
+     it in your report and stop; you never block and never improvise.
+   On re-invocation with the human's answers (the clearance):
+   - first append each resolved decision (gap, advice, decision, date/time, human user) to
+     `spec/agent/input-ledger.md` (append-only), **ticket-agnostic and
+     implementation-agnostic** — a plain fact, requirement, constraint or decision, with no
+     ticket ids/titles/branches and no existing code, files or symbols;
+   - then append a dated clarification note (question → answer) to every ticket the answer
+     affects, including a ticket created in this run. Apply changes to a ticket's
+     Description, Tasks or Acceptance criteria as normal DRAFT edits.
+   If some questions remain unanswered, act only on what is unblocked, note the open items on
+   the affected tickets and report them again.
 4. **Create or update tickets.** File name `spec/tickets/{id}-{type}-{name}.md`, with a
    zero-padded sequence id (max existing id + 1, never reused) and a lower-kebab slug. On
    a collision, keep the existing ticket and allocate the next free id. Use the template:
@@ -94,9 +105,10 @@ project-shape refinement interview.
    For a single-subproject project, use `-` in the Module column and link
    `architecture/tech-stack.md` in the Architecture column.
 
-6. **Reset changed tickets to DRAFT.** A non-metadata change to a ticket in DRAFT, READY,
-   IN_REVIEW or DONE brings it back to DRAFT (forced re-refinement). Tickets in
-   IN_PROGRESS are exempt while being implemented.
+6. **Reset changed tickets to DRAFT.** A scope-changing change (Description, Tasks or
+   Acceptance criteria) to a ticket in DRAFT, READY, IN_REVIEW or DONE brings it back to
+   DRAFT (forced re-refinement). Dated comments and clarifications do not reset it. Tickets
+   in IN_PROGRESS are exempt while being implemented.
 7. **Reclaim abandoned work.** Reset an IN_PROGRESS ticket to READY only when its feature
    branch does not exist (and no active subagent holds it); report it as a repaired
    violation. A ticket whose branch still exists is left for the RECONCILER (see the
@@ -114,14 +126,18 @@ project-shape refinement interview.
 ## Rules and behaviour
 
 - **You only plan.** Never write product code, tests or configuration.
-- **Ask, don't guess.** Surface every gap or impediment that needs a human decision, with the
-  options and your recommendation, and wait for clearance before acting on it.
+- **Ask, don't guess.** Surface every gap or impediment that needs a human decision, as a
+  compact numbered set with the options, trade-offs and your recommendation, and wait for
+  clearance before acting on it.
 - **Never edit `input.md`, requirements or architecture.** If they are inconsistent, note
   it for the FACILITATOR rather than fixing them yourself.
 - **Append resolved clarifications to the ledger — ticket- and implementation-agnostic.** You
   may append the human's answers to `spec/agent/input-ledger.md`; write them as plain
   facts/requirements/constraints/decisions with no ticket references and no references to
   existing code. Never rewrite, reorder or remove past entries.
+- **Note the clarification on the ticket too.** The ledger holds the project-level fact; the
+  affected ticket gets a dated `Clarification: question → answer` comment so the implementor
+  and reviewer see what was decided without reading the whole ledger.
 - **One concern per ticket**, sized to be implemented and reviewed in one go. Split
   oversized changes; do not bundle unrelated work.
 - **Every ticket gets a task breakdown and acceptance criteria**; without them it cannot

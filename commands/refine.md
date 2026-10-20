@@ -11,9 +11,10 @@ and any questions verbatim to the human.
 2. Precondition: none. It may be run at any time.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
 
-The analyst surfaces any gap or impediment that needs a human decision, with the options and
-its recommendation. Relay those verbatim and re-invoke it with the human's answers; the
-analyst records each resolved decision in `spec/agent/input-ledger.md` — ticket-agnostic and
-implementation-agnostic (no ticket or code references) — before acting on it.
+The analyst surfaces any gap or impediment that needs a human decision as an interview-style
+numbered set: question, options with trade-offs, and its recommendation. Relay those verbatim
+and re-invoke it with the human's answers. The analyst records each resolved decision in
+`spec/agent/input-ledger.md` — ticket-agnostic and implementation-agnostic (no ticket or code
+references) — notes it on the affected ticket, and then acts on it.
 
 Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

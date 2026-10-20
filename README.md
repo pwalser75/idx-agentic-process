@@ -9,7 +9,7 @@ work forward in small, gated loops without ever silently overwriting what a huma
 
 > The canonical process definition lives in [idx-agentic-process.md](idx-agentic-process.md).
 > It is **read-only for agents** and only ever changed by humans. Everything in this
-> repository (skills, commands, templates) is derived from it.
+> repository (skills, commands, templates, references) is derived from it.
 
 ---
 
@@ -54,9 +54,11 @@ IAP drives development iteratively:
   optional `blocked-by`, a task breakdown and acceptance criteria.
 - **Human gates, not agent gates** — commands are invoked by humans; agents never invent
   requirements, and implementation reaches `main` only through `/accept`.
-- **Ask before you assume** — `/plan` and `/refine` never guess past a gap or impediment:
-  they state it, advise on the options, ask the human for clearance, and record the decision
-  in the input ledger before acting on it.
+- **Ask before you assume** — no agent guesses past a gap or impediment. `/plan`, `/refine`
+  and `/review` ask interview-style: numbered questions, options with trade-offs, and a
+  recommendation. The durable decision is recorded in the input ledger and noted on the
+  affected ticket before the agent continues; open review questions stay on the ticket until
+  answered.
 - **Implement until stuck** — the orchestrator runs `implement → review → accept` as a single
   loop, fully closing AUTOMATIC tickets (merge included) and pausing only for HUMAN
   acceptance or a decision that needs a human.
@@ -143,9 +145,11 @@ blocked-by: 0005, 0006
 ## Comments
 ```
 
-`## Comments` is an append-only running log while the ticket is open. When `/accept` closes
-the ticket, it replaces the log with a concise post-merge summary that keeps only information
-still useful after the merge.
+`## Comments` is an append-only running log while the ticket is open; it carries dated
+clarifications from `/plan`, `/refine`, `/implement` and `/review`, plus human answers. Review
+questions and answers use stable `RQ` ids, so a later `/review` resumes them instead of
+re-asking. When `/accept` closes the ticket, it replaces the log with a concise post-merge
+summary that keeps only information still useful after the merge.
 
 **Metadata:** `id` (zero-padded, monotonic, never reused), `created` (ISO-8601), `type`,
 `status`, `acceptance-type` (`AUTOMATIC` default | `HUMAN`), `blocked-by` (ids of blocking
@@ -162,9 +166,13 @@ DRAFT ──/refine──▶ READY ──/implement──▶ IN_PROGRESS ──(
                                             /review (accept) ──▶ DONE ──/accept──▶ CLOSED
 ```
 
-A non-metadata edit (Description, Tasks, Acceptance criteria, Comments) of a ticket in
-DRAFT/READY/IN_REVIEW/DONE resets it to DRAFT. Setting `acceptance-type` or `blocked-by` is
-a metadata edit and does not change the status.
+A scope-changing edit (Description, Tasks or Acceptance criteria) of a ticket in
+DRAFT/READY/IN_REVIEW/DONE resets it to DRAFT. Dated workflow notes and human answers in
+`## Comments` do not reset the status; a comment that changes scope or requirements does.
+Setting `acceptance-type` or `blocked-by` is a metadata edit and does not change the status.
+
+`/review` may append review questions and answers to a ticket's comments while leaving it
+`IN_REVIEW`; the review resumes from those questions on the next invocation.
 
 Priorities when picking work: **BUG > IMPROVEMENT > STORY**.
 
@@ -197,12 +205,15 @@ that has it installed understands the whole process.
 IAP ships as a bundle: the [`skills/`](skills/) folder (one folder per role, each with a
 `SKILL.md` per the open [Agent Skills](https://agentskills.io) standard), the
 [`commands/`](commands/) folder (one thin wrapper per slash command), the
-[`templates/`](templates/) folder used to create `spec/`, the process definition
-[`idx-agentic-process.md`](idx-agentic-process.md) and `VERSION`. Templates and scripts live
-inside the skill that uses them where possible:
+[`templates/`](templates/) folder used to seed `spec/`, the
+[`references/`](references/) folder with the bundled normative documents, the process
+definition [`idx-agentic-process.md`](idx-agentic-process.md) and `VERSION`. Templates and
+scripts live inside the skill that uses them where possible:
 
-- **templates** — the `spec/` skeleton and the bundled architecture references
-  (`gui-spec.md`, `screen-workflow.md`, `test-strategy.md`) in `templates/`;
+- **templates** — the copy-once `spec/` skeleton in `templates/spec/`, including the
+  project-owned `architecture/test-strategy.md`;
+- **references** — the installer-refreshed `gui-spec.md` and `screen-workflow.md` in
+  `references/`;
 - the input, project-shape and ticket templates in `iap-facilitator` and `iap-planner`;
 - small read-only scripts inside the agent skills that need them, instead of one shared
   external helper.
@@ -242,9 +253,10 @@ local-only `spec/input.md`).
 The installer:
 - copies `skills/` and `commands/` into the project's tool folder;
 - creates the missing parts of `spec/` from `templates/spec/` — an empty `spec/input.md`,
-  the requirement and architecture folders, the ticket folder and the agent ledger;
-- installs the bundled architecture references `gui-spec.md`, `screen-workflow.md` and
-  `test-strategy.md` into `spec/architecture/`;
+  the requirement and architecture folders (including the project-owned
+  `architecture/test-strategy.md`), the ticket folder and the agent ledger;
+- refreshes the bundled architecture references `gui-spec.md` and `screen-workflow.md` in
+  `spec/architecture/`;
 - records the IAP version in `spec/agent/process-version.md`.
 
 The installer does not create `architecture/tech-stack.md` or `spec/modules/`; the
@@ -370,11 +382,11 @@ idx-agentic-process/
 │  ├─ facilitate.md  design.md  plan.md  refine.md
 │  ├─ implement.md  review.md  accept.md  tickets.md
 │  └─ excavate.md  survey.md  guide.md  reconcile.md
-├─ templates/                   # files the installer puts into spec/
-│  ├─ spec/                     # spec/ skeleton (folders, stubs, ledger, .gitignore)
-│  ├─ gui-spec.md               # bundled gui-v2 reference
-│  ├─ screen-workflow.md        # bundled screen workflow reference
-│  └─ test-strategy.md          # bundled test strategy reference
+├─ references/                  # bundled normative references (refreshed by the installer)
+│  ├─ gui-spec.md               # gui-v2 format and UI design guide
+│  └─ screen-workflow.md        # screen authoring, review and prototype workflow
+├─ templates/                   # files the installer seeds into spec/ (never overwrites)
+│  └─ spec/                     # spec/ skeleton (folders, stubs, ledger, test strategy)
 └─ skills/                      # one folder per skill
    ├─ idx-agentic-process/      # process overview skill
    ├─ iap-facilitator/          # SKILL.md + input and project-shape templates

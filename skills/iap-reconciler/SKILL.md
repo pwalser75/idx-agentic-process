@@ -43,6 +43,8 @@ only safe, idempotent, non-destructive repairs.
 - return to `main` and clean the working tree — never drop uncommitted work; stash it and
   report it.
 - reset an abandoned IN_PROGRESS or IN_REVIEW ticket to READY; keep its branch and report it.
+  An IN_REVIEW ticket with open review questions and a branch is waiting for a human, not
+  abandoned — leave it.
 - delete branches already merged into `main`.
 - remove dangling `blocked-by` references; report cycles.
 - commit uncommitted design/planning artifacts (project-shape documents, screen documents,

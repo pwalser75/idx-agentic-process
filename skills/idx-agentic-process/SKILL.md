@@ -121,11 +121,11 @@ Rules that follow:
 - **Never silently overwrite (X) content.** When inferring, keep human content and add
   provisional material marked `origin: inferred` with evidence.
 - **`spec/agent/input-ledger.md` is append-only.** FACILITATOR records accepted input and
-  resolved clarifications; PLANNER and ANALYST append the clarifications and decisions they
-  resolve (with the human's clearance). Entries are ticket-agnostic and
-  implementation-agnostic — plain facts, requirements, constraints or decisions, never
-  referencing tickets or existing code, because the ledger drives the tickets and the
-  implementation downstream. Never rewrite, reorder or remove past entries.
+  resolved clarifications; UI-DESIGNER, PLANNER, ANALYST and REVIEWER append the
+  clarifications and decisions they resolve (with the human's clearance). Entries are
+  ticket-agnostic and implementation-agnostic — plain facts, requirements, constraints or
+  decisions, never referencing tickets or existing code, because the ledger drives the
+  tickets and the implementation downstream. Never rewrite, reorder or remove past entries.
 - **`spec/tickets/` is (X).** Agents create and process tickets; a human may write one,
   using the template with a unique `id` and `status: DRAFT`.
 
@@ -183,9 +183,10 @@ blocked-by: {blocked-by}
 ## Comments
 ```
 
-`## Comments` is an append-only running log while the ticket is open. When `/accept` closes
-the ticket, it replaces the log with a concise post-merge summary that keeps only information
-that still matters after the merge.
+`## Comments` is an append-only running log while the ticket is open; it carries dated
+clarifications and review questions/answers. Review questions use stable `RQ` ids so a later
+`/review` resumes them. When `/accept` closes the ticket, it replaces the log with a concise
+post-merge summary that keeps only information that still matters after the merge.
 
 ### Metadata
 
@@ -229,18 +230,22 @@ DRAFT ──/refine──▶ READY ──/implement──▶ IN_PROGRESS ──(
                                             /review (accept) ──▶ DONE ──/accept──▶ CLOSED
 ```
 
-A non-metadata edit (Description, Tasks, Acceptance criteria, Comments) of a ticket in
-DRAFT/READY/IN_REVIEW/DONE resets it to DRAFT. Setting `acceptance-type` or `blocked-by`
-is a metadata edit and does not change the status. A reviewer's rework comment is the one
-exception: it moves IN_REVIEW → READY.
+A scope-changing edit (Description, Tasks or Acceptance criteria) of a ticket in
+DRAFT/READY/IN_REVIEW/DONE resets it to DRAFT. Dated workflow notes and human answers in
+`## Comments` do not change the status; a comment that changes scope or requirements does.
+Setting `acceptance-type` or `blocked-by` is a metadata edit and does not change the status.
+A reviewer's rework comment moves IN_REVIEW → READY, and review questions leave the ticket
+IN_REVIEW until the review concludes.
 
 ## Roles
 
 Each named role is a skill with a matching command. A SUBAGENT role runs in its own
 isolated context as a subtask, so its work never pollutes the orchestrator's context. A
 SUBAGENT never blocks on input: it returns its questions in its report, and the invoking
-agent relays them and re-invokes it with the answers. The orchestrator must not do a
-SUBAGENT's work itself.
+agent relays them and re-invokes it with the answers. Questions are interview-style — a
+numbered set with options, trade-offs and a recommendation — and are recorded where the work
+resumes (ticket comments for planning, refinement and review; screen open questions for
+design). The orchestrator must not do a SUBAGENT's work itself.
 
 The IMPLEMENTOR loops only up to the handover: when it leaves a ticket IN_REVIEW and
 reports, the orchestrating agent runs the REVIEWER in a separate SUBAGENT context for that
@@ -282,11 +287,14 @@ Additional commands (also expressed as skills): `/tickets` (list open tickets), 
    blockers.
 7. **If a precondition is not met or an invariant is violated, stop and report it** —
    never improvise around it.
-8. **Keep verbosity low and write plain English** — no "agentish" filler or corporate
+8. **Ask, don't assume.** When a fact, requirement, behavior or implementation choice is
+   unclear, ask interview-style with viable options, trade-offs and a recommendation, and
+   wait for the human. Never encode an assumption as fact.
+9. **Keep verbosity low and write plain English** — no "agentish" filler or corporate
    lingo ("delve", "leverage", …).
-9. **Learn and script.** Read your `lessons-learned-{role}.md` before work and update it after.
-   Keep small, read-only scripts in your skill or record them in your lessons; there is no
-   shared external helper.
+10. **Learn and script.** Read your `lessons-learned-{role}.md` before work and update it after.
+    Keep small, read-only scripts in your skill or record them in your lessons; there is no
+    shared external helper.
 
 ## Collaboration (git)
 
@@ -339,8 +347,9 @@ Additional commands (also expressed as skills): `/tickets` (list open tickets), 
 ## Installation
 
 The distribution bundle is the `skills/` and `commands/` folders, the `templates/` used to
-create `spec/`, and the process definition `idx-agentic-process.md`. The skills hold the role
-logic with their templates and scripts; `commands/` holds the thin slash-command wrappers.
+seed `spec/`, the `references/` folder with the bundled normative documents, and the process
+definition `idx-agentic-process.md`. The skills hold the role logic with their templates and
+scripts; `commands/` holds the thin slash-command wrappers.
 
 Install IAP with the installer in the distribution repository. It copies the skills and
 commands into your project's agent folder — `.opencode` (OpenCode) or `.claude` (Claude Code)

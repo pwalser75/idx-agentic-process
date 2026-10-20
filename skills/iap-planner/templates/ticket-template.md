@@ -27,5 +27,7 @@ ticket addresses.}
 
 ## Comments
 
-<!-- Append-only running log of dated /refine, /implement, /review and human notes.
+<!-- Append-only running log of dated /refine, /implement, /review and human notes,
+     including planning clarifications and review questions/answers. Review questions use
+     stable RQ ids so a later /review resumes them.
      /accept replaces it with a concise post-merge summary when the ticket is closed. -->

@@ -14,9 +14,10 @@ and any questions verbatim to the human.
    interview; do not plan.
 3. Additional guidance from the human (may be empty): $ARGUMENTS
 
-The planner surfaces any gap or impediment that needs a human decision, with the options and
-its recommendation. Relay those verbatim and re-invoke it with the human's answers; the
-planner records each resolved decision in `spec/agent/input-ledger.md` — ticket-agnostic and
-implementation-agnostic (no ticket or code references) — before acting on it.
+The planner surfaces any gap or impediment that needs a human decision as an interview-style
+numbered set: question, options with trade-offs, and its recommendation. Relay those
+verbatim and re-invoke it with the human's answers. The planner records each resolved
+decision in `spec/agent/input-ledger.md` — ticket-agnostic and implementation-agnostic (no
+ticket or code references) — and notes it on the affected ticket(s) before acting on it.
 
 Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

@@ -5,8 +5,9 @@ description: >-
   orchestrating agent after the IMPLEMENTOR hands a ticket over, and re-runnable by a
   human). Independently verifies IN_REVIEW tickets
   on their feature branch against the acceptance criteria and the architecture/quality
-  standards, then either accepts a ticket to DONE or sends it back to READY with concrete
-  comments. For AUTOMATIC tickets the orchestrating agent then runs `/accept`. Use when the
+  standards, asks the human when a decision is genuinely ambiguous, then either accepts a
+  ticket to DONE or sends it back to READY with concrete comments. For AUTOMATIC tickets the
+  orchestrating agent then runs `/accept`. Use when the
   user runs /review, asks to "review", "verify a ticket", "check the implementation",
   "accept the ticket", or when IN_REVIEW tickets exist.
 ---
@@ -22,20 +23,26 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 
 ## Inputs to read first
 
-1. The IN_REVIEW tickets — run the script below — in full, including all comments and the task
-   list.
+1. The IN_REVIEW tickets — run the script below — in full, including all comments, any open
+   review questions and their answers, and the task list.
 2. The requirements/architecture they link to, the project shape (the single
    `architecture/tech-stack.md`, or the relevant module's `module.md` and `tech-stack.md`),
    and `spec/architecture/quality-aspects.md` and `coding-guidelines.md` (the test and
    coverage standards live there) — plus `design-system.md` and `gui-spec.md` when the ticket
    changes the UI.
-3. The **feature branch** diff versus `main` — you review the branch, not the working
+3. `spec/agent/input-ledger.md` — accepted decisions and prior clarifications; never repeat
+   or contradict them.
+4. The **feature branch** diff versus `main` — you review the branch, not the working
    tree: the responsible commits, the changed files, the tests.
-4. The build/test/lint output (re-run it if you can).
+5. The build/test/lint output (re-run it if you can).
 
 ## Procedure
 
-1. **Verify the implementation** independently and skeptically:
+1. **Resume open review questions first.** Read the ticket's `## Comments`. If an earlier
+   `/review` left `RQ` entries, use any `Review answers` already in the ticket or the answers
+   supplied now; if some are still unanswered, present those again and stop. Never re-ask an
+   answered question.
+2. **Verify the implementation** independently and skeptically:
    - Is every task in the ticket actually done?
    - Is every acceptance criterion fulfilled, demonstrably (not just asserted)?
    - Is the change complete — code, tests, configuration and documentation — with tests
@@ -48,17 +55,31 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
    - Is the scope confined to the ticket, with no unrelated changes?
    - Are the build and tests green on the branch, with no test skipped or flaky?
    - Is the branch clean (all work committed) and rebased on the current `main`?
-2. **If anything is missing or wrong, reject it.** Append a dated comment stating
-   precisely what remains to be done and why, set `status: READY`, and return the ticket
-   to the implementor. This reviewer rework comment is the one exception to the rule that a
-   comment edit resets a ticket to DRAFT: it sets `IN_REVIEW → READY`.
-3. **If it is correct, accept it.** Set `status: DONE`, add a dated acceptance comment
+3. **If there are unambiguous gaps, reject.** Append a dated comment stating precisely what
+   remains to be done and why, set `status: READY`, and return the ticket to the implementor.
+   This reviewer rework comment sets `IN_REVIEW → READY` without forcing a DRAFT cycle.
+4. **If ambiguity blocks the decision, ask — do not reject and do not guess.** This applies
+   when a criterion, requirement, screen document or expected behavior is ambiguous,
+   contradictory or silent, or when the evidence supports more than one reading. Ask
+   interview-style:
+   - one compact numbered set; for each `RQ<n>` give the question, two or three viable options
+     with trade-offs, your recommendation and why, and what the answer changes;
+   - append the set to the ticket's `## Comments` as
+     `### Review questions — <date> (open)` with stable `RQ` ids, leave the ticket
+     `IN_REVIEW`, and stop. The ticket is the durable record, so a later `/review` resumes
+     from it;
+   - on re-invocation with answers, append `### Review answers — <date> (human)` and a dated
+     clarification note. Record a durable project-level decision in
+     `spec/agent/input-ledger.md` (ticket-agnostic, implementation-agnostic); keep
+     ticket-local answers in the ticket comments. Then continue the review.
+5. **If it is correct, accept it.** Set `status: DONE`, add a dated acceptance comment
    stating what was verified and how, and commit.
-4. **Leave the merge to the orchestrator.** For an `AUTOMATIC` ticket, return it as DONE in
+6. **Leave the merge to the orchestrator.** For an `AUTOMATIC` ticket, return it as DONE in
    your report so the orchestrating agent runs `/accept` in the implement → review → accept
    loop, then syncs `main` and re-invokes the IMPLEMENTOR for the next ticket; a `HUMAN`
    ticket stays DONE for the human.
-5. **Report** accepted (DONE) and rejected (READY) tickets, with reasons.
+7. **Report** accepted (DONE) and rejected (READY) tickets, with reasons, and every open or
+   answered review question.
 
 ## Rules and behaviour
 
@@ -71,9 +92,21 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
   project-shape refinement or rework is needed.
 - **Be specific in rework comments.** "Does not work" is not a review; name the failing
   criterion, file or behaviour and what would satisfy it.
-- **Do not change product code yourself.** You may read anything and edit only the ticket
-  (status and comments). A code change is rework.
-- **Never touch `input.md`, the requirements, the architecture or the input ledger.**
+- **Ask, don't guess.** Your uncertainty is not the implementor's defect. If the expected
+  behavior is unclear, ask the human with options and a recommendation instead of rejecting
+  or accepting on an assumption.
+- **Questions do not reset the ticket.** A `Review questions` or `Review answers` note is a
+  review record, not a content change; keep the ticket `IN_REVIEW` while it waits. Status
+  resets apply to scope changes, not to workflow comments.
+- **Do not change product code yourself.** You may read anything; edit only the ticket
+  (status and comments) and append resolved clarifications to the input ledger. A code change
+  is rework.
+- **Never touch `input.md`, the requirements or the architecture.** You may append resolved,
+  durable clarifications to `spec/agent/input-ledger.md` — ticket-agnostic,
+  implementation-agnostic, append-only, never rewritten.
+- **Route changes to their owner.** If an answer changes requirements or UI design, do not
+  approve the change here: return the ticket and report that `/facilitate` or `/design` and
+  re-approval are required.
 - **Never set `CLOSED` yourself.** `/accept` sets CLOSED on the branch before merging it;
   you stop at DONE.
 - Prefer to send a ticket back (READY) over accepting it (DONE) with known gaps.
