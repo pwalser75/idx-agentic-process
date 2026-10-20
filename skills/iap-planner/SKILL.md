@@ -23,7 +23,9 @@ Otherwise planning is blocked.
 
 ## Inputs to read first
 
-1. All of `spec/requirements/**`, `spec/architecture/**` and, when present, `spec/modules/**`.
+1. The requirements, architecture and shape documents that changed since the last planning
+   run — the planning log gives the base revision/hash; on the first run, all of them. Read
+   the sections that other affected tickets link to, not every document end-to-end.
 2. All ticket headers in one pass — run the ticket header script below (ID, STATUS, TYPE,
    TITLE, CREATED, FILE) — plus `spec/agent/ticket-index.md` (create if missing). Open a ticket
    body only to edit it or to check it for duplicate work.
@@ -174,6 +176,18 @@ for f in spec/modules/*/module.md; do
   printf '%s\t%s\n' "$(basename "$(dirname "$f")")" "$(sed -n 's/^status:[[:space:]]*//p' "$f" | head -1)"
 done
 ```
+
+## Context and reporting
+
+- **One planning pass per invocation.** Create or update the coherent batch, update
+  `planning-log.md` and the ticket index, commit, then return; a fresh `/plan` continues from
+  the recorded state.
+- **Checkpoint if the change set is too large.** Commit the tickets planned so far and the
+  updated planning log, record the remaining changes on disk, and report `checkpoint`.
+- **Report at most about 200 words** plus open questions: created/updated/reclaimed tickets
+  and deliberate omissions. Details belong in the tickets and the index.
+- **Keep tool output small.** Use the header script; open a ticket body only to edit it or to
+  check it for duplicate work.
 
 ## Lessons learned
 

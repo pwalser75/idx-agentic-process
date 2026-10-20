@@ -64,6 +64,9 @@ IAP drives development iteratively:
   acceptance or a decision that needs a human.
 - **Subagent roles** — specialised roles run in isolated contexts, so their work never
   pollutes the orchestrator; they return one concise report and never block on input.
+- **Context-aware** — every role starts fresh and reports are bounded. Long work checkpoints
+  to disk (ticket comments, branches, screen documents) and resumes in a new context; the
+  orchestrator compacts at durability barriers such as after `/accept`.
 - **Incremental & idempotent reverse-engineering** — existing codebases can be adopted via
   `/excavate` and `/survey`, writing *provisional* (`origin: inferred`) content with
   evidence rather than overwriting human knowledge.
@@ -182,7 +185,10 @@ Priorities when picking work: **BUG > IMPROVEMENT > STORY**.
 
 Commands are invoked by humans. Each role is a skill; a command starts the matching skill.
 A SUBAGENT role runs in an isolated context; the orchestrator selects the role, passes the
-arguments and relays the result — it never does the role's work itself.
+arguments and relays the result — it never does the role's work itself. Each role invocation
+starts in a fresh context, and an implementor handles one ticket per invocation. The
+orchestrator keeps its own context thin, long roles checkpoint to disk, and the session is
+compacted at durability barriers (after `/accept`, or after a planning/design commit).
 
 | Command        | Role / skill          | Type     | Precondition                                |
 |----------------|-----------------------|----------|---------------------------------------------|
@@ -200,7 +206,9 @@ arguments and relays the result — it never does the role's work itself.
 | `/reconcile`   | `iap-reconciler`      | SUBAGENT | none (audit + safe repairs)                 |
 
 The process definition itself is packaged as the `idx-agentic-process` skill, so an agent
-that has it installed understands the whole process.
+that has it installed understands the whole process. `/accept` is mechanical and
+context-heavy: when the orchestrator invokes it, run it in a fresh isolated context; the
+human may run it directly.
 
 ## Installation
 

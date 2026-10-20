@@ -52,6 +52,17 @@ Name any item that needs a human decision before the corresponding action can ru
 - **Do not do the work.** You recommend; the matching command performs it.
 - Report violations you find but cannot repair, so the human can run `/reconcile`.
 
+## Context and reporting
+
+- **Read-only and stateless.** Return a short prioritized list, not a dump of the documents or
+  tickets.
+- **Read in one pass where possible.** Use the ticket-state script; open a document only when
+  the decision needs it.
+- **If the audit is too large, report what you covered and what remains.** Do not speculate
+  about the rest.
+- **Keep tool output small.** Use `git status`, `git log --oneline` and file lists rather than
+  full diffs or file contents.
+
 ## Script: ticket state
 
 Read-only. Prints per-status counts, then open tickets as `FILE STATUS TITLE`.

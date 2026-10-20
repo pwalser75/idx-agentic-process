@@ -23,8 +23,9 @@ only role that reads `input.md` as work, and the only one that clears it.
 ## Inputs to read first
 
 1. `spec/input.md` — the new human input (the work).
-2. All existing `spec/requirements/**`, `spec/architecture/**` and `spec/modules/**` — to fit
-   the input in, not duplicate it.
+2. The existing `spec/requirements/**`, `spec/architecture/**` and `spec/modules/**` that the
+   input affects — search for the models, features and decisions first, and open a whole
+   document only when needed to fit the input in.
 3. `spec/agent/input-ledger.md` — never repeat what was already accepted.
 4. `spec/agent/process-version.md` and, if present, `spec/agent/idx-agentic-process.md`.
 
@@ -166,6 +167,18 @@ for f in spec/modules/*/module.md; do
   printf '%s\t%s\n' "$(basename "$(dirname "$f")")" "$(sed -n 's/^status:[[:space:]]*//p' "$f" | head -1)"
 done
 ```
+
+## Context and reporting
+
+- This is the PRIMARY role and runs in the current session. Read `input.md` first, then only
+  the spec documents the input actually affects; search before opening whole documents.
+- If the input is too large for one focused pass, accept and commit a coherent part, leave the
+  unprocessed input in `input.md`, and report `checkpoint` with what remains. Never clear
+  input that has not been recorded.
+- Report concisely: what changed, what was deferred, and the open questions. Put detail in the
+  spec and the ledger, not in the report.
+- Keep tool output small: read targeted ranges, and do not dump whole files or long logs into
+  the conversation.
 
 ## Lessons learned
 

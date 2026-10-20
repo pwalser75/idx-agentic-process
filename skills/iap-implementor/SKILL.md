@@ -30,10 +30,11 @@ strictly within each ticket's scope.
 
 ## Procedure
 
-Run the loop while a READY, unblocked ticket exists. You implement exactly one ticket per
-invocation and hand it over; the orchestrating agent drives the wider implement → review →
-accept loop (running `/review` and, for AUTOMATIC tickets, `/accept`) and re-invokes you for
-the next ticket. That loop runs until no READY, unblocked ticket remains or it gets stuck.
+Handle exactly one ticket per invocation, then report. The orchestrating agent drives the
+wider implement → review → accept loop (running `/review` and, for AUTOMATIC tickets,
+`/accept`) and starts a fresh IMPLEMENTOR context for the next ticket. Never loop over
+several tickets in one context. That loop runs until no READY, unblocked ticket remains or
+it gets stuck.
 
 1. **Select the ticket.** If the human did not name one, pick the READY ticket with the
    highest priority (**BUG > IMPROVEMENT > STORY**), then by created time, then by id. A
@@ -64,22 +65,36 @@ the next ticket. That loop runs until no READY, unblocked ticket remains or it g
    acceptance criterion. Do not claim success without evidence.
 7. **Keep the ticket current.** Check off tasks (`- [x]`), append dated comments for
    notable decisions, and commit after each acceptance criterion is met.
-8. **Hand over.** When all tasks are done and every acceptance criterion is fulfilled, set
-   `status: IN_REVIEW`, add a summary comment (what changed, how it was verified, what the
-   reviewer should look at), commit and push the branch, and hand the ticket over in your
-   report. The orchestrating agent runs `/review` next — the IMPLEMENTOR never reviews its
+8. **Hand over or checkpoint.** When all tasks are done and every acceptance criterion is
+   fulfilled, set `status: IN_REVIEW`, add a summary comment (what changed, how it was
+   verified, what the reviewer should look at), commit and push the branch, and hand the
+   ticket over in your report. If the ticket is too large for one focused pass or the context
+   is getting large, checkpoint instead: commit the work, append a dated `Resume` comment
+   (done, remaining, next concrete step, blockers), leave the ticket `IN_PROGRESS`, and
+   report `checkpoint`. The orchestrator starts a fresh IMPLEMENTOR for the same ticket id;
+   the branch and the ticket's claim are the resume point. The IMPLEMENTOR never reviews its
    own ticket and never invokes the REVIEWER.
-9. **Continue** when the orchestrator re-invokes you. If a handover came back (READY),
-   rebase onto `main` and rework it. Otherwise take the next READY, unblocked ticket. Sync
-   `main` first when a ticket was accepted (merged). Tickets are processed sequentially,
-   one branch at a time.
+9. **Resume or continue** when the orchestrator starts a fresh invocation. If a handover came
+   back (READY), rebase onto `main` and rework it. If a checkpoint was left (IN_PROGRESS with
+   a `Resume` comment), resume that branch and ticket. Otherwise take the next READY,
+   unblocked ticket. Sync `main` first when a ticket was accepted (merged). Tickets are
+   processed sequentially, one branch at a time; a ticket that needs repeated checkpoints is
+   too big — report it for splitting.
 10. **Report** each ticket id, the changes, the verification evidence, the commits, and
-    anything that needs a human decision.
+    anything that needs a human decision. Keep the report under about 200 words; put detail
+    in the ticket comments, not in the report.
 
 ## Rules and behaviour
 
 - **One ticket, one scope.** Implement only what the claimed ticket asks. Unrelated fixes
   or extra features become new tickets — do not sneak them in.
+- **One ticket, one context.** Never loop over tickets in the same context, and never rely on
+  conversation history for state. The ticket, branch and comments are the handover; a fresh
+  invocation resumes from them.
+- **Keep output small.** Start from the ticket's linked requirement/screen sections and the
+  files you will change; search and read targeted ranges rather than whole files; use
+  `git diff --stat` or per-file diffs; quiet or tail build/test output; do not dump lockfiles,
+  generated files, prototypes or logs into the conversation.
 - **No ticket, no work.** Never implement before the ticket is IN_PROGRESS.
 - **Respect the project shape.** Never change the agreed artifact kind, language, language
   version or stack to make a ticket fit. Report it instead; the shape is reopened through the

@@ -3,9 +3,10 @@ description: ANALYST — refine DRAFT tickets and promote them to READY.
 ---
 Assume the **ANALYST** role of the idx Agentic Process.
 
-This is a SUBAGENT role: run it in an isolated subtask so its work does not pollute this
-context. Do not do the role's work yourself — pass the arguments, then relay its report
-and any questions verbatim to the human.
+This is a SUBAGENT role: run it in an isolated subtask with a fresh context so its work does
+not pollute this context. Never continue a previous session of this role. Do not do the
+role's work yourself — pass the arguments, then relay its bounded report and any questions
+verbatim to the human.
 
 1. Load the `iap-analyst` skill and follow it exactly.
 2. Precondition: none. It may be run at any time.
@@ -16,5 +17,7 @@ numbered set: question, options with trade-offs, and its recommendation. Relay t
 and re-invoke it with the human's answers. The analyst records each resolved decision in
 `spec/agent/input-ledger.md` — ticket-agnostic and implementation-agnostic (no ticket or code
 references) — notes it on the affected ticket, and then acts on it.
+If the DRAFT set is too large for one pass, let it checkpoint after committing the refined
+tickets; a fresh `/refine` continues from the tickets.
 
 Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

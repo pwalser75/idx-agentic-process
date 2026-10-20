@@ -20,8 +20,8 @@ PLANNER (which drafts tickets) and the IMPLEMENTOR (which builds them).
 
 1. DRAFT tickets (and READY, to keep them consistent) — run the ticket script below, then read
    only those bodies.
-2. All `spec/requirements/**`, `spec/architecture/**` and, when present, `spec/modules/**` — the
-   source of truth.
+2. The requirements, architecture and shape sections the DRAFT/READY tickets link to, plus
+   any shared model they depend on — not every document end-to-end.
 3. `spec/agent/ticket-index.md` and any notes under `spec/agent/`.
 
 ## Procedure
@@ -103,6 +103,16 @@ for f in spec/tickets/*.md; do
   printf '%s\t%s\t%s\n' "$f" "$status" "$title"
 done | sort -t"$(printf '\t')" -k2,2 -k1,1
 ```
+
+## Context and reporting
+
+- **One refinement pass per invocation.** Refine the coherent batch, commit, then return; a
+  fresh `/refine` resumes from the tickets.
+- **Checkpoint if the DRAFT set is too large.** Commit the tickets refined so far, leave the
+  rest DRAFT with a note on what remains, and report `checkpoint`.
+- **Report at most about 200 words** plus open questions: which tickets are READY, which
+  stayed DRAFT and why. Details belong in the tickets.
+- **Keep tool output small.** Use the ticket script first, then read only the bodies you edit.
 
 ## Lessons learned
 

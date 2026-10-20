@@ -22,8 +22,9 @@ Projects without a UI skip this role.
 
 ## Inputs to read first
 
-1. `spec/requirements/**`, `spec/architecture/**` and `spec/references/**` — including
-   `gui-spec.md` and `screen-workflow.md`.
+1. The `spec/requirements/**` and `spec/architecture/**` sections that affect the screens and
+   flows being designed, plus the relevant `spec/references/gui-spec.md` and
+   `screen-workflow.md` sections — search first, read targeted ranges.
 2. The project shape: `architecture/tech-stack.md` for a single subproject, or
    `spec/modules/{module}/module.md` and `tech-stack.md` for a multi-subproject project. Use the
    artifact kind (web app, mobile app, desktop app, …) for platform mapping.
@@ -117,6 +118,17 @@ done | sort -t"$(printf '\t')" -k2,2 -k1,1
   project-shape refinement is needed.
 - **Keep the design lean.** Document what changes behavior or appearance; do not restate the
   whole product.
+
+## Context and reporting
+
+- **One design round per invocation.** Do the affected screens, flows and prototype, then
+  return; a fresh `/design` resumes from the documents.
+- **Checkpoint if the surface is too large.** Commit a coherent set, record the remaining
+  screens and open questions in the screen documents, and report `checkpoint`.
+- **Report at most about 200 words** plus the open-question set: what changed, prototype
+  status, and what the human must decide. Put detail in the screen documents and ledger.
+- **Keep tool output small.** Read targeted sections of `gui-spec.md`/`screen-workflow.md` and
+  existing screens; do not dump whole files or generated HTML into the conversation.
 
 ## Lessons learned
 

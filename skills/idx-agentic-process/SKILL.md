@@ -259,6 +259,16 @@ sequences them, one writing role at a time — and it drives this implement → 
 loop automatically until no READY, unblocked ticket remains or the loop gets stuck (an
 impediment, a violated invariant, or a decision that needs a human).
 
+Context is a cache, not the record. Each role invocation starts in a fresh SUBAGENT context;
+a previous session is never resumed, and an implementor handles exactly one ticket per
+invocation. The orchestrator stays thin — it does not read code, diffs, build logs or whole
+tickets, and it relays a report of about 200 words. Detail lives in the ticket comments,
+`spec/`, the ledger and git. A role that is running out of context checkpoints to disk
+(commit plus a dated `Resume` comment) and returns; a fresh invocation resumes. Compact or
+clear the orchestrator at durability barriers — after `/accept`, or after
+`/facilitate`/`/design`/`/plan`/`/refine` commits — and prefer a new session at a phase
+change. See "Context hygiene and checkpoints" in the canonical process for the full rules.
+
 | Role                  | Type     | Command       | Precondition                              |
 |-----------------------|----------|---------------|-------------------------------------------|
 | FACILITATOR           | PRIMARY  | `/facilitate` | input non-empty or shape unsettled        |

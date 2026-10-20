@@ -18,4 +18,9 @@ subproject records it in `architecture/tech-stack.md`, multiple subprojects use
 `spec/modules/{module}/`. Ask, propose concrete options and a recommendation, and let the human
 choose; never choose a stack silently.
 
+This role runs in the current session. If the input is too large for one focused pass, let it
+checkpoint: it accepts and commits a coherent part, leaves the unprocessed input in
+`input.md`, and reports `checkpoint`. Never let it clear input it has not recorded. After the
+commit, start a fresh session or compact before the next phase if the session is long.
+
 Keep verbosity low and use plain English — concise, fluff-free, no corporate lingo.

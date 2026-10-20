@@ -83,6 +83,19 @@ find . -maxdepth 6 \
      -o -name '*.php' -o -name '*.rb' -o -name '*.sql' \) -print | sed -n '1,200p'
 ```
 
+## Context and reporting
+
+- **Work incrementally from the ledger.** `spec/agent/source-ledger.md` is the resume point;
+  a fresh invocation revisits only changed or new sources.
+- **Checkpoint if the codebase is too large.** Write the reconstructed items, update the
+  ledger only for sources actually covered, commit, and report `checkpoint`. Never mark an
+  unscanned source as scanned.
+- **Report at most about 200 words** plus open questions: what was reconstructed, what
+  changed, and the top uncertainties. Evidence and detail belong in the documents and the
+  reverse-engineering report.
+- **Keep tool output small.** Use searches and the inventory script, read targeted ranges,
+  exclude generated/vendor/build output, and do not dump whole files.
+
 ## Lessons learned
 
 Read `spec/agent/lessons-learned-archaeologist.md` before working and update it before

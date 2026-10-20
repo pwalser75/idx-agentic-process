@@ -49,12 +49,15 @@ The human drives the loop; the agent does the ticket work.
    works through the READY, unblocked tickets one at a time, AUTOMATIC tickets are reviewed and
    accepted (merged) automatically, and HUMAN tickets are implemented and left for you. The loop
    runs until no workable ticket remains or it gets stuck (an impediment, or a decision that needs
-   you), then reports what remains and why.
+   you), then reports what remains and why. Each ticket runs in a fresh context and the loop
+   compacts after accepted tickets; if the session is cleared, run `/implement` again and it
+   resumes from the tickets and branches.
 9. **Accept manually**: inspect the tickets awaiting your acceptance (status DONE with
    `acceptance-type: HUMAN`) and run `/accept` to merge them, or comment on a ticket to send it
    back to DRAFT.
 10. **Recover / re-orient**: after any interruption, or when unsure, run `/reconcile` to restore a
-    consistent state and `/guide` to see what to do next.
+    consistent state and `/guide` to see what to do next. Start a new session at a phase change —
+    requirements or design settled, a new work batch — instead of carrying the old context.
 
 ## Definitions
 
@@ -576,7 +579,10 @@ A SUBAGENT role never blocks on input: it returns its questions/blockers in the 
 
 For SUBAGENT skills, the invoking (orchestrating) agent must not perform the role's work itself — it selects the role, passes the arguments, and relays the result.
 
-Each agent starts with a clean context (to prevent context pollution).
+Each SUBAGENT command invocation starts its role in a clean context (to prevent context
+pollution); a previous role session is never resumed. The PRIMARY role runs interactively in
+the current session. The conversation is a cache — tickets, `spec/`, the input ledger and git
+are the only durable handover state.
 
 Each role section lists the spec documents it reads (`Works with`) and the spec files it may
 create, edit or delete (`May modify`). Anything not listed under "May modify" is read-only for
@@ -593,15 +599,22 @@ a separate SUBAGENT context for that ticket. Roles never invoke each other — o
 orchestrator sequences them, one writing role at a time.
 
 The orchestrator then drives implement → review → accept as a single loop, without returning
-to the human after each ticket:
+to the human after each ticket. Every role step below runs in a fresh SUBAGENT context; never
+continue a previous role session:
 
 1. run the REVIEWER on the IN_REVIEW ticket;
-2. if the reviewer rejected it (READY), re-invoke the IMPLEMENTOR to rework that ticket;
-3. if the reviewer accepted an AUTOMATIC ticket (DONE), run `/accept` to merge and close it,
-   then sync `main` and re-invoke the IMPLEMENTOR for the next READY ticket;
+2. if the reviewer rejected it (READY), re-invoke the IMPLEMENTOR in a fresh context to
+   rework that ticket;
+3. if the reviewer accepted an AUTOMATIC ticket (DONE), run `/accept` in a fresh context to
+   merge and close it, then sync `main` and re-invoke the IMPLEMENTOR in a fresh context for
+   the next READY ticket;
 4. a HUMAN ticket accepted by the reviewer stays DONE — leave it for the human and continue
    with the other workable tickets;
-5. repeat until no READY, unblocked ticket remains, or it is stuck — an impediment, a
+5. after every few `/accept` runs (for example every five closed tickets), compact the
+   orchestrating session and re-orient from `/tickets` and git. If the host cannot compact
+   from inside the session, continue to the next safe barrier and ask the human to compact or
+   start a fresh session at the end of the batch;
+6. repeat until no READY, unblocked ticket remains, or it is stuck — an impediment, a
    violated invariant, or a decision that needs a human. On a stuck loop it stops and reports
    what remains and why.
 
@@ -611,6 +624,69 @@ human decision.
 
 UI-DESIGNER is a design-stage role. It runs before planning, not inside the implement → review
 → accept loop; its output is the approved screen document that UI tickets implement.
+
+### Context hygiene and checkpoints
+
+Implementation is the most context-heavy stage: source files, diffs, build and test output,
+ticket comments and review rounds all accumulate. The conversation is a cache, not the
+record. Tickets, `spec/`, the input ledger and git are the durable state, so any role can be
+replaced by a fresh context at a checkpoint.
+
+- **Fresh context per invocation.** Every SUBAGENT command starts its role in a new context.
+  Never continue or reuse a previous role session, and never pass a previous session id.
+  Rework and resume are new invocations that read the ticket, branch and git state.
+- **Thin orchestrator.** The orchestrating session only selects the role, passes the
+  arguments and relays the report. It does not read source files, diffs, build logs,
+  requirements/architecture or whole tickets. It uses `/tickets` and short git status
+  commands, and gets detail from the role's report or the files the report names.
+- **Bounded handover.** A role report is at most about 200 words: status (`done`,
+  `checkpoint` or `blocked`), ticket id, branch and commit, verification evidence as command
+  and result, and blockers. No code, diffs, logs, file dumps or restating the task. Durable
+  detail goes to the ticket's `## Comments`, the screen document, the ledger or the commit.
+- **Checkpoint before the context gets large.** Do not wait for automatic compaction: as a
+  rule of thumb, a role checkpoints by the time about half the model's context window is
+  used, or sooner if the conversation is already dominated by old tool output. When a role
+  cannot finish in one focused pass, it writes a checkpoint and returns instead of pushing
+  on:
+  - IMPLEMENTOR: commit the work, append a dated `Resume` comment (done, remaining, next
+    concrete step, blockers), leave the ticket `IN_PROGRESS`, and report `checkpoint`. The
+    orchestrator re-invokes a fresh IMPLEMENTOR with that ticket id; the existing branch and
+    the ticket's claim are the resume point. A ticket that needs repeated checkpoints is too
+    big: report it for splitting instead of grinding.
+  - REVIEWER: append the findings or `RQ` questions and a resume note to the ticket, leave
+    it `IN_REVIEW`, and report `checkpoint`. A fresh `/review` resumes from the ticket.
+  - PLANNER, ANALYST, UI-DESIGNER: commit the artifacts written so far, record the open
+    items on the ticket or screen document, and report `checkpoint`.
+  - ARCHAEOLOGIST, SYSTEM-ARCHITECT: record only the sources actually covered in the source
+    ledger, commit the reconstructed documents and report `checkpoint`; a fresh invocation
+    continues from the ledger. Never mark an unscanned source as scanned.
+  - ACCEPT: finish the ticket it is closing, merge it, and report `checkpoint`; a fresh
+    `/accept` continues with the remaining DONE tickets.
+  - RECONCILER: apply only the safe repairs it has audited so far, report `checkpoint`, and
+    leave the rest for a fresh `/reconcile`.
+- **Compact at durability barriers, not mid-ticket.** Compact or clear the orchestrating
+  session only when the work is durable on disk:
+  - after `/accept` closes a ticket (merged, branch deleted);
+  - after `/facilitate`, `/design`, `/plan` or `/refine` has committed;
+  - when the loop stops for a human decision (start fresh after the answer);
+  - after `/reconcile` or `/guide`, once their findings are recorded or acted on (their
+    reports are not durable state).
+  Do not clear between `/implement`, `/review` and `/accept` for the same ticket: they are
+  separate contexts already, and the ticket and branch hold the state.
+- **Prefer a new session at a phase change.** Planning to implementation, a new design round,
+  or a new work batch: start a new session (or clear) and re-orient from `/tickets`,
+  `git status` and `/guide`. Compaction is the fallback while a long implement → review →
+  accept loop continues; compact after every few accepted tickets (for example five), when
+  the host exposes it. If it does not, ask the human to compact or start a fresh session at
+  the next checkpoint; the loop resumes from disk.
+- **Re-orient after any compaction or clear.** Read the current ticket, `git status`, the
+  last commits and the next loop step from disk. Never rely on a compaction summary for
+  ticket state, acceptance evidence or decisions. Assume the host may compact at any time, so
+  keep the ticket comments and commits current enough that a lost transcript does not matter.
+- **Keep tool output small.** Read targeted ranges and search instead of whole files; use
+  `git diff --stat` or per-file diffs, not the whole branch diff; quiet or tail build and
+  test output; never dump lockfiles, generated files, prototypes or logs into the
+  conversation.
 
 ### Reflection, learning and self-optimization
 
@@ -777,6 +853,8 @@ does not plan: it reports the missing decisions and points back to the project-s
 interview.
 It then creates or updates tickets that define which changes are to be done in the project, and links them to the requirements (internally, in the `agent` folder).
 It gives the ticket a number (sequence number, if possible) and a name, a description, a short task breakdown (checkbox list) and acceptance criteria (bullet list).
+It sizes each ticket so one implementor can finish it in one focused context; a requirement
+that is too large is split into tickets that can be implemented and reviewed independently.
 Each ticket links the project shape it changes: `architecture/tech-stack.md` for a
 single-subproject project, or the module(s) and their `tech-stack.md` for a multi-subproject
 project. If a ticket spans modules, list all of them.
@@ -860,9 +938,11 @@ Documents:
   `prototypes/**` (regenerate only, never hand-edit); project code, tests, configuration and
   documentation outside `spec/`.
 
-Repeat while a READY, unblocked ticket exists:
-- finds the best one (BUG > IMPROVEMENT > STORY) and claims it.
-- reads the project shape from the ticket: `architecture/tech-stack.md` for a single-subproject
+Handle exactly one ticket per invocation, then report. The orchestrating agent starts a
+fresh IMPLEMENTOR context for the next ticket; never loop over several tickets in one
+context:
+- find the best READY, unblocked ticket (BUG > IMPROVEMENT > STORY) and claim it.
+- read the project shape from the ticket: `architecture/tech-stack.md` for a single-subproject
   project, or the relevant `spec/modules/{module}/module.md` and `tech-stack.md`. If the shape
   is missing or not `agreed`, stop and report it. Follow the agreed artifacts, language,
   language version and stack.
@@ -880,15 +960,20 @@ Repeat while a READY, unblocked ticket exists:
   re-planning.
 - regenerate the prototype or screenshots for review evidence when the project’s prototype
   builder is available.
+- if the ticket is too large for one focused pass or the context is getting large, checkpoint
+  instead of pushing on: commit the work, append a dated `Resume` comment (done, remaining,
+  next concrete step, blockers), leave the ticket IN_PROGRESS, and report `checkpoint`. The
+  orchestrator re-invokes a fresh IMPLEMENTOR for that ticket id; the branch and the ticket's
+  claim are the resume point. Report a ticket that needs repeated checkpoints so it can be split.
 
 Tests covering the code changes are required.
 
 When done, set the ticket STATUS: IN_REVIEW, commit, and hand it over in the report — the
 orchestrating agent runs `/review` next. Never review your own ticket. The orchestrating
-agent drives the implement → review → accept loop and re-invokes the IMPLEMENTOR for the
-next READY ticket after the reviewer finishes; sync main first when a ticket was accepted
-(merged). The loop runs until no READY, unblocked ticket remains or it gets stuck. Tickets
-are processed sequentially, one branch at a time.
+agent drives the implement → review → accept loop and re-invokes the IMPLEMENTOR in a fresh
+context for the next READY ticket after the reviewer finishes; sync main first when a ticket
+was accepted (merged). The loop runs until no READY, unblocked ticket remains or it gets
+stuck. Tickets are processed sequentially, one branch at a time.
 
 ### REVIEWER
 
@@ -923,6 +1008,10 @@ Looks at tickets in status IN_REVIEW and checks:
   required; it does not approve an undocumented design change.
 
 Test/coverage standards are not set here; they live in `architecture/quality-aspects.md` and `architecture/coding-guidelines.md`.
+
+If the review is too large for one focused pass, it writes the findings and remaining checks
+to the ticket (or the `RQ` set), leaves it `IN_REVIEW`, and reports `checkpoint`; a fresh
+`/review` resumes from the ticket.
 
 When the evidence is ambiguous or the expected behavior is unclear — an acceptance criterion
 is contradictory, the requirements or screen document are silent, or the evidence supports
@@ -1149,7 +1238,9 @@ Precondition: at least one AUTOMATIC ticket in DONE (reviewer) or one HUMAN tick
 Invoked by: the orchestrating agent (for the AUTOMATIC ticket(s) `/review` just accepted) or
 HUMAN (for HUMAN tickets). In the implement/review/accept loop the orchestrator runs it
 automatically for each accepted AUTOMATIC ticket; it may accept every eligible DONE ticket in
-one run.
+one run. Run it in its own isolated context when the orchestrator invokes it: it is mechanical
+and context-heavy. It handles one ticket at a time and may report `checkpoint`; a fresh
+`/accept` continues with the remaining DONE tickets.
 
 Documents:
 - Works with: `spec/tickets/**` (DONE tickets); `spec/release-notes.md`; for UI tickets,
@@ -1204,6 +1295,7 @@ These must always hold. Any role that finds one violated must report it and stop
 - `blocked-by` references existing tickets and is acyclic.
 - no two writing roles run concurrently.
 - the process document is never edited by an agent.
+- conversation history is never state: every handover, decision and resume point is on disk (ticket, spec, ledger, git), so a role can be replaced by a fresh context at any checkpoint.
 - every human decision that changes requirements, architecture, screen documents or tickets is recorded in `input-ledger.md`.
 - no ticket is planned until the project shape is `agreed`: the single `tech-stack.md` or every module, with artifact kind, language and version.
 - implementation follows the ticket's agreed project shape; changing an artifact kind, boundary or stack reopens the shape and returns affected tickets to DRAFT.
@@ -1273,6 +1365,23 @@ global installation.
 The installer creates the missing `spec/` files from the bundled templates. Commit a
 project-local tool folder so collaborators and cloud agents have it. Generated `prototypes/`
 may be added to `.gitignore`; screen documents, flows, theme/components and data are versioned.
+
+### Agent host configuration
+
+The process needs a host that runs roles in isolated subagent contexts and can compact or
+clear a session. Configure it to compact well before the model window fills; automatic
+compaction at the limit is too late and has already made the run slow and expensive.
+
+- **OpenCode V2** — compaction is on by default. Set `compaction.buffer` so compaction starts
+  around half the model's window (for example `buffer: 100000` on a 200k-token model) and keep
+  `compaction.keep.tokens` around 10–15k so the recent ticket handover survives. The
+  orchestrator can request compaction at a checkpoint with
+  `opencode api post /api/session/$OPENCODE_SESSION_ID/compact --data '{}'`; `/new` starts a
+  fresh session.
+- **Claude Code** — use `/compact` inside a long loop and `/clear` at a phase boundary.
+
+Compaction is lossy and costs a model call, so it is the fallback, not the primary control.
+Fresh contexts per command and checkpoints at durability barriers are the primary control.
 
 ### Starting a project
 

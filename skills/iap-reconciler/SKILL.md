@@ -74,6 +74,16 @@ Keep the working tree publishable: never leave a half-rebased tree or a dropped 
 - **Non-destructive:** when in doubt, report instead of changing.
 - **Never run two writing roles at once.** If another role appears active, stop and report.
 
+## Context and reporting
+
+- **One audit/repair pass per invocation.** A fresh `/reconcile` continues from the audited
+  state.
+- **Checkpoint if there is too much to audit or repair.** Apply only the safe repairs audited
+  so far, commit them, report `checkpoint`, and leave the rest for a fresh invocation.
+- **Report each finding compactly** with its evidence and whether it was fixed or needs a
+  human. Do not dump diffs, logs or whole files.
+- **Keep tool output small.** Use the state-audit script and targeted git commands.
+
 ## Script: state audit
 
 Read-only. Prints the git state, ticket statuses, and shape files.

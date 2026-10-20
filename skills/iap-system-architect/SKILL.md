@@ -110,6 +110,20 @@ find . -maxdepth 4 \
      -o -name Cargo.toml -o -name pyproject.toml -o -name requirements.txt \) -print
 ```
 
+## Context and reporting
+
+- **Work incrementally from the ledger.** `spec/agent/source-ledger.md` is shared with the
+  ARCHAEOLOGIST and is the resume point; a fresh invocation revisits only changed or new
+  sources.
+- **Checkpoint if the codebase is too large.** Write the reconstructed documents, update the
+  ledger only for sources actually covered, commit, and report `checkpoint`. Never mark an
+  unscanned source as scanned.
+- **Report at most about 200 words** plus open questions: what was reconstructed, what
+  changed, and which shape/stack decisions still need human confirmation. Detail belongs in
+  the architecture documents and the reverse-engineering report.
+- **Keep tool output small.** Use manifests, searches and the inventory script; read targeted
+  ranges, exclude generated/vendor/build output, and do not dump whole files.
+
 ## Lessons learned
 
 Read `spec/agent/lessons-learned-system-architect.md` before working and update it before

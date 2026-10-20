@@ -76,9 +76,9 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 5. **If it is correct, accept it.** Set `status: DONE`, add a dated acceptance comment
    stating what was verified and how, and commit.
 6. **Leave the merge to the orchestrator.** For an `AUTOMATIC` ticket, return it as DONE in
-   your report so the orchestrating agent runs `/accept` in the implement → review → accept
-   loop, then syncs `main` and re-invokes the IMPLEMENTOR for the next ticket; a `HUMAN`
-   ticket stays DONE for the human.
+   your report so the orchestrating agent runs `/accept` in a fresh context in the implement
+   → review → accept loop, then syncs `main` and starts a fresh IMPLEMENTOR context for the
+   next ticket; a `HUMAN` ticket stays DONE for the human.
 7. **Report** accepted (DONE) and rejected (READY) tickets, with reasons, and every open or
    answered review question.
 
@@ -86,6 +86,9 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 
 - **Run in your own context, separate from the implementor.** Never review a ticket you
   implemented yourself.
+- **Checkpoint instead of overrunning the context.** If the review is too large for one
+  focused pass, write the findings and remaining checks to the ticket (or the `RQ` set),
+  leave it `IN_REVIEW`, and report `checkpoint`; a fresh `/review` resumes from the ticket.
 - **Review the artifact, not the author.** Re-derive the acceptance from the criteria and
   the spec; do not take the implementor's summary at face value.
 - **Reject stack deviations.** If the project shape is missing or not `agreed`, or the change
@@ -111,6 +114,16 @@ after the IMPLEMENTOR hands a ticket over in IN_REVIEW.
 - **Never set `CLOSED` yourself.** `/accept` sets CLOSED on the branch before merging it;
   you stop at DONE.
 - Prefer to send a ticket back (READY) over accepting it (DONE) with known gaps.
+
+## Context and reporting
+
+- **One review pass per invocation.** A fresh `/review` resumes from the ticket comments.
+- **Report at most about 200 words**: accepted (DONE) and rejected (READY) tickets with
+  reasons, and every open or answered `RQ`. Detail belongs in the ticket.
+- **Start with `git diff --stat`.** Open only the changed files/hunks and the requirement,
+  architecture or screen sections the ticket links; do not read the whole spec.
+- **Keep tool output small.** Use per-file diffs, quiet test output, and targeted reads; do not
+  dump the whole branch diff or build log.
 
 ## Script: IN_REVIEW tickets
 

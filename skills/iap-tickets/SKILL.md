@@ -22,6 +22,13 @@ You show the state of the process. You change nothing.
    should be run (see `README.md`).
 4. Only if the human explicitly asks for per-status counts, run the count script below.
 
+## Context and reporting
+
+- The listing is the output. Print it verbatim; no commentary or analysis.
+- Never open ticket bodies or other documents for the listing.
+- Keep the response to the table plus at most one sentence when something is missing.
+- Do not dump directory listings, logs or file contents into the conversation.
+
 ## Script: open tickets
 
 Read-only. Prints `ID  STATUS  TYPE  TITLE  CREATED`, oldest first, with CLOSED omitted.

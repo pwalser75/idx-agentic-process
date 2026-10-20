@@ -20,8 +20,9 @@ involvement.
 **Precondition:** at least one AUTOMATIC ticket in DONE (reviewer), or one HUMAN ticket in
 DONE (human). It may accept every eligible DONE ticket in one run.
 
-After it merges, the orchestrating agent syncs `main` and re-invokes the IMPLEMENTOR for the
-next READY ticket, and so on until no READY, unblocked ticket remains or the loop gets stuck.
+After it merges, the orchestrating agent syncs `main` and starts a fresh IMPLEMENTOR context
+for the next READY ticket, and so on until no READY, unblocked ticket remains or the loop
+gets stuck.
 
 ## Procedure
 
@@ -66,6 +67,19 @@ Find the eligible DONE tickets in one pass — run the DONE ticket script below.
 - **Never discard work.** If anything is unexpected, stop and report.
 - Review the branch, not the working tree; a ticket is set to CLOSED before the branch is
   merged.
+
+## Context and reporting
+
+- **Run in its own context.** This role is mechanical and context-heavy (rebase, merge,
+  release notes, comment condensation). When the orchestrator invokes it, use a fresh
+  isolated context; never accept from the orchestrator's conversation.
+- **One ticket at a time.** After each merge the state is durable. If the context grows,
+  finish the current ticket, report `checkpoint`, and let the orchestrator call `/accept`
+  again.
+- **Report at most about 200 words**: merged tickets, the resulting `main` revision, and
+  anything needing a human. Details belong in the release notes and ticket summaries.
+- **Keep tool output small.** Use `git diff --stat`, `git log --oneline` and quiet rebase/merge
+  output; do not dump diffs or logs.
 
 ## Script: DONE tickets
 
