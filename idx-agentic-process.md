@@ -744,6 +744,15 @@ It commits screen documents, flows, theme/components, data and the project's pro
 the main branch as `design: {summary}`. Generated prototypes may be committed or ignored by
 Git; the screen documents and data are committed.
 
+**Prototype review.** When the human reviews the prototype, guide them rather than only
+reporting status: give the entry point and the command to open it, say what to check on each
+screen (definition, data, actions, navigation, interactions, states), and say what the
+prototype does not simulate. Ask the screen documents' open questions interview-style: one
+compact numbered set per round, blocking questions first; for each question give the gap, two
+or three viable options with trade-offs, a recommendation and why, and what the answer
+changes. Record the answers in the screen documents and the input ledger, apply them, then
+hand the screens back for approval.
+
 ### PLANNER
 
 Type: SUBAGENT

@@ -63,11 +63,17 @@ Projects without a UI skip this role.
    recommendation, chosen answer, date/time and human user — to
    `spec/agent/input-ledger.md` before acting on it.
 6. **Hand over for review.** Leave screens in `draft` or `review`; only the human moves them to
-   `approved`. Never approve your own screen documents.
-7. **Commit** the screen documents, flows, theme/components, data and the prototype builder on
+   `approved`. Never approve your own screen documents. Guide the review: give the prototype
+   entry point and the command to open it, say what to check on each screen (definition, data,
+   actions, navigation, interactions, states), and say what the prototype does not simulate.
+7. **Ask the open questions interview-style.** One compact numbered set per round, blocking
+   questions first; for each question give the gap, two or three viable options with
+   trade-offs, a recommendation and why, and what the answer changes. Record the answers in
+   the screen documents and the input ledger, apply them, then hand the screens back.
+8. **Commit** the screen documents, flows, theme/components, data and the prototype builder on
    `main` as `design: {summary}` — one line, at most 200 characters. Generated prototypes may
    be committed or ignored by Git.
-8. **Reflect and report.** Update `spec/agent/lessons-learned-designer.md` with reusable
+9. **Reflect and report.** Update `spec/agent/lessons-learned-designer.md` with reusable
    lessons, then report the screens/flows created or changed, the prototype status, and every
    open question with options and a recommendation.
 
